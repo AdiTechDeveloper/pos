@@ -3,6 +3,8 @@ import axios from "axios";
 import Layout from "../layout";
 import { Link } from "react-router-dom";
 import { useAppData } from "../../context/AppDataContext";
+import { RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
+
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -94,11 +96,10 @@ export default function GSTR3BReport() {
 
               <div className="text-right z-10">
                 <div
-                  className={`inline-flex items-center px-4 py-2 rounded-2xl font-black text-3xl transition-all duration-300 ${
-                    isNegative
+                  className={`inline-flex items-center px-4 py-2 rounded-2xl font-black text-3xl transition-all duration-300 ${isNegative
                       ? "text-rose-600 bg-rose-50 shadow-[inset_0_0_10px_rgba(225,29,72,0.05)]"
                       : "text-emerald-600 bg-emerald-50/50"
-                  }`}
+                    }`}
                 >
                   {isNegative ? (
                     <span className="mr-2 text-xl">▼</span>
@@ -130,9 +131,34 @@ export default function GSTR3BReport() {
         <div className="main-content-wrap">
           {/* TOP HEADER & BREADCRUMBS */}
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">
-              GSTR-3B <span className="text-indigo-600">Summary</span>
-            </h1>
+            <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span
+                  style={{
+                    width: "5px",
+                    height: "34px",
+                    borderRadius: "999px",
+                    background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
+                    display: "inline-block",
+                  }}
+                />
+                <div>
+                  <h3
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: 800,
+                      color: "#111827",
+                      margin: 0,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    GSTR3B Summary
+                  </h3>
+
+                </div>
+              </div>
+
+            </div>
             <ul className="breadcrumbs flex items-center flex-wrap justify-start gap-2 mt-2">
               <li className="text-slate-500 font-medium hover:text-indigo-600">
                 <Link to="/">Dashboard</Link>
@@ -209,9 +235,10 @@ export default function GSTR3BReport() {
               <div className="flex items-end">
                 <button
                   onClick={handleFetch}
-                  className="bg-green-600 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md"
+                  title={loading ? "Loading..." : "Refresh"}
+                  className="flex items-center justify-center bg-green-600 text-white h-[45px] w-[45px] rounded-xl shadow-md hover:bg-green-700 transition-colors shrink-0 mb-[2px]"
                 >
-                  {loading ? "Loading..." : "Refresh"}
+                  <RefreshCw className={loading ? "animate-spin" : ""} size={22} />
                 </button>
               </div>
             </div>

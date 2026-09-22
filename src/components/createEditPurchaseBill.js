@@ -65,7 +65,7 @@ const ledgerStyles = `
     background: var(--pb-paper);
     border: 1px solid var(--pb-border);
     border-radius: 14px;
-    padding: 22px 24px;
+    padding: 9px 24px;
     margin-bottom: 20px;
     box-shadow: 0 1px 2px rgba(15, 27, 46, 0.04);
   }
@@ -1066,7 +1066,7 @@ const CreateEditPurchaseBill = () => {
                     <div className="pb-card">
                       <p className="pb-section-label">Bill Details</p>
                       <div className="row mb-0">
-                        <div className="mb-20 col-md-4">
+                        <div className="mb-20 col-md-2">
                           <label className="pb-field-label">Branch</label>
                           <Field as="select" name="branch_id">
                             <option value="">Select Branch</option>
@@ -1083,7 +1083,7 @@ const CreateEditPurchaseBill = () => {
                           />
                         </div>
 
-                        <div className="mb-20 col-md-4">
+                        <div className="mb-20 col-md-2">
                           <label className="pb-field-label">Supplier</label>
                           <Field name="supplier_id" as="select">
                             {({ field }) => (
@@ -1117,7 +1117,7 @@ const CreateEditPurchaseBill = () => {
                           />
                         </div>
 
-                        <div className="mb-20 col-md-4">
+                        <div className="mb-20 col-md-2">
                           <label className="pb-field-label">Bill Date</label>
                           <FormikDatePicker type="date" name="bill_date" />
                           <ErrorMessage
@@ -1126,10 +1126,8 @@ const CreateEditPurchaseBill = () => {
                             component="div"
                           />
                         </div>
-                      </div>
-
-                      <div className="row mb-0">
-                        <div className="mb-0 col-md-6">
+                      
+                        <div className="mb-0 col-md-4">
                           <label className="pb-field-label">Bill No</label>
                           <div
                             style={{
@@ -1524,7 +1522,7 @@ const CreateEditPurchaseBill = () => {
                           <Field
                             as="textarea"
                             name="notes"
-                            rows="1"
+                          
                             placeholder="Enter settlement remarks or adjustment details..."
                           />
                           <ErrorMessage

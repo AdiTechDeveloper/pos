@@ -271,7 +271,7 @@ const CreateEditProduct = () => {
                       </fieldset>
 
                       {/* SKU */}
-                      <fieldset className="col-md-4">
+                      <fieldset className="col-md-3">
                         <div className="body-title">SKU</div>
                         <div className="body-content mb-15">
                           <Field
@@ -288,7 +288,7 @@ const CreateEditProduct = () => {
                         </div>
                       </fieldset>
 
-                      <fieldset className="col-md-4 mb-15">
+                      <fieldset className="col-md-3 mb-15">
                         <div className="body-title">Brand *</div>
                         <div className="body-content">
                           <Field name="brand_id" as="select" className="mb-6">
@@ -326,12 +326,9 @@ const CreateEditProduct = () => {
                             component="div"
                           />
                         </div>
-                      </fieldset>
-                    </div>
 
-                    {/* Category / GST Rate / HSN */}
-                    <div className="row mb-20">
-                      <fieldset className="col-md-4">
+                      </fieldset>
+                      <fieldset className="col-md-3">
                         <div className="body-title">Category *</div>
                         <div className="body-content">
                           <Field
@@ -374,8 +371,12 @@ const CreateEditProduct = () => {
                           />
                         </div>
                       </fieldset>
+                    </div>
 
-                      <fieldset className="col-md-4">
+                    {/* Category / GST Rate / HSN */}
+                    <div className="row mb-20">
+
+                      <fieldset className="col-md-1">
                         <div className="body-title">Gst Rate *</div>
                         <div className="body-content mb-15">
                           <Field
@@ -398,7 +399,7 @@ const CreateEditProduct = () => {
                         </div>
                       </fieldset>
 
-                      <fieldset className="col-md-4">
+                      <fieldset className="col-md-2">
                         <div className="body-title">HSN</div>
                         <div className="body-content mb-15">
                           <Field
@@ -414,11 +415,7 @@ const CreateEditProduct = () => {
                           />
                         </div>
                       </fieldset>
-                    </div>
-
-                    {/* Barcode / GST Included */}
-                    <div className="row mb-20">
-                      <fieldset className="col-md-4">
+                      <fieldset className="col-md-3">
                         <div className="body-title">Barcode</div>
                         <div className="body-content mb-15">
                           <Field name="barcode">
@@ -465,88 +462,158 @@ const CreateEditProduct = () => {
                           />
                         </div>
                       </fieldset>
-
-                      <fieldset className="col-md-4">
+                      <fieldset className="col-md-2">
                         <div className="body-title mb-5">GST Included</div>
 
                         <Field name="gst_inclusive">
                           {({ field, form }) => {
-                            const isIncluded =
-                              field.value === true || field.value === 1;
+                            const isIncluded = field.value === true || field.value === 1;
 
                             return (
-                              <div className="gst-checkbox-wrapper">
-                                {/* GST Included */}
-                                <label>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "10px",
+                                }}
+                              >
+                                <label
+                                  style={{
+                                    position: "relative",
+                                    display: "inline-block",
+                                    width: "48px",
+                                    height: "26px",
+                                    cursor: "pointer",
+                                  }}
+                                >
                                   <input
                                     type="checkbox"
                                     checked={isIncluded}
-                                    onChange={() => {
-                                      form.setFieldValue("gst_inclusive", true);
+                                    onChange={() =>
+                                      form.setFieldValue("gst_inclusive", !isIncluded)
+                                    }
+                                    style={{
+                                      opacity: 0,
+                                      width: 0,
+                                      height: 0,
                                     }}
                                   />
-                                  <span>Included</span>
+                                  <span
+                                    style={{
+                                      position: "absolute",
+                                      top: 0,
+                                      left: 0,
+                                      right: 0,
+                                      bottom: 0,
+                                      background: isIncluded ? "#22c55e" : "#cbd5e1",
+                                      borderRadius: "999px",
+                                      transition: "background-color 0.2s ease",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        position: "absolute",
+                                        top: "3px",
+                                        left: isIncluded ? "25px" : "3px",
+                                        width: "20px",
+                                        height: "20px",
+                                        background: "#fff",
+                                        borderRadius: "50%",
+                                        boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                                        transition: "left 0.2s ease",
+                                      }}
+                                    />
+                                  </span>
                                 </label>
 
-                                {/* GST Excluded */}
-                                <label>
-                                  <input
-                                    type="checkbox"
-                                    checked={!isIncluded}
-                                    onChange={() => {
-                                      form.setFieldValue(
-                                        "gst_inclusive",
-                                        false,
-                                      );
-                                    }}
-                                  />
-                                  <span>Excluded</span>
-                                </label>
+                                <span
+                                  style={{
+                                    fontSize: "14px",
+                                    fontWeight: 600,
+                                    color: isIncluded ? "#16a34a" : "#64748b",
+                                  }}
+                                >
+                                  {isIncluded ? "Included" : "Excluded"}
+                                </span>
                               </div>
                             );
                           }}
                         </Field>
                       </fieldset>
 
-                      <fieldset className="col-md-4">
-                        <div className="body-title mb-5">Is Price_override</div>
+                        <fieldset className="col-md-2">
+                        <div className="body-title mb-5">Allow Change Price</div>
 
                         <Field name="is_price_override">
                           {({ field, form }) => {
-                            const isOverride =
-                              field.value === true || field.value === 1;
+                            const isOverride = field.value === true || field.value === 1;
 
                             return (
-                              <div className="gst-checkbox-wrapper">
-                                {/* Price override */}
-                                <label>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "10px",
+                                }}
+                              >
+                                <label
+                                  style={{
+                                    position: "relative",
+                                    display: "inline-block",
+                                    width: "48px",
+                                    height: "26px",
+                                    cursor: "pointer",
+                                  }}
+                                >
                                   <input
                                     type="checkbox"
                                     checked={isOverride}
-                                    onChange={() => {
-                                      form.setFieldValue(
-                                        "is_price_override",
-                                        true,
-                                      );
+                                    onChange={() =>
+                                      form.setFieldValue("is_price_override", !isOverride)
+                                    }
+                                    style={{
+                                      opacity: 0,
+                                      width: 0,
+                                      height: 0,
                                     }}
                                   />
-                                  <span>Yes</span>
+                                  <span
+                                    style={{
+                                      position: "absolute",
+                                      top: 0,
+                                      left: 0,
+                                      right: 0,
+                                      bottom: 0,
+                                      background: isOverride ? "#22c55e" : "#cbd5e1",
+                                      borderRadius: "999px",
+                                      transition: "background-color 0.2s ease",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        position: "absolute",
+                                        top: "3px",
+                                        left: isOverride ? "25px" : "3px",
+                                        width: "20px",
+                                        height: "20px",
+                                        background: "#fff",
+                                        borderRadius: "50%",
+                                        boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                                        transition: "left 0.2s ease",
+                                      }}
+                                    />
+                                  </span>
                                 </label>
 
-                                {/* Price not override */}
-                                <label>
-                                  <input
-                                    type="checkbox"
-                                    checked={!isOverride}
-                                    onChange={() => {
-                                      form.setFieldValue(
-                                        "is_price_override",
-                                        false,
-                                      );
-                                    }}
-                                  />
-                                  <span>No</span>
-                                </label>
+                                <span
+                                  style={{
+                                    fontSize: "14px",
+                                    fontWeight: 600,
+                                    color: isOverride ? "#16a34a" : "#64748b",
+                                  }}
+                                >
+                                  {isOverride ? "Yes" : "No"}
+                                </span>
                               </div>
                             );
                           }}
@@ -559,8 +626,8 @@ const CreateEditProduct = () => {
                       <button className="tf-button w208" type="submit">
                         {isEdit ? "Update Product" : "Create Product"}
                       </button>
-                      <button type="button" className="ml-5">
-                        <a href="/product"> Cancel</a>
+                      <button type="button" className="ml-5 tf-button style-1">
+                        <a href="/product" style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
                       </button>
                     </div>
                   </Form>

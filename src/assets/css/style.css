@@ -3183,7 +3183,7 @@ form input[type="submit"]:hover {
   color: var(--primary);
 }
 form textarea {
-  height: 200px !important;
+  height: 100px !important;
 }
 form .cols {
   display: -webkit-box;
@@ -6084,19 +6084,19 @@ form.form-style-1 > * {
   .layout-wrap.menu-style-icon-default .section-menu-left > .box-logo {
     width: 92px;
   }
-  .layout-wrap.menu-style-icon-default .section-menu-left > .box-logo a {
+  /* .layout-wrap.menu-style-icon-default .section-menu-left > .box-logo a {
     overflow: hidden;
-  }
+  } */
   .layout-wrap.menu-style-icon-default .section-menu-left > .box-logo a img {
     min-width: 154px;
     width: 154px;
   }
-  .layout-wrap.menu-style-icon-default
+  /* .layout-wrap.menu-style-icon-default
     .section-menu-left
     > .box-logo
     .button-show-hide {
     display: none;
-  }
+  } */
   .layout-wrap.menu-style-icon-default .section-menu-left:hover {
     width: 280px;
     background-color: transparent;

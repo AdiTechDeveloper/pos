@@ -5,6 +5,10 @@ import { CSVLink } from "react-csv";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useAppData } from "../../context/AppDataContext";
+import { RotateCcw, FileSpreadsheet, FileDown } from "lucide-react";
+import DataTable from "react-data-table-component";
+
+
 
 export default function SalesReport() {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -141,11 +145,10 @@ export default function SalesReport() {
   };
 
   const csvData = buildCsvData();
-  const csvFilename = `financial-report-${
-    filters.date_range === "custom"
+  const csvFilename = `financial-report-${filters.date_range === "custom"
       ? `${filters.date_from}_to_${filters.date_to}`
       : filters.date_range
-  }.csv`;
+    }.csv`;
 
   const exportCSV = () => {
     const csvContent = csvData
@@ -183,10 +186,9 @@ export default function SalesReport() {
 
     doc.setFontSize(11);
     doc.text(
-      `Date Range: ${
-        filters.date_range === "custom"
-          ? `${filters.date_from} to ${filters.date_to}`
-          : "This Month"
+      `Date Range: ${filters.date_range === "custom"
+        ? `${filters.date_from} to ${filters.date_to}`
+        : "This Month"
       }`,
       14,
       26,
@@ -246,10 +248,9 @@ export default function SalesReport() {
     });
 
     doc.save(
-      `financial-report-${
-        filters.date_range === "custom"
-          ? `${filters.date_from}_to_${filters.date_to}`
-          : filters.date_range
+      `financial-report-${filters.date_range === "custom"
+        ? `${filters.date_from}_to_${filters.date_to}`
+        : filters.date_range
       }.pdf`,
     );
   };
@@ -258,11 +259,36 @@ export default function SalesReport() {
     <Layout>
       <div className="p-8 bg-white min-h-screen text-gray-900">
         {/* HEADER */}
-        <h1 className="text-5xl font-extrabold mb-3 text-gray-900">
-          Financial Report
-        </h1>
+        <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span
+              style={{
+                width: "5px",
+                height: "34px",
+                borderRadius: "999px",
+                background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
+                display: "inline-block",
+              }}
+            />
+            <div>
+              <h3
+                style={{
+                  fontSize: "24px",
+                  fontWeight: 800,
+                  color: "#111827",
+                  margin: 0,
+                  lineHeight: 1.2,
+                }}
+              >
+                Financial Report
+              </h3>
+
+            </div>
+          </div>
+
+        </div>
         <div className="flex flex-col gap-3 mb-6">
-          <p className="text-3xl text-gray-600 mt-6">
+          <p className="text-xl text-gray-600 mt-6">
             Overview of sales, purchases, net profits, and outstanding
             collections.
           </p>
@@ -270,66 +296,97 @@ export default function SalesReport() {
 
         {/* FILTERS */}
         <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="text-2xl font-semibold text-gray-900">
-                Date Preset
-              </label>
-              <select
-                className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
-                value={filters.date_range}
-                onChange={(e) =>
-                  setFilters({ ...filters, date_range: e.target.value })
-                }
-              >
-                <option value="this_month">This Month (Default)</option>
-                <option value="custom">Custom Date Range</option>
-              </select>
+          <div className="flex flex-wrap items-end justify-between gap-6 mb-6">
+            <div className="flex flex-wrap items-end gap-6">
+              <div className="shrink-0">
+                <label className="text-2xl font-semibold text-gray-900">
+                  Date Preset
+                </label>
+                <select
+                  className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
+                  value={filters.date_range}
+                  onChange={(e) =>
+                    setFilters({ ...filters, date_range: e.target.value })
+                  }
+                >
+                  <option value="this_month">This Month (Default)</option>
+                  <option value="custom">Custom Date Range</option>
+                </select>
+              </div>
+
+              <div className="shrink-0">
+                <label className="text-2xl font-semibold text-gray-900">
+                  Branch
+                </label>
+                <select
+                  className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
+                  value={filters.branch_id}
+                  onChange={(e) =>
+                    setFilters({ ...filters, branch_id: e.target.value })
+                  }
+                >
+                  <option value="">All Branches</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label className="text-2xl font-semibold text-gray-900">
-                Branch
-              </label>
-              <select
-                className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
-                value={filters.branch_id}
-                onChange={(e) =>
-                  setFilters({ ...filters, branch_id: e.target.value })
-                }
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={resetFilters}
+                title="Reset Filters"
+                className="flex items-center justify-center bg-green-600 text-white w-[48px] h-[48px] rounded-xl shadow-md hover:bg-green-700 transition-all"
               >
-                <option value="">All Branches</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+                <RotateCcw size={20} />
+              </button>
+
+              <button
+                type="button"
+                onClick={exportPDF}
+                title="Export as PDF"
+                className="flex items-center justify-center bg-red-600 text-white w-[48px] h-[48px] rounded-xl hover:bg-red-700 transition-all"
+              >
+                <FileDown size={20} />
+              </button>
+
+              <button
+                type="button"
+                onClick={exportCSV}
+                title="Export as CSV"
+                className="flex items-center justify-center bg-green-600 text-white w-[48px] h-[48px] rounded-xl hover:bg-green-700 transition-all"
+              >
+                <FileSpreadsheet size={20} />
+              </button>
             </div>
           </div>
 
           {filters.date_range === "custom" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className="text-2xl font-semibold text-gray-900">
+            <div className="flex flex-wrap items-end gap-6 mb-6">
+              <div className="shrink-0">
+                <label className="text-xl font-semibold text-gray-900">
                   From
                 </label>
                 <input
                   type="date"
-                  className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
+                  className="block mt-3 rounded-lg border border-gray-300 px-3 py-2 text-sm"
                   value={filters.date_from}
                   onChange={(e) =>
                     setFilters({ ...filters, date_from: e.target.value })
                   }
                 />
               </div>
-              <div>
+              <div className="shrink-0">
                 <label className="text-2xl font-semibold text-gray-900">
                   To
                 </label>
                 <input
                   type="date"
-                  className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
+                  className="block mt-3 rounded-lg border border-gray-300 px-3 py-2 text-sm"
                   value={filters.date_to}
                   onChange={(e) =>
                     setFilters({ ...filters, date_to: e.target.value })
@@ -338,86 +395,54 @@ export default function SalesReport() {
               </div>
             </div>
           )}
-
-          <div className="flex flex-col lg:flex-row items-center gap-4 justify-between">
-            <div className="text-gray-600 text-2xl">
-              Filters update automatically when changed.
-            </div>
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="bg-blue-600 px-8 py-4 rounded-2xl text-white text-2xl font-semibold hover:bg-blue-700 transition-all"
-            >
-              Reset Filters
-            </button>
-          </div>
-          <button
-            type="button"
-            onClick={exportPDF}
-            className="bg-red-600 px-8 py-4 rounded-2xl text-white text-2xl font-semibold hover:bg-red-700 transition-all"
-          >
-            Export PDF
-          </button>
-          <button
-            type="button"
-            onClick={exportCSV}
-            className="bg-green-600 px-8 py-4 ml-4 rounded-2xl text-white text-2xl font-semibold hover:bg-green-700 transition-all"
-          >
-            Export CSV
-          </button>
         </div>
 
         {/* KPI CARDS CONTAINER */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6 mt-4 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-8 gap-6 mt-4 mb-10">
           <Card
             title="Total Sales"
             value={k.total_sales}
-            variant="from-sky-100 to-blue-200"
+            variant="bg-blue-50 text-blue-700 border-blue-200"
           />
           <Card
             title="Total Purchase"
             value={k.total_purchase}
-            variant="from-violet-100 to-fuchsia-200"
+            variant="bg-amber-50 text-amber-700 border-amber-200"
           />
           <Card
             title="Net Profit"
             value={k.profit}
             variant={
-              k.profit >= 0
-                ? "from-emerald-100 to-lime-200"
-                : "from-red-100 to-orange-200"
+             "bg-emerald-50 text-emerald-700 border-emerald-200"
             }
           />
           <Card
             title="Amount Received"
             value={k.received_amount}
-            variant="from-amber-100 to-orange-200"
+            variant="bg-teal-50 text-teal-700 border-teal-200"
           />
           <Card
             title="Pending Amount"
             value={k.pending_amount}
-            variant="from-rose-100 to-pink-200"
+            variant="bg-rose-50 text-rose-700 border-rose-200"
           />
-        </div>
-
-        {/* GST BREAKDOWN */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
           <SmallCard label="CGST Collected" value={gst.cgst} />
           <SmallCard label="SGST Collected" value={gst.sgst} />
           <SmallCard label="IGST Collected" value={gst.igst} />
         </div>
 
+       
+
         {/* TABS CONTROLLER */}
-        <div className="flex flex-wrap gap-3 mb-6 border-b border-gray-200">
+        <div className="flex flex-wrap justify-center gap-3 mb-6 border-b border-gray-200">
           {["products", "customer dues", "daily trend"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-3 rounded-t-2xl font-semibold text-2xl transition-all ${
-                activeTab === tab
+              className={`px-5 py-3 rounded-t-2xl font-semibold text-2xl transition-all ${activeTab === tab
                   ? "bg-blue-600 text-white border-b-2 border-blue-600"
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              }`}
+                }`}
             >
               {tab.toUpperCase()}
             </button>
@@ -441,10 +466,10 @@ export default function SalesReport() {
 
 const Card = ({ title, value, variant }) => (
   <div
-    className={`bg-gradient-to-br ${variant} p-8 rounded-3xl shadow-xl border border-gray-200`}
+    className={`bg-gradient-to-br ${variant} p-8 rounded-3xl shadow-xl border border-gray-200 mt-8 text-center hover:-translate-y-1 transform transition-all duration-300`}
   >
-    <p className="text-2xl font-semibold text-gray-700 mb-3">{title}</p>
-    <h2 className="text-4xl font-bold text-gray-900">
+    <p className="text-xl font-semibold text-gray-700 mb-3">{title}</p>
+    <h2 className="text-2xl font-bold text-gray-900">
       ₹
       {(Number(value) || 0).toLocaleString("en-IN", {
         minimumFractionDigits: 2,
@@ -453,125 +478,215 @@ const Card = ({ title, value, variant }) => (
   </div>
 );
 
-const SmallCard = ({ label, value }) => (
-  <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 rounded-3xl border border-gray-200 text-gray-900 shadow-sm flex-1">
-    <p className="text-xl text-gray-600">{label}</p>
-    <p className="text-3xl font-bold mt-2">
+const SmallCard = ({ label, value , variant}) => (
+  <div className={`bg-gradient-to-br ${variant} p-8 rounded-3xl shadow-xl border mt-8  border-gray-200 hover:-translate-y-1 transform transition-all duration-300`}>
+    <p className="text-xl text-purple-600">{label}</p>
+    <p className="text-2xl font-bold mt-2 text-purple-700">
       ₹{(Number(value) || 0).toFixed(2)}
     </p>
   </div>
 );
 
-const ProductTable = ({ data }) => (
-  <div className="overflow-auto bg-white shadow-xl border border-gray-200">
-    <table className="w-full text-lg">
-      <thead className="bg-gradient-to-r from-blue-100 to-cyan-100 border-b border-gray-200">
-        <tr>
-          <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-            Product Name
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Qty Sold
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Total Sales Valuation
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((p, i) => (
-          <tr
-            key={i}
-            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-          >
-            <td className="px-6 py-5 text-2xl text-gray-800 font-semibold">
-              {p.name}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-              {Number(p.total_qty).toFixed(0)}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl font-bold text-green-600">
-              ₹{Number(p.total_sales).toFixed(2)}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
 
-const DuesTable = ({ data }) => (
-  <div className="overflow-auto bg-white shadow-xl border border-gray-200">
-    <table className="w-full text-lg">
-      <thead className="bg-gradient-to-r from-blue-100 to-cyan-100 border-b border-gray-200">
-        <tr>
-          <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-            Customer Name
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Total Outstanding Balance
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((d, i) => (
-          <tr
-            key={i}
-            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-          >
-            <td className="px-6 py-5 text-2xl text-gray-800 font-semibold">
-              {d.name}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl font-bold text-red-600">
-              ₹{Number(d.total_due).toFixed(2)}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+const ProductTable = ({ data }) => {
+  const columns = [
+    {
+      name: "Product Name",
+      selector: (row) => row.name,
+      sortable: true,
+      wrap: true,
+      cell: (row) => (
+        <span className="text-2xl text-gray-800 font-semibold">
+          {row.name}
+        </span>
+      ),
+    },
+    {
+      name: "Qty Sold",
+      selector: (row) => Number(row.total_qty),
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="text-2xl font-semibold text-gray-700">
+          {Number(row.total_qty).toFixed(0)}
+        </span>
+      ),
+    },
+    {
+      name: "Total Sales Valuation",
+      selector: (row) => Number(row.total_sales),
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="text-2xl font-bold text-green-600">
+          ₹{Number(row.total_sales).toFixed(2)}
+        </span>
+      ),
+    },
+  ];
 
-const DailyTrendTable = ({ data }) => (
-  <div className="overflow-auto bg-white shadow-xl border border-gray-200">
-    <table className="w-full text-lg">
-      <thead className="bg-gradient-to-r from-blue-100 to-cyan-100 border-b border-gray-200">
-        <tr>
-          <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-            Date
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Sales Amount
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Received
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Due
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((row, i) => (
-          <tr
-            key={i}
-            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-          >
-            <td className="px-6 py-5 text-2xl font-semibold text-gray-700">
-              {row.date}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl font-semibold text-gray-900">
-              ₹{Number(row.sales).toFixed(2)}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl font-bold text-green-600">
-              ₹{Number(row.received).toFixed(2)}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl font-bold text-red-600">
-              ₹{Number(row.due).toFixed(2)}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+  return (
+    <div className="bg-white shadow-xl border border-gray-200 rounded-xl overflow-hidden">
+      <DataTable
+        columns={columns}
+        data={data}
+        pagination
+        highlightOnHover
+        responsive
+        customStyles={{
+          headCells: {
+            style: {
+              fontWeight: 600,
+              fontSize: "16px",
+              color: "#374151",
+              backgroundColor: "#e0f2fe",
+            },
+          },
+          cells: {
+            style: {
+              fontSize: "16px",
+              padding: "14px 16px",
+            },
+          },
+        }}
+      />
+    </div>
+  );
+};
+
+
+
+
+const DuesTable = ({ data }) => {
+  const columns = [
+    {
+      name: "Customer Name",
+      selector: (row) => row.name,
+      sortable: true,
+      wrap: true,
+      cell: (row) => (
+        <span className="text-2xl text-gray-800 font-semibold">
+          {row.name}
+        </span>
+      ),
+    },
+    {
+      name: "Total Outstanding Balance",
+      selector: (row) => Number(row.total_due),
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="text-2xl font-bold text-red-600">
+          ₹{Number(row.total_due).toFixed(2)}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <div className="bg-white shadow-xl border border-gray-200 rounded-xl overflow-hidden">
+      <DataTable
+        columns={columns}
+        data={data}
+        pagination
+        highlightOnHover
+        responsive
+        customStyles={{
+          headCells: {
+            style: {
+              fontWeight: 600,
+              fontSize: "16px",
+              color: "#374151",
+              backgroundColor: "#e0f2fe",
+            },
+          },
+          cells: {
+            style: {
+              fontSize: "16px",
+              padding: "14px 16px",
+            },
+          },
+        }}
+      />
+    </div>
+  );
+};
+
+
+
+const DailyTrendTable = ({ data }) => {
+  const columns = [
+    {
+      name: "Date",
+      selector: (row) => row.date,
+      sortable: true,
+      cell: (row) => (
+        <span className="text-2xl font-semibold text-gray-700">
+          {row.date}
+        </span>
+      ),
+    },
+    {
+      name: "Sales Amount",
+      selector: (row) => Number(row.sales),
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="text-2xl font-semibold text-gray-900">
+          ₹{Number(row.sales).toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      name: "Received",
+      selector: (row) => Number(row.received),
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="text-2xl font-bold text-green-600">
+          ₹{Number(row.received).toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      name: "Due",
+      selector: (row) => Number(row.due),
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="text-2xl font-bold text-red-600">
+          ₹{Number(row.due).toFixed(2)}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <div className="bg-white shadow-xl border border-gray-200 rounded-xl overflow-hidden">
+      <DataTable
+        columns={columns}
+        data={data}
+        pagination
+        highlightOnHover
+        responsive
+        customStyles={{
+          headCells: {
+            style: {
+              fontWeight: 600,
+              fontSize: "20px",
+              color: "#374151",
+              backgroundColor: "#e0f2fe",
+            },
+          },
+          cells: {
+            style: {
+              fontSize: "16px",
+              padding: "14px 16px",
+            },
+          },
+        }}
+      />
+    </div>
+  );
+};
+

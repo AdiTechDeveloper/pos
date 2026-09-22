@@ -6,6 +6,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Layout from "../layout";
 import { useAppData } from "../../context/AppDataContext";
+import { RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
+
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -140,101 +142,126 @@ const GSTR1Reports = () => {
   ];
 
   const exportCSV = () => {
-  const data = allData[activeTab];
+    const data = allData[activeTab];
 
-  if (!data || !data.length) {
-    alert("No data available to export");
-    return;
-  }
+    if (!data || !data.length) {
+      alert("No data available to export");
+      return;
+    }
 
-  const headers = [
-    "Invoice No",
-    "Taxable Value",
-    "CGST",
-    "SGST",
-    "IGST",
-    "Total Amount",
-  ];
+    const headers = [
+      "Invoice No",
+      "Taxable Value",
+      "CGST",
+      "SGST",
+      "IGST",
+      "Total Amount",
+    ];
 
-  const rows = data.map((row) => [
-    `\t${row.invoice_no || row.bill_no || ""}`,
-    row.taxable_value || 0,
-    row.cgst || 0,
-    row.sgst || 0,
-    row.igst || 0,
-    row.total || row.total_amount || 0,
-  ]);
+    const rows = data.map((row) => [
+      `\t${row.invoice_no || row.bill_no || ""}`,
+      row.taxable_value || 0,
+      row.cgst || 0,
+      row.sgst || 0,
+      row.igst || 0,
+      row.total || row.total_amount || 0,
+    ]);
 
-  const csvContent = [
-    headers,
-    ...rows,
-  ]
-    .map((e) => e.join(","))
-    .join("\n");
+    const csvContent = [
+      headers,
+      ...rows,
+    ]
+      .map((e) => e.join(","))
+      .join("\n");
 
-  const blob = new Blob([csvContent], {
-    type: "text/csv;charset=utf-8;",
-  });
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
 
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `GSTR1-${activeTab}.csv`;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `GSTR1-${activeTab}.csv`;
 
-  document.body.appendChild(link);
-  link.click();
+    document.body.appendChild(link);
+    link.click();
 
-  document.body.removeChild(link);
+    document.body.removeChild(link);
 
-  URL.revokeObjectURL(url);
-};
+    URL.revokeObjectURL(url);
+  };
 
-const exportPDF = () => {
-  const data = allData[activeTab];
+  const exportPDF = () => {
+    const data = allData[activeTab];
 
-  if (!data || !data.length) {
-    alert("No data available to export");
-    return;
-  }
+    if (!data || !data.length) {
+      alert("No data available to export");
+      return;
+    }
 
-  const doc = new jsPDF();
-  doc.text(`GSTR-1 ${activeTab.toUpperCase()} Report`, 14, 15);
+    const doc = new jsPDF();
+    doc.text(`GSTR-1 ${activeTab.toUpperCase()} Report`, 14, 15);
 
-  const rows = data.map((row) => [
-    row.invoice_no || row.bill_no || "",
-    row.taxable_value || 0,
-    row.cgst || 0,
-    row.sgst || 0,
-    row.igst || 0,
-    row.total || row.total_amount || 0,
-  ]);
+    const rows = data.map((row) => [
+      row.invoice_no || row.bill_no || "",
+      row.taxable_value || 0,
+      row.cgst || 0,
+      row.sgst || 0,
+      row.igst || 0,
+      row.total || row.total_amount || 0,
+    ]);
 
-  autoTable(doc, {
-    head: [
-      [
-        "Invoice",
-        "Taxable",
-        "CGST",
-        "SGST",
-        "IGST",
-        "Total",
+    autoTable(doc, {
+      head: [
+        [
+          "Invoice",
+          "Taxable",
+          "CGST",
+          "SGST",
+          "IGST",
+          "Total",
+        ],
       ],
-    ],
-    body: rows,
-    startY: 25,
-  });
+      body: rows,
+      startY: 25,
+    });
 
-  doc.save(`GSTR1-${activeTab}.pdf`);
-};
+    doc.save(`GSTR1-${activeTab}.pdf`);
+  };
 
   return (
     <Layout>
       <div className="p-8 bg-slate-50 min-h-screen">
         {/* HEADER SECTION */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">
-            GSTR-1 <span className="text-indigo-600">Summary</span>
-          </h1>
+            <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span
+              style={{
+                width: "5px",
+                height: "34px",
+                borderRadius: "999px",
+                background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
+                display: "inline-block",
+              }}
+            />
+            <div>
+              <h3
+                style={{
+                  fontSize: "24px",
+                  fontWeight: 800,
+                  color: "#111827",
+                  margin: 0,
+                  lineHeight: 1.2,
+                }}
+              >
+               GSTR1 Summary
+              </h3>
+
+            </div>
+          </div>
+
+        </div>
           <ul className="breadcrumbs flex items-center flex-wrap justify-start gap-2 mt-2">
             <li className="text-slate-500 font-medium hover:text-indigo-600">
               <Link to="/">Dashboard</Link>
@@ -251,16 +278,15 @@ const exportPDF = () => {
         </div>
 
         {/* TABS SELECTOR */}
-        <div className="flex space-x-2 mb-6 mt-6 bg-slate-200/50 p-2 rounded-[2rem] w-fit">
+        <div className="flex space-x-2 mb-6 mt-6 bg-purple-200/50 p-2 rounded-[2rem] w-fit">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`px-10 py-4 rounded-[1.5rem] text-xl font-black transition-all duration-300 uppercase ${
-                activeTab === t.id
-                  ? "bg-white text-indigo-600 shadow-xl scale-105"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
+              className={`px-10 py-4 rounded-[1.5rem] text-2xl font-bold transition-all duration-300 uppercase ${activeTab === t.id
+                  ? "bg-purple-300 text-white-600 shadow-xl scale-105"
+                  : "text-white-500 hover:text-white-700"
+                }`}
             >
               {t.label}
             </button>
@@ -269,6 +295,8 @@ const exportPDF = () => {
 
         {/* MODERN FILTER BAR */}
         <div className="wg-box mb-8 shadow-xl rounded-3xl p-8 border border-slate-200 bg-white">
+            <div className="flex justify-between items-end gap-4 w-full">
+
           <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
             {/* Branch, Start Date, End Date Inputs same as before... */}
             <div className="flex flex-col">
@@ -326,23 +354,28 @@ const exportPDF = () => {
             <div className="flex items-end">
               <button
                 onClick={loadReport}
-                className="bg-green-600 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md"
+                title={loading ? "Loading..." : "Refresh"}
+                className="flex items-center justify-center bg-green-600 text-white h-[45px] w-[45px] rounded-xl shadow-md hover:bg-green-700 transition-colors shrink-0 mb-[2px]"
               >
-                {loading ? "Loading..." : "Refresh"}
+                <RefreshCw className={loading ? "animate-spin" : ""} size={22} />
               </button>
             </div>
-             <div className="flex items-end">
+            </div>
+            <div className="flex items-end gap-4">
               <button
                 onClick={exportCSV}
-                className="bg-green-500 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md mr-4 hover:bg-green-700"
+                title="Export as CSV"
+                className="flex items-center justify-center bg-green-500 text-white w-[42px] h-[42px] rounded-xl hover:bg-green-700 shadow-md"
               >
-                Export CSV
+                <FileSpreadsheet size={22} />
               </button>
+
               <button
                 onClick={exportPDF}
-                className="bg-red-500 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md hover:bg-red-700"
+                title="Export as PDF"
+                className="flex items-center justify-center bg-red-500 text-white w-[42px] h-[42px] rounded-xl hover:bg-red-700 shadow-md"
               >
-                Export PDF
+                <FileDown size={22} />
               </button>
             </div>
           </div>

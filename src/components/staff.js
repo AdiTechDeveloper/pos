@@ -183,36 +183,41 @@ const Staff = () => {
       width: "180px",
     },
     {
-      name: "Action",
-      cell: (row) => (
-        <div
-          className="list-icon-function"
-          style={{ display: "flex", gap: "12px", alignItems: "center" }}
-        >
-          <div
-            className="item key"
-            style={{ cursor: "pointer", color: "#e0a800" }}
-            onClick={() => handleOpenPasswordModal(row)}
-          >
-            <i className="icon-key" style={{ fontSize: "16px" }}></i>
-          </div>
+  name: "Action",
+  cell: (row) => (
+    <div
+      className="list-icon-function"
+      style={{ display: "flex", gap: "12px", alignItems: "center" }}
+    >
+      {/* Reset Password Button */}
+      <div
+        className="item key"
+        style={{ cursor: "pointer", color: "#e0a800" }}
+        onClick={() => handleOpenPasswordModal(row)}
+        title="Reset Password"
+      >
+        <i className="icon-key" style={{ fontSize: "16px" }}></i>
+      </div>
 
-          <div className="item edit">
-            <Link to={`/staff/edit/${row.id}`} onClick={() => handleEdit(row)}>
-              <i className="icon-edit-3"></i>
-            </Link>
-          </div>
+      {/* Edit Button */}
+      <div className="item edit" title="Edit">
+        <Link to={`/staff/edit/${row.id}`} onClick={() => handleEdit(row)}>
+          <i className="icon-edit-3"></i>
+        </Link>
+      </div>
 
-          <div
-            className="item trash"
-            style={{ cursor: "pointer" }}
-            onClick={() => handleDeleteConfirm(row.id)}
-          >
-            <i className="icon-trash-2"></i>
-          </div>
-        </div>
-      ),
-    },
+      {/* Delete Button */}
+      <div
+        className="item trash"
+        style={{ cursor: "pointer" }}
+        onClick={() => handleDeleteConfirm(row.id)}
+        title="Delete"
+      >
+        <i className="icon-trash-2"></i>
+      </div>
+    </div>
+  ),
+},
   ];
 
   return (
@@ -220,7 +225,42 @@ const Staff = () => {
       <div className="main-content-inner">
         <div className="main-content-wrap">
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-            <h3>All Staff</h3>
+            <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span
+                  style={{
+                    width: "5px",
+                    height: "34px",
+                    borderRadius: "999px",
+                    background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
+                    display: "inline-block",
+                  }}
+                />
+                <div>
+                  <h3
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: 800,
+                      color: "#111827",
+                      margin: 0,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    Cashier
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: "13px",
+                      color: "#6b7280",
+                      margin: "2px 0 0 0",
+                    }}
+                  >
+                  Manage cashier accounts and their shift access
+                  </p>
+                </div>
+              </div>
+
+            </div>
             <ul className="breadcrumbs flex items-center flex-wrap justify-start gap10">
               <li>
                 <Link to="/">
@@ -254,7 +294,7 @@ const Staff = () => {
                   <fieldset className="name">
                     <input
                       type="text"
-                      placeholder="Search staff..."
+                      placeholder="Search cashier..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                     />

@@ -10,6 +10,9 @@ import ReceiptModal from "./ReceiptModal";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import PaymentEditModal from "../components/PaymentEditModal";
+import { Check, RotateCcw, FileSpreadsheet, FileDown , Printer ,  Wallet} from "lucide-react";
+
+
 
 const getAuthHeader = () => {
   const user_detail = localStorage.getItem("user_detail");
@@ -156,27 +159,29 @@ const SaleBill = () => {
 
   const columns = [
     { name: "Id", selector: (row) => row.id, sortable: true, width: "70px" },
-    {
+       {
       name: "Action",
       button: true,
       cell: (row) => (
         <button
           onClick={() => handlePrint(row.id)}
-          className="px-3 py-1 text-xl bg-blue-600 text-white rounded hover:bg-blue-700"
+          title="Print"
+          className="flex items-center justify-center text-black w-[36px] h-[36px] rounded"
         >
-          Print
+          <Printer size={18} />
         </button>
       ),
     },
-    {
+        {
       name: "Payment",
       button: true,
       cell: (row) => (
         <button
           onClick={() => openPaymentModal(row)}
-          className="px-2 py-1 bg-green-700 text-white rounded text-xl"
+          title="Edit Payment"
+          className="flex items-center justify-center bg-green-400 text-white w-[28px] h-[28px] rounded"
         >
-          Edit Payment
+          <Wallet size={18} />
         </button>
       ),
     },
@@ -478,7 +483,42 @@ const SaleBill = () => {
       <div className="main-content-inner">
         <div className="main-content-wrap">
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-            <h3>All Sale Bills</h3>
+            <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span
+                  style={{
+                    width: "5px",
+                    height: "34px",
+                    borderRadius: "999px",
+                    background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
+                    display: "inline-block",
+                  }}
+                />
+                <div>
+                  <h3
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: 800,
+                      color: "#111827",
+                      margin: 0,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    Sales Bills
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: "13px",
+                      color: "#6b7280",
+                      margin: "2px 0 0 0",
+                    }}
+                  >
+                    View and manage bills issued to your customers
+                  </p>
+                </div>
+              </div>
+
+            </div>
             <ul className="breadcrumbs flex items-center flex-wrap justify-start gap10">
               <li>
                 <Link to="/">
@@ -503,24 +543,24 @@ const SaleBill = () => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-6 gap-4 mb-8">
             <div
-              className="wg-box bg-blue-50 p-4"
-              style={{ background: "#e9efa8", border: "1px solid #d4d770" }}
+              className="wg-box p-4 mb-4 text-center"
+              style={{ background: "#ECFDF5", border: "1px solid #94e7c0" }}
             >
               <h6>Total Bills</h6>
               <h3>{stats.totalBills}</h3>
             </div>
             <div
-              className="wg-box p-4 mb-4"
+              className="wg-box p-4 mb-4 text-center"
               style={{ background: "#fef2f2", border: "1px solid #fecaca" }}
             >
               <h6>Total Revenue</h6>
               <h3>₹{stats.totalRevenue.toFixed(2)}</h3>
             </div>
             <div
-              className="wg-box p-4"
-              style={{ background: "#97e99b", border: "1px solid #99bb8e" }}
+              className="wg-box p-4 mb-4 text-center"
+              style={{ background: "#FFFBEB", border: "1px solid #f6e7ab" }}
             >
               <h6>Total Profit</h6>
               <h3>₹{stats.totalProfit.toFixed(2)}</h3>
@@ -553,35 +593,12 @@ const SaleBill = () => {
               </div>
 
               {/* Date Filter Controls */}
-              <div className="flex items-center gap-2">
-                <DatePicker
-                  selected={selectedDate ? new Date(selectedDate) : null}
-                  onChange={(date) => {
-                    if (date) {
-                      // Format to YYYY-MM-DD for API parameter consistency
-                      const day = String(date.getDate()).padStart(2, "0");
-                      const month = String(date.getMonth() + 1).padStart(
-                        2,
-                        "0",
-                      );
-                      const year = date.getFullYear();
-                      setSelectedDate(`${year}-${month}-${day}`);
-                    } else {
-                      setSelectedDate("");
-                    }
-                  }}
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="dd-mm-yyyy"
-                  className="px-3 py-2 border rounded text-base"
-                  /* Easy Year & Month Dropdowns */
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                  yearDropdownItemNumber={20}
-                  scrollableYearDropdown
-                  /* Prevent clipping */
-                  portalId="root-portal"
-                  popperProps={{ strategy: "fixed" }}
+              <div className="px-4 py-4 flex items-center gap-2">
+                <input
+                  type="date"
+                  value={selectedDate || ""}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="px-3 py-4 border rounded text-2xl"
                 />
 
                 {selectedDate && (
@@ -594,25 +611,27 @@ const SaleBill = () => {
                   </button>
                 )}
               </div>
+
+              <div className="flex gap-2">
+                {/* CSV/Excel Export */}
+                <button
+                  onClick={formatExportData(filteredData)}
+                  title="Export as CSV"
+                  className="flex items-center justify-center bg-green-500 text-white w-[44px] h-[44px] rounded-xl hover:bg-green-700 shadow-md"
+                >
+                  <FileSpreadsheet size={22} />
+                </button>
+
+                <button
+                  onClick={exportPDF}
+                  title="Export as PDF"
+                  className="flex items-center justify-center bg-red-500 text-white w-[44px] h-[44px] rounded-xl hover:bg-red-700 shadow-md"
+                >
+                  <FileDown size={22} />
+                </button>
+              </div>
             </div>
 
-            {/* Export Buttons */}
-            <div className="flex gap-2 mb-3">
-              <CSVLink
-                data={formatExportData(filteredData)}
-                headers={csvHeaders}
-                filename={`sales_bills_${selectedDate || "all"}.csv`}
-                className="px-3 py-3 bg-green-600 text-lg text-white rounded hover:bg-green-700"
-              >
-                Export CSV
-              </CSVLink>
-              <button
-                onClick={exportPDF}
-                className="px-3 py-3 bg-red-600 text-lg text-white rounded hover:bg-red-700"
-              >
-                Export PDF
-              </button>
-            </div>
 
             <DataTable
               columns={columns}

@@ -6,6 +6,10 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Layout from "../layout";
 import { useAppData } from "../../context/AppDataContext";
+import { RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
+// import { Check, RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
+
+
 
 const PurchaseSummary = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -247,12 +251,40 @@ const PurchaseSummary = () => {
     },
   ];
 
+
   return (
     <Layout>
       <div className="main-content-inner">
         <div className="main-content-wrap">
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-            <h3>Purchase Summury</h3>
+            <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span
+                  style={{
+                    width: "5px",
+                    height: "34px",
+                    borderRadius: "999px",
+                    background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
+                    display: "inline-block",
+                  }}
+                />
+                <div>
+                  <h3
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: 800,
+                      color: "#111827",
+                      margin: 0,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    Purchase Summury
+                  </h3>
+
+                </div>
+              </div>
+
+            </div>
             <ul className="breadcrumbs flex items-center flex-wrap justify-start gap10">
               <li>
                 <Link to="/">
@@ -277,31 +309,29 @@ const PurchaseSummary = () => {
           </div>
 
           {/* TOP SUMMARY CARDS */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-            <StatCard label="Total Units" value={totals.qty} />
-            <StatCard
-              label="Taxable Value"
-              value={`₹${totals.taxable.toLocaleString("en-IN")}`}
-            />
-            <StatCard
-              label="GST Amount"
-              value={`₹${totals.gst.toLocaleString("en-IN")}`}
-              color="text-blue-600"
-            />
-            <StatCard
-              label="Net Purchase"
-              value={`₹${totals.net.toLocaleString("en-IN")}`}
-              highlight
-            />
-          </div>
+             <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+        <StatCard label="Total Units" value={totals.qty} variant="quantity" />
+        <StatCard
+          label="Taxable Value"
+          value={`₹${totals.taxable.toLocaleString("en-IN")}`}
+          variant="gross"
+        />
+        <StatCard
+          label="GST Amount"
+          value={`₹${totals.gst.toLocaleString("en-IN")}`}
+          variant="tax"
+        />
+        <StatCard
+          label="Net Purchase"
+          value={`₹${totals.net.toLocaleString("en-IN")}`}
+          variant="cost"
+        />
+      </div>
 
           {/* FILTERS PANEL */}
           <div className="wg-box mb-6 shadow-lg rounded-2xl p-6 border border-slate-200">
-            <div className="flex justify-between mb-4 pb-3 border-b border-slate-200">
-              <h5 className="text-2xl font-extrabold text-slate-800">
-                Filters
-              </h5>
-
+            {/* <div className="flex justify-between mb-4 pb-3 border-b border-slate-200">
+            
               <label className="flex items-center gap-2 text-2xl font-bold text-slate-700">
                 <input
                   type="checkbox"
@@ -312,7 +342,7 @@ const PurchaseSummary = () => {
                 />
                 Include Bills
               </label>
-            </div>
+            </div> */}
 
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <FilterField label="Group By">
@@ -418,25 +448,29 @@ const PurchaseSummary = () => {
               <div className="flex items-end">
                 <button
                   onClick={fetchReport}
-                  className="bg-green-600 text-white text-2xl font-bold w-full h-[48px] rounded-xl hover:bg-blue-700 shadow-md"
+                  title={loading ? "Loading..." : "Refresh"}
+                  className="flex items-center justify-center bg-green-600 text-white h-[55px] w-[55px] rounded-xl shadow-md hover:bg-green-700 transition-colors"
                 >
-                  {loading ? "Loading..." : "Refresh"}
+                  <RefreshCw className={loading ? "animate-spin" : ""} size={22} />
                 </button>
+                
               </div>
 
-              <div className="flex items-end ">
+              <div className="flex items-end gap-2">
                 <button
                   onClick={exportCSV}
-                  className="bg-green-500 text-white text-2xl font-bold px-4 h-[48px] mr-4 rounded-xl hover:bg-green-700 shadow-md"
+                  title="Export as CSV"
+                  className="flex items-center justify-center bg-green-500 text-white w-[40px] h-[40px] rounded-xl hover:bg-green-700 shadow-md"
                 >
-                  Export CSV
+                  <FileSpreadsheet size={21} />
                 </button>
 
                 <button
                   onClick={exportPDF}
-                  className="bg-red-500 text-white text-2xl font-bold px-4 h-[48px] rounded-xl hover:bg-red-700 shadow-md"
+                  title="Export as PDF"
+                  className="flex items-center justify-center bg-red-500 text-white w-[40px] h-[40px] rounded-xl hover:bg-red-700 shadow-md"
                 >
-                  Export PDF
+                  <FileDown size={21} />
                 </button>
               </div>
             </div>
@@ -507,20 +541,74 @@ const PurchaseSummary = () => {
   );
 };
 
-const StatCard = ({ label, value, icon }) => (
-  <div className="bg-gradient-to-br from-pink-500 to-blue-400 text-white p-6 rounded-3xl shadow-[0_8px_30px_rgba(30,64,175,0.25)] flex items-center gap-5 transform hover:scale-[1.02] transition">
-    <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-      <div className="text-3xl">{icon}</div>
-    </div>
 
-    <div>
-      <div className="text-xl uppercase tracking-widest font-bold opacity-90">
-        {label}
+  const STAT_VARIANTS = {
+  quantity: {
+    bg: "bg-slate-50",
+    text: "text-slate-700",
+    border: "border-slate-200",
+    iconBg: "bg-slate-100",
+  },
+  gross: {
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    border: "border-blue-200",
+    iconBg: "bg-blue-100",
+  },
+  cost: {
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+    iconBg: "bg-amber-100",
+  },
+  tax: {
+    bg: "bg-purple-50",
+    text: "text-purple-700",
+    border: "border-purple-200",
+    iconBg: "bg-purple-100",
+  },
+  profit: {
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    border: "border-emerald-200",
+    iconBg: "bg-emerald-100",
+  },
+  collected: {
+    bg: "bg-teal-50",
+    text: "text-teal-700",
+    border: "border-teal-200",
+    iconBg: "bg-teal-100",
+  },
+  outstanding: {
+    bg: "bg-rose-50",
+    text: "text-rose-700",
+    border: "border-rose-200",
+    iconBg: "bg-rose-100",
+  },
+};
+
+const StatCard = ({ label, value, icon, variant = "quantity" }) => {
+  const v = STAT_VARIANTS[variant] || STAT_VARIANTS.quantity;
+
+  return (
+    <div
+      className={`${v.bg} ${v.text} border ${v.border} px-6 py-4 rounded-2xl shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow`}
+    >
+      {icon && (
+        <div className={`${v.iconBg} p-3 rounded-xl`}>
+          <div className="text-xl">{icon}</div>
+        </div>
+      )}
+
+      <div>
+        <div className="text-2xl  tracking-wide font-semibold opacity-80">
+          {label}
+        </div>
+        <div className="text-xl font-bold tracking-tight mt-0.5">{value}</div>
       </div>
-      <div className="text-4xl font-extrabold tracking-tight mt-1">{value}</div>
     </div>
-  </div>
-);
+  );
+};
 
 const FilterField = ({ label, children }) => (
   <div className="flex flex-col">

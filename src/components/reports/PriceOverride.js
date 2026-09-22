@@ -3,10 +3,12 @@ import axios from "axios";
 import DataTable from "react-data-table-component";
 import { Link } from "react-router-dom";
 import Layout from "../layout";
-import { CSVLink } from "react-csv"; 
-import jsPDF from "jspdf"; 
-import "jspdf-autotable"; 
-import autoTable from "jspdf-autotable"; 
+import { CSVLink } from "react-csv";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
+import { Check, RotateCcw, FileSpreadsheet, FileDown } from "lucide-react";
+
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -35,7 +37,7 @@ const PriceOverride = () => {
 
   const exportToPDF = () => {
     const doc = new jsPDF();
-    const data = getExportData(); 
+    const data = getExportData();
     const tableColumn = ["Date", "Bill No", "Product", "Original", "Override", "Total Loss", "Done By", "Branch"];
     const tableRows = data.map(item => [
       item.Date,
@@ -323,7 +325,34 @@ const PriceOverride = () => {
 
           {/* Title Area */}
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-            <h3>Price Override Report</h3>
+            <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span
+                  style={{
+                    width: "5px",
+                    height: "34px",
+                    borderRadius: "999px",
+                    background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
+                    display: "inline-block",
+                  }}
+                />
+                <div>
+                  <h3
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: 800,
+                      color: "#111827",
+                      margin: 0,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    Price Override Report
+                  </h3>
+
+                </div>
+              </div>
+
+            </div>
             <ul className="breadcrumbs flex items-center flex-wrap justify-start gap10">
               <li>
                 <Link to="/">
@@ -358,12 +387,12 @@ const PriceOverride = () => {
           </div>
 
           <div className="wg-box mb-20" style={{ padding: "16px 20px" }}>
-            <div style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b", marginBottom: "12px" }}>Filters</div>
 
-            <div style={{ display: "flex", flexDirection: "row", gap: "12px", alignItems: "flex-end", width: "100%", flexWrap: "nowrap" }}>
+
+            <div style={{ display: "flex", flexDirection: "row", gap: "12px", alignItems: "flex-end", flexWrap: "nowrap" }}>
 
               {/* From Date */}
-              <div style={{ flex: 1, minWidth: "120px" }}>
+              <div style={{ flex: 1, maxWidth: "150px" }}>
                 <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
                   START DATE
                 </label>
@@ -371,14 +400,14 @@ const PriceOverride = () => {
                   type="date"
                   name="from_date"
                   className="form-control"
-                  style={{ height: "48px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
+                  style={{ height: "48px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px" }}
                   value={filters.from_date}
                   onChange={handleFilterChange}
                 />
               </div>
 
               {/* To Date */}
-              <div style={{ flex: 1, minWidth: "120px" }}>
+              <div style={{ flex: 1, maxWidth: "150px" }}>
                 <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
                   END DATE
                 </label>
@@ -386,14 +415,14 @@ const PriceOverride = () => {
                   type="date"
                   name="to_date"
                   className="form-control"
-                  style={{ height: "48px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
+                  style={{ height: "48px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px" }}
                   value={filters.to_date}
                   onChange={handleFilterChange}
                 />
               </div>
 
               {/* Product ID Input */}
-              <div style={{ flex: 1, minWidth: "110px" }}>
+              <div style={{ flex: 1, maxWidth: "150px" }}>
                 <label style={{ fontSize: "13px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
                   PRODUCTS
                 </label>
@@ -402,7 +431,7 @@ const PriceOverride = () => {
                   className="form-control"
                   value={filters.product_id}
                   onChange={handleFilterChange}
-                   style={{ height: "48px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
+                  style={{ height: "48px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
                 >
                   <option value="">All Products</option>
 
@@ -416,7 +445,7 @@ const PriceOverride = () => {
               </div>
 
               {/* Staff ID Input */}
-              <div style={{ flex: 1, minWidth: "110px" }}>
+              <div style={{ flex: 1, maxWidth: "150px" }}>
                 <label style={{ fontSize: "13px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
                   STAFFS
                 </label>
@@ -425,7 +454,7 @@ const PriceOverride = () => {
                   className="form-control"
                   value={filters.overridden_by}
                   onChange={handleFilterChange}
-                   style={{ height: "48px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px", width: "100%" }}
+                  style={{ height: "48px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", padding: "0 10px" }}
                 >
                   <option value="">All Staff</option>
 
@@ -439,68 +468,45 @@ const PriceOverride = () => {
               </div>
 
               {/* Action Buttons: Unified into the layout alignment */}
-              <div style={{ display: "flex", gap: "8px", minWidth: "180px" }}>
+              <div style={{ display: "flex", gap: "8px" }}>
                 <button
+                  type="button"
                   onClick={fetchReport}
-                  disabled={loading}
-                  className="btn btn-success"
-                  style={{
-                    height: "45px",
-                    background: loading ? "#10b981" : "#22c55e",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "6px",
-                    padding: "0 16px",
-                    fontWeight: "600",
-                    fontSize: "13px",
-                    cursor: "pointer",
-                    flex: 1,
-                    whiteSpace: "nowrap"
-                  }}
+                  title="Apply Filters"
+                  className="flex items-center justify-center bg-green-600 text-white w-[40px] h-[40px] rounded-xl shadow-md hover:bg-green-700 transition-all"
                 >
-                  {loading ? "Loading..." : "Apply"}
+                  <Check size={20} />
                 </button>
                 <button
+                  type="button"
                   onClick={handleClearFilters}
-                  className="btn btn-secondary"
-                  style={{
-                    height: "45px",
-                    background: "#f1f5f9",
-                    color: "#475569",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "6px",
-                    padding: "0 16px",
-                    fontWeight: "600",
-                    fontSize: "13px",
-                    cursor: "pointer",
-                    whiteSpace: "nowrap"
-                  }}
+                  title="Clear Filters"
+                  className="flex items-center justify-center bg-slate-100 text-slate-600 border border-slate-300 w-[40px] h-[40px] rounded-xl hover:bg-slate-200 transition-all"
                 >
-                  Clear
+                  <RotateCcw size={18} />
                 </button>
               </div>
 
-            </div>
-            <div className="flex gap-2">
-              {/* CSV/Excel Export */}
-              <CSVLink
-                data={exportData}
-                filename={"price-override-report.csv"}
-                className="btn btn-primary"
-                style={{ padding: "10px 20px", background: "#3b82f6", color: "#fff", borderRadius: "6px" }}
-              >
-                Export Excel
-              </CSVLink>
+              <div className="flex gap-2">
+                {/* CSV/Excel Export */}
+                <button
+                  onClick={getExportData}
+                  title="Export as CSV"
+                  className="flex items-center justify-center bg-green-500 text-white w-[48px] h-[48px] rounded-xl hover:bg-green-700 shadow-md"
+                >
+                  <FileSpreadsheet size={20} />
+                </button>
 
-              {/* PDF Export */}
-              <button
-                onClick={exportToPDF}
-                className="btn btn-danger"
-                style={{ padding: "10px 20px", background: "#ef4444", color: "#fff", borderRadius: "6px" }}
-              >
-                Export PDF
-              </button>
+                <button
+                  onClick={exportToPDF}
+                  title="Export as PDF"
+                  className="flex items-center justify-center bg-red-500 text-white w-[48px] h-[48px] rounded-xl hover:bg-red-700 shadow-md"
+                >
+                  <FileDown size={20} />
+                </button>
+              </div>
             </div>
+
           </div>
 
           {/* Table Container Area */}
