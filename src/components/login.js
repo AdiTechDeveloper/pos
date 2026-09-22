@@ -39,10 +39,8 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) {
-      console.log("Validation failed");
-      return;
-    }
+    if (!validate()) return;
+
     try {
       const response = await axios.post(`${BASE_URL}/api/login`, formData, {
         headers: {
@@ -51,9 +49,15 @@ const Login = () => {
       });
       const user_detail = response.data;
       localStorage.setItem("user_detail", JSON.stringify(user_detail));
+
       if (response.data) {
         toast.success(user_detail.message || "Login successfull!");
-        history.push("/dashboard");
+
+        if (user_detail.must_change_credentials) {
+          history.push("/change-password");
+        } else {
+          history.push("/dashboard");
+        }
       }
     } catch (err) {
       toast.error(err?.response?.data?.message || "Invalid credentials!");

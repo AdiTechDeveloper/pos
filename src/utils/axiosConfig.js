@@ -22,7 +22,7 @@ axios.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem("user_detail");
+      localStorage.removeItem("user_detail", "cart_detail", "cart_detail");
       toast.error("Session Expired. Please login again.");
       window.location.href = "/";
       return new Promise(() => {});

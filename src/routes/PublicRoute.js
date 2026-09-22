@@ -7,7 +7,9 @@ const PublicRoute = ({ component: Component, ...rest }) => {
 
     if (!userDetail?.token) return null;
 
-    return userDetail.role === "cashier" ? "/pos" : "/dashboard";
+    if (userDetail?.must_change_credentials) return "/change-password";
+
+    return userDetail.user?.role === "cashier" ? "/pos" : "/dashboard";
   };
   const redirectPath = getRedirectPath();
 

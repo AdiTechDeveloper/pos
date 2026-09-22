@@ -57,6 +57,7 @@ import ShiftHistory from "./components/reports/ShiftHistoryReport";
 import stockExpiryReport from "./components/reports/stockExpiryReport";
 import DiscardProducts from "./components/DiscartProducts";
 import AdvancePayment from "./components/AdvancePayment";
+import ChangePassword from "./components/ChangePassword";
 
 const isAuthenticated = () => {
   const storedData = localStorage.getItem("user_detail");
@@ -89,6 +90,11 @@ function App() {
           <PublicRoute exact path="/" component={Login} />
           <PublicRoute exact path="/register" component={Register} />
           <PublicRoute exact path="/cashier_login" component={CashierLogin} />
+          <ProtectedRoute
+            exact
+            path="/change-password"
+            component={ChangePassword}
+          />
           <ProtectedRoute exact path="/pos" component={POS} />
           <ProtectedRoute exact path="/dashboard" component={Home} />
           <ProtectedRoute exact path="/product" component={Product} />
