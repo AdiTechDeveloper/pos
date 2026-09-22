@@ -93,7 +93,7 @@ const Navbar = () => {
       console.error("Logout API error:", error);
     }
 
-    localStorage.clear();
+    localStorage.removeItem("user_detail", "cart_detail", "cart_detail");
     sessionStorage.clear();
     history.push("/");
   };

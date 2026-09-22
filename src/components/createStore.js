@@ -29,8 +29,6 @@ const CreateStore = () => {
         },
       });
 
-      console.log(res);
-
       setEditingData(res.data.data);
     } catch (error) {
       toast.error(
@@ -47,8 +45,6 @@ const CreateStore = () => {
       fetchStore();
     }
   }, [id]);
-
-  console.log("editingData:", editingData);
 
   const storeSchema = Yup.object().shape({
     name: Yup.string().required("Store name is required"),
@@ -155,10 +151,6 @@ const CreateStore = () => {
         formData.append("logo", values.logo);
       }
 
-      for (let pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
-      }
-
       let response;
 
       if (isEdit) {
@@ -176,6 +168,7 @@ const CreateStore = () => {
         response = await axios.post(`${BASE_URL}/api/stores`, formData, {
           headers: {
             Authorization: `Bearer ${user_data?.token}`,
+            "Content-Type": "multipart/form-data",
           },
         });
       }

@@ -123,7 +123,7 @@ const Header = () => {
         .replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/");
     });
 
-    localStorage.clear();
+    localStorage.removeItem("user_detail", "cart_detail", "cart_detail");
     sessionStorage.clear();
     history.push("/");
   };

@@ -10,7 +10,16 @@ const ProtectedRoute = ({ component: Component, ...rest }) => {
   if (!token) {
     return <Redirect to="/" />;
   }
-  if (role === "cashier" && rest.path !== "/pos") {
+
+  if (userDetail?.must_change_credentials && rest.path !== "/change-password") {
+    return <Redirect to="/change-password" />;
+  }
+
+  if (
+    role === "cashier" &&
+    rest.path !== "/pos" &&
+    rest.path !== "/change-password"
+  ) {
     return <Redirect to="/pos" />;
   }
 
