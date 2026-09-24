@@ -35,6 +35,19 @@ const CreateEditCategory = () => {
     }
   };
 
+  // Validation Schema
+const validationSchema = Yup.object({
+  name: Yup.string()
+    .required("Name is required")
+    .min(3, "Name must be at least 3 characters long")
+    .max(50, "Name cannot exceed 50 characters"),
+  
+  description: Yup.string()
+    .required("Description is required")
+    .min(10, "Description must be at least 10 characters long")
+    .max(255, "Description cannot exceed 255 characters"),
+});
+
   const fetchCategory = async () => {
     try {
       const response = await axios.get(`${BASE_URL}/api/categories`, {
@@ -55,11 +68,11 @@ const CreateEditCategory = () => {
   }, []);
 
   // Validation Schema
-  const validationSchema = Yup.object({
-    name: Yup.string().required("Name is required"),
-    description: Yup.string().required("Description is required"),
-    // parent_id: Yup.string().required("Parent Id is required"),
-  });
+  // const validationSchema = Yup.object({
+  //   name: Yup.string().required("Name is required"),
+  //   description: Yup.string().required("Description is required"),
+  //   // parent_id: Yup.string().required("Parent Id is required"),
+  // });
 
   // Submit (Create + Update)
   const handleSubmit = async (values) => {
@@ -118,6 +131,7 @@ const CreateEditCategory = () => {
                         <Field
                           type="text"
                           name="name"
+                          maxLength={50} // Prevents typing past 50 characters
                           placeholder="Enter category name"
                           className="mb-5"
                         />
@@ -153,6 +167,7 @@ const CreateEditCategory = () => {
                           as="textarea"
                           rows={1}
                           name="description"
+                          maxLength={255} // Prevents typing past 255 characters
                           className="mb-5 form-control small-textarea"
                           placeholder="Enter description"
                           
@@ -173,7 +188,8 @@ const CreateEditCategory = () => {
                       {isEdit ? "Update Category" : "Create Category"}
                     </button>
                     <button type="button" className="ml-5  tf-button style-1">
-                      <a href="/category" style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
+                      <a href="/category" style={{ color: "inherit", textDecoration: "none" }} 
+                      > Cancel</a>
                     </button>
                   </div>
                 </Form>

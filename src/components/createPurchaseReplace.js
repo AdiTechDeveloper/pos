@@ -21,7 +21,7 @@ const CreatePurchaseReplace = () => {
   const [purchaseBillId, setPurchaseBillId] = useState("");
   const [newPurchaseBill, setNewPurchaseBill] = useState("");
   const [error, setError] = useState("");
-  const [fieldValue, setFieldValue] = useState(() => () => {});
+  const [fieldValue, setFieldValue] = useState(() => () => { });
   const [activeRowIndex, setActiveRowIndex] = useState(null);
   const [products, setProducts] = useState([]);
 
@@ -66,19 +66,19 @@ const CreatePurchaseReplace = () => {
         return_date: incomingReplaceBill.return_date || "",
         lines: incomingReplaceBill.lines?.length
           ? incomingReplaceBill.lines.map((line) => ({
-              purchase_bill_line_id: line.purchase_line_id?.toString() || "",
-              qty: line.qty || "",
-            }))
+            purchase_bill_line_id: line.purchase_line_id?.toString() || "",
+            qty: line.qty || "",
+          }))
           : initialValues.lines,
         new_items: incomingReplaceBill.new_items?.length
           ? incomingReplaceBill.new_items.map((item) => ({
-              product_id: item.product_id?.toString() || "",
-              qty: item.qty || "",
-              purchase_rate: item.purchase_rate || "",
-              mrp: item.mrp || "",
-              selling_price: item.selling_price || "",
-              batch_no: item.batch_no || "",
-            }))
+            product_id: item.product_id?.toString() || "",
+            qty: item.qty || "",
+            purchase_rate: item.purchase_rate || "",
+            mrp: item.mrp || "",
+            selling_price: item.selling_price || "",
+            batch_no: item.batch_no || "",
+          }))
           : initialValues.new_items,
       });
     }
@@ -266,7 +266,7 @@ const CreatePurchaseReplace = () => {
                 <Form>
                   <div className="container">
                     <div className="row mb-20">
-                      <div className="mb-20 col-md-6">
+                      <div className="mb-20 col-md-2">
                         <label className="mb-8 purchase-label">
                           Purchase Bill No
                         </label>
@@ -296,7 +296,7 @@ const CreatePurchaseReplace = () => {
                           component="div"
                         />
                       </div>
-                      <div className="mb-20 col-md-6">
+                      <div className="mb-20 col-md-2">
                         <label className="mb-8 purchase-label">Branch</label>
                         <Field as="select" name="branch_id" className="mb-6">
                           <option value="">Select Branch</option>
@@ -312,7 +312,7 @@ const CreatePurchaseReplace = () => {
                           component="div"
                         />
                       </div>
-                      <div className="mb-20 col-md-6">
+                      <div className="mb-20 col-md-2">
                         <label className="mb-8 purchase-label">Supplier</label>
                         <Field as="select" name="supplier_id" className="mb-6">
                           <option value="">Select Supplier</option>
@@ -329,7 +329,7 @@ const CreatePurchaseReplace = () => {
                         />
                       </div>
 
-                      <div className="mb-20 col-md-6">
+                      <div className="mb-20 col-md-2">
                         <label
                           className="mb-8 purchase-label"
                           style={{ fontSize: "15px", display: "block" }}
@@ -400,60 +400,66 @@ const CreatePurchaseReplace = () => {
                               </button>
                             </div>
 
-                            <div className="grid grid-cols-12 gap-4">
-                              {/* LEFT COLUMN: SOURCE (The original purchase) */}
+                            <div className="grid grid-cols-12 gap-6">
+
+                              {/* =========================
+                                 LEFT: SOURCE / RETURN
+                                    ========================== */}
                               <div
                                 className="col-span-12 lg:col-span-4"
                                 style={{
                                   borderRight: "1px dashed #e2e8f0",
-                                  paddingRight: "15px",
+                                  paddingRight: "20px",
                                 }}
                               >
-                                <label className="block text-2xl font-medium text-gray-700 mb-1">
+                                <label className="block text-2xl font-medium text-gray-700 mb-2">
                                   Source Batch (Return)
                                 </label>
-                                <Field
-                                  name={`lines.${index}.purchase_bill_line_id`}
-                                >
+
+                                <Field name={`lines.${index}.purchase_bill_line_id`}>
                                   {({ field, form }) => (
                                     <select
                                       {...field}
                                       className="form-select w-full text-2xl py-2 px-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                       onChange={(e) => {
                                         const lineId = e.target.value;
+
                                         form.setFieldValue(field.name, lineId);
+
                                         const selectedLine = purchaseLines.find(
-                                          (p) => p.id.toString() === lineId,
+                                          (p) => p.id.toString() === lineId
                                         );
+
                                         if (selectedLine) {
                                           form.setFieldValue(
                                             `lines.${index}.product_id`,
-                                            selectedLine.product_id,
+                                            selectedLine.product_id
                                           );
+
                                           form.setFieldValue(
                                             `lines.${index}.purchase_rate`,
-                                            selectedLine.inventory
-                                              ?.cost_price || "",
+                                            selectedLine.purchase_rate || ""
                                           );
+
                                           form.setFieldValue(
                                             `lines.${index}.mrp`,
-                                            selectedLine.inventory?.mrp || "",
+                                            selectedLine.inventory?.mrp || ""
                                           );
+
                                           form.setFieldValue(
                                             `lines.${index}.selling_price`,
-                                            selectedLine.inventory
-                                              ?.selling_price || "",
+                                            selectedLine.inventory?.selling_price || ""
                                           );
+
                                           form.setFieldValue(
                                             `lines.${index}.return_qty`,
-                                            selectedLine.qty,
+                                            selectedLine.qty || ""
                                           );
                                         }
                                       }}
                                     >
-                                      <option value="">
-                                        Select Batch/Product
-                                      </option>
+                                      <option value="">Select Batch/Product</option>
+
                                       {purchaseLines.map((p) => (
                                         <option value={p.id} key={p.id}>
                                           {p.batch_no} — {p.product?.name}
@@ -463,32 +469,41 @@ const CreatePurchaseReplace = () => {
                                   )}
                                 </Field>
 
-                                <div className="mt-3">
-                                  <label className="block text-2xl font-medium text-gray-700 mt-2">
+                                <div className="mt-4">
+                                  <label className="block text-2xl font-medium text-gray-700 mb-2">
                                     Return Qty
                                   </label>
+
                                   <Field
                                     type="number"
                                     name={`lines.${index}.return_qty`}
-                                    className="form-control w-full bg-light"
+                                    className="form-control w-full"
                                     placeholder="0.00"
                                   />
                                 </div>
                               </div>
 
-                              {/* RIGHT COLUMN: REPLACEMENT (The new stock details) */}
+
+                              {/* =========================
+                                  RIGHT: REPLACEMENT
+                                ========================== */}
                               <div className="col-span-12 lg:col-span-8">
-                                <div className="grid grid-cols-3 gap-3">
-                                  <div className="col-span-2">
-                                    <label className="block text-2xl font-medium text-gray-700 mb-1">
+
+                                <div className="grid grid-cols-12 gap-4">
+
+                                  {/* Replacement Product */}
+                                  <div className="col-span-12 lg:col-span-5">
+                                    <label className="block text-2xl font-medium text-gray-700 mb-2">
                                       Replacement Product
                                     </label>
+
                                     <Field
                                       as="select"
                                       name={`lines.${index}.product_id`}
                                       className="form-select w-full text-2xl py-2 px-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     >
                                       <option value="">Select Product</option>
+
                                       {products.map((p) => (
                                         <option key={p.id} value={p.id}>
                                           {p.name}
@@ -497,10 +512,13 @@ const CreatePurchaseReplace = () => {
                                     </Field>
                                   </div>
 
-                                  <div>
-                                    <label className="block text-2xl font-medium text-gray-700 mb-2 mt-2">
+
+                                  {/* New Qty */}
+                                  <div className="col-span-12 sm:col-span-6 lg:col-span-2">
+                                    <label className="block text-2xl font-medium text-gray-700 mb-2">
                                       New Qty
                                     </label>
+
                                     <Field
                                       type="number"
                                       name={`lines.${index}.new_qty`}
@@ -509,10 +527,13 @@ const CreatePurchaseReplace = () => {
                                     />
                                   </div>
 
-                                  <div>
-                                    <label className="block text-2xl font-medium text-gray-700 mb-2 mt-2">
+
+                                  {/* Rate */}
+                                  <div className="col-span-12 sm:col-span-6 lg:col-span-2">
+                                    <label className="block text-2xl font-medium text-gray-700 mb-2">
                                       Rate
                                     </label>
+
                                     <Field
                                       type="number"
                                       name={`lines.${index}.purchase_rate`}
@@ -521,10 +542,13 @@ const CreatePurchaseReplace = () => {
                                     />
                                   </div>
 
-                                  <div>
-                                    <label className="block text-2xl font-medium text-gray-700 mb-2 mt-2">
+
+                                  {/* MRP */}
+                                  <div className="col-span-12 sm:col-span-6 lg:col-span-2">
+                                    <label className="block text-2xl font-medium text-gray-700 mb-2">
                                       MRP
                                     </label>
+
                                     <Field
                                       type="number"
                                       name={`lines.${index}.mrp`}
@@ -533,10 +557,13 @@ const CreatePurchaseReplace = () => {
                                     />
                                   </div>
 
-                                  <div>
-                                    <label className="block text-2xl font-medium text-gray-700 mb-2 mt-2">
+
+                                  {/* New SP */}
+                                  <div className="col-span-12 sm:col-span-6 lg:col-span-1">
+                                    <label className="block text-2xl font-medium text-gray-700 mb-2">
                                       New SP
                                     </label>
+
                                     <Field
                                       type="number"
                                       name={`lines.${index}.selling_price`}
@@ -545,63 +572,70 @@ const CreatePurchaseReplace = () => {
                                     />
                                   </div>
 
-                                  <div className="col-span-3">
-                                    <label className="block text-2xl font-medium text-gray-700 mb-2 mt-2">
+
+                                  {/* New Batch Number */}
+                                  <div className="col-span-12 lg:col-span-7">
+                                    <label className="block text-2xl font-medium text-gray-700 mb-2">
                                       New Batch Number
                                     </label>
+
                                     <Field
                                       type="text"
                                       name={`lines.${index}.batch_no`}
                                       className="form-control w-full"
                                       placeholder="Auto-generate or enter batch..."
-                                      style={{ backgroundColor: "#fdfcf0" }} // Slight tint to show it's a new entry
+                                      style={{
+                                        backgroundColor: "#fdfcf0",
+                                      }}
                                     />
                                   </div>
+
                                 </div>
                               </div>
+
                             </div>
+                            <button
+                              type="button"
+                              className="btn btn-outline-primary text-2xl"
+                              style={{
+                                border: "2px dashed #cbd5e1",
+                                // width: "100%",
+                                padding: "12px",
+                                borderRadius: "8px",
+                                fontWeight: "600",
+                              }}
+                              onClick={() =>
+                                push({
+                                  purchase_bill_line_id: "",
+                                  return_qty: "",
+                                  new_qty: "",
+                                  product_id: "",
+                                  purchase_rate: "",
+                                  mrp: "",
+                                  selling_price: "",
+                                  batch_no: "",
+                                })
+                              }
+                            >
+                              + Add Another Replacement Row
+                            </button>
+
                           </div>
                         ))}
 
-                        <button
-                          type="button"
-                          className="btn btn-outline-primary text-2xl"
-                          style={{
-                            border: "2px dashed #cbd5e1",
-                            // width: "100%",
-                            padding: "12px",
-                            borderRadius: "8px",
-                            fontWeight: "600",
-                          }}
-                          onClick={() =>
-                            push({
-                              purchase_bill_line_id: "",
-                              return_qty: "",
-                              new_qty: "",
-                              product_id: "",
-                              purchase_rate: "",
-                              mrp: "",
-                              selling_price: "",
-                              batch_no: "",
-                            })
-                          }
-                        >
-                          + Add Another Replacement Row
-                        </button>
                       </>
                     )}
-                  </FieldArray>
-
+                  </FieldArray> 
                   <div className="flex col">
                     <button
                       type="submit"
-                      className="mt-20 btn btn-success text-2xl w-md p-2"
+                      className="ml-5 tf-button style-1"
                     >
                       Save Replace Bill
                     </button>
 
-                    <button type="button" className="ml-5">
-                      <a href="/purchase-return-bill"> Cancel</a>
+                    <button type="button"  className="ml-5 tf-button style-1">
+                      <a href="/purchase-return-bill" style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
                     </button>
                   </div>
                 </Form>

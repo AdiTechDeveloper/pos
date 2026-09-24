@@ -11,16 +11,16 @@ import FormikDatePicker from "./FormikDatePicker";
 
 const ledgerStyles = `
   :root {
-    --pb-navy: #6B5B45;
-    --pb-navy-soft: #8A7860;
-    --pb-ivory: #FBF9F5;
+    --pb-navy: #3563c7;
+    --pb-navy-soft: #2f4ca2;
+    --pb-ivory: #f5f8fb;
     --pb-paper: #FFFFFF;
-    --pb-gold: #C89B4A;
+    --pb-gold: #3894da;
     --pb-gold-soft: #F3E6C8;
     --pb-text: #3D3527;
     --pb-muted: #8A8170;
-    --pb-border: #ECE6D8;
-    --pb-border-strong: #E2D9C4;
+    --pb-border: #b7c5d2;
+    --pb-border-strong: #b7c5d2;
     --pb-green: #3E9C76;
     --pb-green-bg: #EEFAF3;
     --pb-red: #D1655A;
@@ -28,7 +28,7 @@ const ledgerStyles = `
   }
 
   .pb-page {
-    background: var(--pb-ivory);
+    // background: var(--pb-ivory);
     padding: 28px 28px 80px;
     border-radius: 16px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -75,7 +75,7 @@ const ledgerStyles = `
     font-weight: 700;
     letter-spacing: 1.2px;
     text-transform: uppercase;
-    color: var(--pb-gold);
+    // color: var(--pb-gold);
     margin: 0 0 16px;
     display: flex;
     align-items: center;
@@ -123,7 +123,7 @@ const ledgerStyles = `
     box-shadow: 0 0 0 3px rgba(184, 137, 63, 0.15);
   }
   .pb-page input::placeholder { color: #A8A29B; }
-  .pb-page input:disabled { background: #F3F1EC; color: var(--pb-muted); }
+  .pb-page input:disabled { color: var(--pb-muted); }
 
   .error-text {
     color: var(--pb-red);
@@ -198,7 +198,7 @@ const ledgerStyles = `
 
   .pb-barcode-input {
     border: 1.5px dashed var(--pb-gold) !important;
-    background: #FFFBF2 !important;
+    // background: #FFFBF2 !important;
     font-family: 'Courier New', monospace;
     letter-spacing: 1px;
     margin-bottom: 16px !important;
@@ -295,7 +295,7 @@ const ledgerStyles = `
     padding: 4px;
     border-radius: 9px;
     border: 1.5px solid var(--pb-border-strong);
-    background: var(--pb-ivory);
+    // background: var(--pb-ivory);
     gap: 4px;
   }
   .pb-tax-btn {
@@ -314,18 +314,19 @@ const ledgerStyles = `
     background: transparent;
     color: var(--pb-muted);
   }
-  .pb-tax-btn.active-exclusive { background: var(--pb-gold); color: #fff; box-shadow: 0 2px 6px rgba(200,155,74,0.3); }
+  .pb-tax-btn.active-exclusive { background: var(--pb-red); color: #fff; box-shadow: 0 2px 6px rgba(206, 42, 27, 0.3); }
   .pb-tax-btn.active-inclusive { background: var(--pb-green); color: #fff; box-shadow: 0 2px 6px rgba(62,156,118,0.3); }
 
   .pb-total-bar {
     padding: 18px 26px;
     border-radius: 12px;
-    background: linear-gradient(135deg, #FFFDF8 0%, var(--pb-gold-soft) 100%);
+    // background: linear-gradient(135deg, #7094b8 0%, var(--pb-gold-soft) 100%);
     border: 1px solid var(--pb-border-strong);
     display: flex;
+    color : white;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 4px 14px rgba(200, 155, 74, 0.1);
+    box-shadow: 0 4px 14px rgba(85, 139, 215, 0.1);
   }
   .pb-total-label {
     display: flex;
@@ -335,7 +336,7 @@ const ledgerStyles = `
   .pb-total-icon {
     width: 34px; height: 34px;
     background: var(--pb-gold);
-    color: #fff;
+    color: #1D4ED8;
     border-radius: 9px;
     display: flex;
     align-items: center;
@@ -1659,12 +1660,12 @@ const CreateEditPurchaseBill = () => {
 
                     {/* Actions & Summary */}
                     <div className="pb-bottom-row">
-                      <button type="submit" className="pb-submit-btn">
+                      <button type="submit" className="ml-5 tf-button style-1">
                         {isEdit ? "Update Bill" : "Save Bill"}
                       </button>
 
-                      <button type="button" className="ml-5">
-                        <a href="/purchase-bill"> Cancel</a>
+                      <button type="button" className="ml-5 tf-button style-1">
+                        <a href="/purchase-bill" style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
                       </button>
 
                       <div className="pb-total-bar">
