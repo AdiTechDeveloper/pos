@@ -106,7 +106,7 @@ const TopSellingProducts = ({ role, user = {}, filters = {} }) => {
           onChange={handleChange}
           className="border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-400 outline-none mb-6"
         >
-          <option value="">All Branches</option>
+          <option value="ALL">All Branches</option>
           {branches.map((b) => (
             <option key={b.id} value={b.id}>
               {b.name}

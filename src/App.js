@@ -97,21 +97,36 @@ function App() {
           />
           <ProtectedRoute exact path="/pos" component={POS} />
           <ProtectedRoute exact path="/dashboard" component={Home} />
-          <ProtectedRoute exact path="/product" component={Product} />
+
+          <ProtectedRoute
+            exact
+            path="/product"
+            component={Product}
+            requiredFeature="products"
+          />
           <ProtectedRoute
             exact
             path="/print-barcode"
             component={PrintBarcode}
+            requiredFeature="products"
           />
           <ProtectedRoute
             exact
             path="/create-product"
             component={CreateEditProduct}
+            requiredFeature="products"
           />
           <ProtectedRoute
             path="/product/edit/:id"
             component={CreateEditProduct}
+            requiredFeature="products"
           />
+          <ProtectedRoute
+            path="/expired-products"
+            component={DiscardProducts}
+            requiredFeature="products"
+          />
+
           <ProtectedRoute exact path="/store" component={Store} />
           <ProtectedRoute exact path="/stores/view/:id" component={ViewStore} />
           <ProtectedRoute
@@ -119,16 +134,25 @@ function App() {
             path="/create-store/:id?"
             component={CreateStore}
           />
-          <ProtectedRoute exact path="/branch" component={Branch} />
+
+          <ProtectedRoute
+            exact
+            path="/branch"
+            component={Branch}
+            requiredFeature="branch_management"
+          />
           <ProtectedRoute
             exact
             path="/create-branch"
             component={CreateEditBranch}
+            requiredFeature="branch_management"
           />
           <ProtectedRoute
             path="/branch/edit/:id"
             component={CreateEditBranch}
+            requiredFeature="branch_management"
           />
+
           <ProtectedRoute exact path="/category" component={Category} />
           <ProtectedRoute
             exact
@@ -139,74 +163,102 @@ function App() {
             path="/category/edit/:id"
             component={CreateEditCategory}
           />
+
           <ProtectedRoute
             exact
             path="/purchase-return-bill"
             component={PurchaseReturn}
+            requiredFeature="purchase_returns"
           />
           <ProtectedRoute
             exact
             path="/create-purchase-return-bill"
             component={CreateEditPurchaseReturn}
+            requiredFeature="purchase_returns"
           />
           <ProtectedRoute
             exact
             path="/purchase-return-bill/edit/:id"
             component={CreateEditPurchaseReturn}
+            requiredFeature="purchase_returns"
           />
           <ProtectedRoute
             exact
             path="/create-purchase-replace"
             component={CreatePurchaseReplace}
+            requiredFeature="purchase_returns"
           />
+
           <ProtectedRoute
             exact
             path="/purchase-bill"
             component={PurchaseBill}
+            requiredFeature="purchase_bills"
           />
           <ProtectedRoute
             exact
             path="/create-purchase-bill"
             component={CreateEditPurchaseBill}
+            requiredFeature="purchase_bills"
           />
           <ProtectedRoute
             path="/purchase-bill/edit/:id"
             component={CreateEditPurchaseBill}
+            requiredFeature="purchase_bills"
           />
-          <ProtectedRoute exact path="/sale-bill" component={SaleBill} />
+
+          <ProtectedRoute
+            exact
+            path="/sale-bill"
+            component={SaleBill}
+            requiredFeature="sales_bills"
+          />
           <ProtectedRoute
             exact
             path="/create-sale-bill"
             component={CreateEditSaleBill}
+            requiredFeature="sales_bills"
           />
+
           <ProtectedRoute
             exact
             path="/sales-bill/return"
             component={SalesReturn}
+            requiredFeature="sales_returns"
           />
           <ProtectedRoute
             exact
             path="/sales-return/list"
             component={SalesReturnList}
+            requiredFeature="sales_returns"
           />
 
           <ProtectedRoute
             exact
             path="/advancepayment"
             component={AdvancePayment}
+            requiredFeature="customers"
           />
 
-          <ProtectedRoute exact path="/suppliers" component={SupplierBill} />
+          <ProtectedRoute
+            exact
+            path="/suppliers"
+            component={SupplierBill}
+            requiredFeature="suppliers"
+          />
           <ProtectedRoute
             exact
             path="/create-suppliers"
             component={CreateEditSupplier}
+            requiredFeature="suppliers"
           />
           <ProtectedRoute
             exact
             path="/suppliers/edit/:id"
             component={CreateEditSupplier}
+            requiredFeature="suppliers"
           />
+
           <ProtectedRoute exact path="/brand" component={Brand} />
           <ProtectedRoute
             exact
@@ -214,82 +266,121 @@ function App() {
             component={CreateEditBrand}
           />
           <ProtectedRoute path="/brand/edit/:id" component={CreateEditBrand} />
+
           <ProtectedRoute
             exact
             path="/create-staff"
             component={CreateEditStaff}
+            requiredFeature="staff_management"
           />
-          <ProtectedRoute path="/staff/edit/:id" component={CreateEditStaff} />
+          <ProtectedRoute
+            path="/staff/edit/:id"
+            component={CreateEditStaff}
+            requiredFeature="staff_management"
+          />
+          <ProtectedRoute
+            exact
+            path="/staff"
+            component={Staff}
+            requiredFeature="staff_management"
+          />
 
-          <ProtectedRoute exact path="/gst-rates" component={GstRate} />
-          <ProtectedRoute exact path="/staff" component={Staff} />
+          <ProtectedRoute
+            exact
+            path="/gst-rates"
+            component={GstRate}
+            requiredFeature="gst_rates"
+          />
           <ProtectedRoute
             exact
             path="/create-gst-rates"
             component={CreateEditGstRates}
+            requiredFeature="gst_rates"
           />
           <ProtectedRoute
             path="/gst-rates/edit/:id"
             component={CreateEditGstRates}
+            requiredFeature="gst_rates"
           />
+
           <ProtectedRoute
             path="/stock-expiry-alerts"
             component={StockExpiryAlertsPage}
+            requiredFeature="stock_alerts"
           />
           <ProtectedRoute
             path="/reports/stock-summary"
             component={StockSummury}
+            requiredFeature="stock_alerts"
           />
+          <ProtectedRoute
+            path="/reports/stock-expiry-report"
+            component={stockExpiryReport}
+            requiredFeature="stock_alerts"
+          />
+
           <ProtectedRoute
             path="/reports/purchase-summary"
             component={PurchaseSummary}
-          />
-          <ProtectedRoute
-            path="/reports/sales-analytics"
-            component={SalesAnalytics}
-          />
-          <ProtectedRoute
-            path="/reports/price-override"
-            component={PriceOverride}
-          />
-          <ProtectedRoute
-            path="/reports/gst-output-sales"
-            component={GstReports}
-          />
-          <ProtectedRoute path="/reports/GSTR3B" component={GSTR3BReport} />
-          <ProtectedRoute
-            path="/reports/GSTR1-Summary"
-            component={GSTR1Summary}
-          />
-          <ProtectedRoute
-            path="/reports/sales-report"
-            component={SalesReport}
+            requiredFeature="reports_purchase"
           />
           <ProtectedRoute
             path="/reports/purchase-report"
             component={PurchaseReport}
+            requiredFeature="reports_purchase"
           />
+          <ProtectedRoute
+            path="/reports/price-override"
+            component={PriceOverride}
+            requiredFeature="reports_purchase"
+          />
+
+          <ProtectedRoute
+            path="/reports/sales-analytics"
+            component={SalesAnalytics}
+            requiredFeature="reports_sales"
+          />
+          <ProtectedRoute
+            path="/reports/sales-report"
+            component={SalesReport}
+            requiredFeature="reports_sales"
+          />
+
+          <ProtectedRoute
+            path="/reports/gst-output-sales"
+            component={GstReports}
+            requiredFeature="reports_gst"
+          />
+          <ProtectedRoute
+            path="/reports/GSTR3B"
+            component={GSTR3BReport}
+            requiredFeature="reports_gst"
+          />
+          <ProtectedRoute
+            path="/reports/GSTR1-Summary"
+            component={GSTR1Summary}
+            requiredFeature="reports_gst"
+          />
+
           <ProtectedRoute
             path="/reports/financial-report"
             component={FinancialReport}
+            requiredFeature="reports_financial"
           />
 
+          {/* backend me bhi ye ungated hai (cashier ka apna register/shift core flow hai), isliye yahan bhi feature nahi laga */}
           <ProtectedRoute
             path="/reports/shift-report"
             component={ShiftHistory}
           />
 
+          {/* pehle plain <Route> tha, koi login-check hi nahi ho raha tha — fix kiya */}
           <ProtectedRoute
-            path="/reports/stock-expiry-report"
-            component={stockExpiryReport}
+            path="/customer-dues"
+            component={CustomerDues}
+            requiredFeature="customers"
           />
 
-          <ProtectedRoute
-            path="/expired-products"
-            component={DiscardProducts}
-          />
-
-          <Route path="/customer-dues" component={CustomerDues} />
           <Route path="*" component={Login} />
         </Switch>
       </Router>

@@ -6,6 +6,7 @@ import TopSellingProducts from "./topSellingProducts";
 import LowStockAlert from "./lowStockAlert";
 import StatCard from "./StatCard";
 import PaymentBreakdown from "./PaymentBreakdown";
+import { hasFeature } from "../utils/hasFeature";
 
 /* ---- tiny inline icons (no extra icon-library dependency) ---- */
 const iconProps = {
@@ -105,37 +106,64 @@ const Home = () => {
         }
 
         if (role === "manager") {
-          const [p, pb, sb, cd] = await Promise.all([
-            get("/api/products"),
-            get("/api/purchase-bill"),
-            get("/api/sales-bills"),
-            get("/api/customer/due"),
-          ]);
-          setProducts(p.data.products);
-          setPurchaseBills(pb.data.data);
-          setSaleBills(sb.data.data);
-          setCustomerDues(cd.data.data);
+          const calls = [];
+          const keys = [];
 
-          try {
-            const tr = await get("/api/reports/sales-report", {
-              date_range: "today",
-              bill_status: "all",
-            });
-            setTodayReport(tr.data);
-          } catch (e) {
-            console.warn("Could not load today's report:", e.message);
+          if (hasFeature("products")) {
+            calls.push(get("/api/products"));
+            keys.push("products");
+          }
+          if (hasFeature("purchase_bills")) {
+            calls.push(get("/api/purchase-bill"));
+            keys.push("purchaseBills");
+          }
+          calls.push(get("/api/sales-bills"));
+          keys.push("saleBills");
+          calls.push(get("/api/customer/due"));
+          keys.push("customerDues");
+
+          const results = await Promise.all(calls);
+          results.forEach((res, i) => {
+            if (keys[i] === "products") setProducts(res.data.products);
+            if (keys[i] === "purchaseBills") setPurchaseBills(res.data.data);
+            if (keys[i] === "saleBills") setSaleBills(res.data.data);
+            if (keys[i] === "customerDues") setCustomerDues(res.data.data);
+          });
+
+          if (hasFeature("reports_sales")) {
+            try {
+              const tr = await get("/api/reports/sales-report", {
+                date_range: "today",
+                bill_status: "all",
+              });
+              setTodayReport(tr.data);
+            } catch (e) {
+              console.warn("Could not load today's report:", e.message);
+            }
           }
         }
 
         if (role === "admin") {
-          const [br, st, cd] = await Promise.all([
-            get("/api/branches"),
-            get("/api/staff"),
-            get("/api/customer/due"),
-          ]);
-          setBranchs(br.data.data);
-          setStaffs(st.data.data);
-          setCustomerDues(cd.data.data);
+          const calls = [];
+          const keys = [];
+
+          if (hasFeature("branch_management")) {
+            calls.push(get("/api/branches"));
+            keys.push("branches");
+          }
+          if (hasFeature("staff_management")) {
+            calls.push(get("/api/staff"));
+            keys.push("staff");
+          }
+          calls.push(get("/api/customer/due"));
+          keys.push("customerDues");
+
+          const results = await Promise.all(calls);
+          results.forEach((res, i) => {
+            if (keys[i] === "branches") setBranchs(res.data.data);
+            if (keys[i] === "staff") setStaffs(res.data.data);
+            if (keys[i] === "customerDues") setCustomerDues(res.data.data);
+          });
         }
       } catch (error) {
         console.error("Error loading dashboard data:", error);
@@ -165,22 +193,26 @@ const Home = () => {
 
             {role === "manager" && (
               <>
-                <StatCard
-                  to="/product"
-                  icon={<IconBox />}
-                  label="Total Products"
-                  value={products.length}
-                  color="#2377FC"
-                  loading={loading}
-                />
-                <StatCard
-                  to="/purchase-bill"
-                  icon={<IconInbox />}
-                  label="Total Purchase Bills"
-                  value={purchaseBills.length}
-                  color="#FC2359"
-                  loading={loading}
-                />
+                {hasFeature("products") && (
+                  <StatCard
+                    to="/product"
+                    icon={<IconBox />}
+                    label="Total Products"
+                    value={products.length}
+                    color="#2377FC"
+                    loading={loading}
+                  />
+                )}
+                {hasFeature("purchase_bills") && (
+                  <StatCard
+                    to="/purchase-bill"
+                    icon={<IconInbox />}
+                    label="Total Purchase Bills"
+                    value={purchaseBills.length}
+                    color="#FC2359"
+                    loading={loading}
+                  />
+                )}
                 <StatCard
                   to="/sale-bill"
                   icon={<IconCart />}
@@ -202,22 +234,26 @@ const Home = () => {
 
             {role === "admin" && (
               <>
-                <StatCard
-                  to="/branch"
-                  icon={<IconBranch />}
-                  label="Total Branches"
-                  value={branchs.length}
-                  color="#FF5200"
-                  loading={loading}
-                />
-                <StatCard
-                  to="/staff"
-                  icon={<IconUsers />}
-                  label="Total Staff"
-                  value={staffs.length}
-                  color="#8B5CF6"
-                  loading={loading}
-                />
+                {hasFeature("branch_management") && (
+                  <StatCard
+                    to="/branch"
+                    icon={<IconBranch />}
+                    label="Total Branches"
+                    value={branchs.length}
+                    color="#FF5200"
+                    loading={loading}
+                  />
+                )}
+                {hasFeature("staff_management") && (
+                  <StatCard
+                    to="/staff"
+                    icon={<IconUsers />}
+                    label="Total Staff"
+                    value={staffs.length}
+                    color="#8B5CF6"
+                    loading={loading}
+                  />
+                )}
                 <StatCard
                   to="/customer-dues"
                   icon={<IconUserAlert />}
@@ -230,7 +266,7 @@ const Home = () => {
             )}
           </div>
 
-          {role === "manager" && (
+          {role === "manager" && hasFeature("reports_sales") && (
             <PaymentBreakdown
               report={todayReport}
               loading={loading || !todayReport}
@@ -240,19 +276,25 @@ const Home = () => {
           {["admin", "manager"].includes(role) && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="flex flex-col gap-6">
-                <ProfitLossWidget role={role} user={user_data} />
-                <LowStockAlert
-                  role={role}
-                  user={user_data}
-                  filters={{ branch_id: "ALL" }}
-                />
+                {hasFeature("reports_financial") && (
+                  <ProfitLossWidget role={role} user={user_data} />
+                )}
+                {hasFeature("stock_alerts") && (
+                  <LowStockAlert
+                    role={role}
+                    user={user_data}
+                    filters={{ branch_id: "ALL" }}
+                  />
+                )}
               </div>
               <div className="flex flex-col gap-6 selling-product">
-                <TopSellingProducts
-                  role={role}
-                  user={user_data}
-                  filters={{ branch_id: "ALL" }}
-                />
+                {hasFeature("reports_sales") && (
+                  <TopSellingProducts
+                    role={role}
+                    user={user_data}
+                    filters={{ branch_id: "ALL" }}
+                  />
+                )}
               </div>
             </div>
           )}

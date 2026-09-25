@@ -16,6 +16,9 @@ export default function POSApp() {
   const [showModal, setShowModal] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState(null);
 
+  const [role, setRole] = useState(null);
+  const [adminBranches, setAdminBranches] = useState([]);
+
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
   const getUserDetail = () => {
@@ -41,6 +44,16 @@ export default function POSApp() {
     }
 
     const { role, branchIds, token } = userDetail;
+    setRole(role);
+
+    if (role === "admin") {
+      axios
+        .get(`${BASE_URL}/api/branches`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => setAdminBranches(res.data.data || []));
+      return;
+    }
 
     if (!branchIds || branchIds.length === 0) {
       console.error("Could not find a valid branch_ids array in user_detail!");
@@ -50,9 +63,7 @@ export default function POSApp() {
     const branchId = branchIds[0];
     setSelectedBranchId(branchId);
 
-    if (role !== "cashier") {
-      return;
-    }
+    if (role !== "cashier") return;
 
     const checkStatus = async () => {
       try {
@@ -141,6 +152,33 @@ export default function POSApp() {
 
     addToCart(item);
   };
+
+  if (role === "admin" && !selectedBranchId) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="bg-white p-8 rounded-2xl shadow-lg text-center">
+          <h3 className="text-2xl font-bold mb-4">Select a Branch</h3>
+          <p className="text-gray-500 mb-6">
+            Choose a branch for POS Screen.
+          </p>
+          <select
+            className="border p-3 rounded-lg text-lg"
+            defaultValue=""
+            onChange={(e) => setSelectedBranchId(Number(e.target.value))}
+          >
+            <option value="" disabled>
+              -- Select Branch --
+            </option>
+            {adminBranches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pos-flex h-screen bg-gray-100">

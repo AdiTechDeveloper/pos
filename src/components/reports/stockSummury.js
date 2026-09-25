@@ -18,6 +18,12 @@ const StockSummury = () => {
   const appData = useAppData();
   const branch = appData?.branches || [];
   const [loading, setLoading] = useState(false);
+  const [paginationInfo, setPaginationInfo] = useState({
+    currentPage: 1,
+    lastPage: 1,
+    totalRecords: 0,
+    perPage: 20,
+  });
 
   const formatStockData = (data) => {
     return data.map((row) => ({
@@ -274,32 +280,48 @@ const StockSummury = () => {
     },
   ];
 
-  const fetchStockSummury = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(
-        `${BASE_URL}/api/reports/stock-summary`,
-        {
-          params: {
-            start_date: filters.start_date,
-            end_date: filters.end_date,
-            branch_id: filters.branch_id,
+  const fetchStockSummury = useCallback(
+    async (currentPage = 1, requestedPerPage = paginationInfo.perPage) => {
+      setLoading(true);
+      try {
+        const response = await axios.get(
+          `${BASE_URL}/api/reports/stock-summary`,
+          {
+            params: {
+              page: currentPage,
+              per_page: requestedPerPage,
+              start_date: filters.start_date,
+              end_date: filters.end_date,
+              branch_id: filters.branch_id,
+              search: search.trim(),
+            },
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${user_data.token}`,
+            },
           },
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${user_data.token}`,
-          },
-        },
-      );
-      const data = response.data.data || [];
-      setStockSummury(data);
-      setFilteredData(data);
-    } catch (error) {
-      console.error("Error fetching stock summary:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters, BASE_URL, user_data.token]);
+        );
+
+        const data = response.data.data || [];
+        const pagination = response.data.pagination || {};
+
+        setStockSummury(data);
+        setFilteredData(data);
+
+        setPaginationInfo({
+          currentPage: pagination.current_page,
+          lastPage: pagination.last_page,
+          totalRecords: pagination.total,
+          perPage: pagination.per_page || requestedPerPage,
+        });
+      } catch (error) {
+        console.error("Error fetching stock summary:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [filters, BASE_URL, user_data.token, search, paginationInfo.perPage],
+  );
 
   const handleBarcodeSearch = (value) => {
     if (!value) {
@@ -341,50 +363,6 @@ const StockSummury = () => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
-
-  useEffect(() => {
-    const searchText = search.toLowerCase().trim();
-
-    if (!searchText) {
-      setFilteredData(stockSummury);
-      return;
-    }
-
-    const result = stockSummury.filter((item) => {
-      return (
-        item.product_name?.toLowerCase().includes(searchText) ||
-        item.barcode?.toString().includes(searchText) ||
-        item.product_id?.toString().includes(searchText) ||
-        item.stock_health?.toLowerCase().includes(searchText)
-      );
-    });
-    setFilteredData(result);
-  }, [search, stockSummury]);
-
-  useEffect(() => {
-    const searchText = search.toLowerCase();
-
-    const result = stockSummury.filter((item) => {
-      const searchable = `
-      ${item.product_id}
-      ${item.product_name}
-      ${item.barcode}
-      ${item.opening_stock}
-      ${item.purchased}
-      ${item.sold}
-      ${item.closing_stock}
-      ${item.sales_percentage}
-      ${item.last_month_sold}
-      ${item.trend}
-      ${item.stock_health}
-      ${item.dead_stock ? "dead" : ""}
-    `.toLowerCase();
-
-      return searchable.includes(searchText);
-    });
-
-    setFilteredData(result);
-  }, [search, stockSummury]);
 
   return (
     <Layout>
@@ -516,6 +494,20 @@ const StockSummury = () => {
               columns={columns}
               data={filteredData}
               pagination
+              paginationServer
+              paginationTotalRows={paginationInfo.totalRecords}
+              paginationPerPage={paginationInfo.perPage}
+              paginationDefaultPage={paginationInfo.currentPage}
+              paginationRowsPerPageOptions={[10, 20, 50, 100]}
+              onChangePage={(page) => fetchStockSummury(page)}
+              onChangeRowsPerPage={(newPerPage) => {
+                setPaginationInfo((prev) => ({
+                  ...prev,
+                  perPage: newPerPage,
+                  currentPage: 1,
+                }));
+                fetchStockSummury(1, newPerPage);
+              }}
               highlightOnHover
               pointerOnHover
               responsive

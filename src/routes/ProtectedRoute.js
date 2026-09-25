@@ -23,6 +23,15 @@ const ProtectedRoute = ({ component: Component, ...rest }) => {
     return <Redirect to="/pos" />;
   }
 
+  const userFeatures = userDetail?.user?.features || [];
+  if (
+    rest.requiredFeature &&
+    role !== "superadmin" &&
+    !userFeatures.includes(rest.requiredFeature)
+  ) {
+    return <Redirect to="/dashboard" />;
+  }
+
   return (
     <Route
       {...rest}
