@@ -130,8 +130,8 @@ const CreateEditBrand = () => {
                       {isEdit ? "Update Brand" : "Create Brand"}
                     </button>
 
-                    <button type="button" className="ml-5">
-                      <a href="/brand"> Cancel</a>
+                    <button type="button" className="ml-5 tf-button style-1">
+                      <a href="/brand"  style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
                     </button>
                   </div>
                 </Form>

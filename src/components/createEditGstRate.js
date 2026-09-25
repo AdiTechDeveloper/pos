@@ -92,7 +92,7 @@ const CreateEditGstRates = () => {
                 <Form className="wg-form">
                   {/* Name */}
                   <div className="row mb-15">
-                    <fieldset className="col-md-6 mb-15">
+                    <fieldset className="col-md-2 mb-15">
                       <div className="body-title">Rate *</div>
                       <div className="body-content">
                         <Field
@@ -108,7 +108,7 @@ const CreateEditGstRates = () => {
                         />
                       </div>
                     </fieldset>
-                    <fieldset className="col-md-6 mb-15">
+                    <fieldset className="col-md-4 mb-15">
                       <div className="body-title">Description *</div>
                       <div className="body-content">
                         <Field
@@ -131,8 +131,8 @@ const CreateEditGstRates = () => {
                     <button className="tf-button w208" type="submit">
                       {isEdit ? "Update Gst Rates" : "Create Gst Rates"}
                     </button>
-                    <button type="button" className="ml-5">
-                      <a href="/gst-rates"> Cancel</a>
+                    <button type="button" className="ml-5 tf-button style-1">
+                      <a href="/gst-rates" style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
                     </button>
                   </div>
                 </Form>

@@ -6,6 +6,9 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Link } from "react-router-dom";
 import { useAppData } from "../../context/AppDataContext";
+import { RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
+
+
 
 const SalesAnalytics = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -152,7 +155,7 @@ const SalesAnalytics = () => {
       sortable: true,
       grow: 2,
       cell: (row) => (
-        <div className="text-2xl font-extrabold text-slate-800">{row.date}</div>
+        <div className="text-xl font-bold text-slate-800">{row.date}</div>
       ),
     },
     {
@@ -160,37 +163,49 @@ const SalesAnalytics = () => {
       selector: (row) => row.bills,
       center: true,
       cell: (row) => (
-        <span className="text-2xl font-black text-slate-800">{row.bills}</span>
+        <span className="text-xl font-semibold text-slate-800">{row.bills}</span>
       ),
     },
     {
       name: "Taxable",
+      selector: (row) => row.total_taxable,
+      sortable: true,
+      right: true,
       cell: (row) => (
-        <span className="text-3xl font-bold text-green-600">
+        <span className="text-xl font-semibold text-blue-700">
           ₹{parseFloat(row.total_taxable).toLocaleString("en-IN")}
         </span>
       ),
     },
     {
       name: "GST",
+      selector: (row) => row.total_gst,
+      sortable: true,
+      right: true,
       cell: (row) => (
-        <span className="text-3xl font-bold text-yellow-600">
+        <span className="text-xl font-semibold text-purple-700">
           ₹{parseFloat(row.total_gst).toLocaleString("en-IN")}
         </span>
       ),
     },
     {
       name: "Net",
+      selector: (row) => row.total_amount,
+      sortable: true,
+      right: true,
       cell: (row) => (
-        <span className="text-3xl font-black text-blue-600">
+        <span className="text-xl font-bold text-blue-700">
           ₹{parseFloat(row.total_amount).toLocaleString("en-IN")}
         </span>
       ),
     },
     {
       name: "Profit",
+      selector: (row) => row.total_profit,
+      sortable: true,
+      right: true,
       cell: (row) => (
-        <span className="text-3xl font-black text-green-600">
+        <span className="text-xl font-bold text-emerald-700">
           ₹{parseFloat(row.total_profit).toLocaleString("en-IN")}
         </span>
       ),
@@ -203,7 +218,34 @@ const SalesAnalytics = () => {
         <div className="main-content-wrap">
           {/* HEADER */}
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-            <h3>Sales Analytics</h3>
+            <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span
+                  style={{
+                    width: "5px",
+                    height: "34px",
+                    borderRadius: "999px",
+                    background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
+                    display: "inline-block",
+                  }}
+                />
+                <div>
+                  <h3
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: 800,
+                      color: "#111827",
+                      margin: 0,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    Sales Analytics
+                  </h3>
+
+                </div>
+              </div>
+
+            </div>
             <ul className="breadcrumbs flex items-center flex-wrap justify-start gap10">
               <li>
                 <Link to="/">Dashboard</Link>
@@ -227,69 +269,84 @@ const SalesAnalytics = () => {
           <SummaryCards summary={summary} />
 
           {/* FILTER PANEL */}
-          <div className="wg-box mb-6 shadow-lg rounded-2xl p-6 border border-slate-200">
-            <h5 className="text-2xl font-extrabold text-slate-800">Filters</h5>
+          <div className="wg-box mt-6  mb-6 shadow-lg rounded-2xl p-6 border border-slate-200 w-full">
+            {/* <h5 className="text-2xl font-extrabold text-slate-800">Filters</h5> */}
 
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-              <FilterField label="Start Date">
-                <input
-                  type="date"
-                  name="start_date"
-                  value={filters.start_date}
-                  onChange={handleFilterChange}
-                />
-              </FilterField>
+            <div className="flex justify-between items-end gap-4 w-full">
+              <div className="flex items-end gap-4">
+                <div className="shrink-0">
+                  <FilterField label="Start Date">
+                    <input
+                      type="date"
+                      name="start_date"
+                      value={filters.start_date}
+                      onChange={handleFilterChange}
+                      className="border border-slate-300 rounded-lg p-2 text-sm"
+                    />
+                  </FilterField>
+                </div>
 
-              <FilterField label="End Date">
-                <input
-                  type="date"
-                  name="end_date"
-                  value={filters.end_date}
-                  onChange={handleFilterChange}
-                />
-              </FilterField>
+                <div className="shrink-0">
+                  <FilterField label="End Date">
+                    <input
+                      type="date"
+                      name="end_date"
+                      value={filters.end_date}
+                      onChange={handleFilterChange}
+                      className="border border-slate-300 rounded-lg p-2 text-sm"
+                    />
+                  </FilterField>
+                </div>
 
-              <FilterField label="Branch">
-                <select
-                  className="..."
-                  value={filters.branch_id}
-                  onChange={(e) =>
-                    setFilters({ ...filters, branch_id: e.target.value })
-                  }
-                >
-                  <option value="">All Branches</option>
-                  {branch.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
+                <div className="shrink-0">
+                  <FilterField label="Branch">
+                    <select
+                      className="border border-slate-300 rounded-lg p-2 text-sm bg-white min-w-[140px]"
+                      value={filters.branch_id}
+                      onChange={(e) =>
+                        setFilters({ ...filters, branch_id: e.target.value })
+                      }
+                    >
+                      <option value="">All Branches</option>
+                      {branch.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                </div>
 
-              <div className="flex items-end">
                 <button
                   onClick={fetchReport}
-                  className="bg-green-600 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md"
+                  title={loading ? "Loading..." : "Refresh"}
+                  className="flex items-center justify-center bg-green-600 text-white h-[40px] w-[40px] rounded-xl shadow-md hover:bg-green-700 transition-colors shrink-0 mb-[2px]"
                 >
-                  {loading ? "Loading..." : "Refresh"}
+                  <RefreshCw className={loading ? "animate-spin" : ""} size={21} />
                 </button>
               </div>
-              <div className="flex items-end">
+
+              <div className="flex items-end gap-4 shrink-0 mb-[2px]">
                 <button
                   onClick={exportCSV}
-                  className="bg-green-500 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md mr-4 hover:bg-green-700"
+                  title="Export as CSV"
+                  className="flex items-center justify-center bg-green-500 text-white w-[40px] h-[40px] rounded-xl hover:bg-green-700 shadow-md"
                 >
-                  Export CSV
+                  <FileSpreadsheet size={21} />
                 </button>
+
                 <button
                   onClick={exportPDF}
-                  className="bg-red-500 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md hover:bg-red-700"
+                  title="Export as PDF"
+                  className="flex items-center justify-center bg-red-500 text-white w-[40px] h-[40px] rounded-xl hover:bg-red-700 shadow-md"
                 >
-                  Export PDF
+                  <FileDown size={21} />
                 </button>
               </div>
             </div>
           </div>
+
+
 
           {/* DATE-WISE TABLE */}
           <div className="wg-box shadow-xl rounded-2xl overflow-hidden border border-slate-200 mt-8">
@@ -351,6 +408,16 @@ const FilterField = ({ label, children }) => (
   </div>
 );
 
+const STAT_GRADIENTS = {
+  quantity: "bg-blue-50 text-black-700 border-blue-200 ",
+  gross: "bg-amber-50 text-amber-700 border-amber-200",
+  cost: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  tax: "bg-teal-50 text-teal-700 border-teal-200",
+  profit: "bg-rose-50 text-rose-700 border-rose-200",
+  collected: "from-teal-500 to-cyan-600",
+  outstanding: "from-rose-500 to-red-600",
+};
+
 const SummaryCards = ({ summary }) => {
   const totals = summary.reduce(
     (t, row) => ({
@@ -364,54 +431,58 @@ const SummaryCards = ({ summary }) => {
   );
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-      <StatCard label="Bills" value={totals.bills} />
+    <div className="grid grid-cols-1 md:grid-cols-8 gap-4 mb-6 text-center">
+      <StatCard label="Bills" value={totals.bills} variant="quantity" />
       <StatCard
         label="Taxable"
         value={`₹${totals.taxable.toLocaleString("en-IN")}`}
+        variant="gross"
       />
-      <StatCard label="GST" value={`₹${totals.gst.toLocaleString("en-IN")}`} />
+      <StatCard
+        label="GST"
+        value={`₹${totals.gst.toLocaleString("en-IN")}`}
+        variant="tax"
+      />
       <StatCard
         label="Net Sales"
         value={`₹${totals.net.toLocaleString("en-IN")}`}
+        variant="gross"
       />
       <StatCard
         label="Profit"
         value={`₹${totals.profit.toLocaleString("en-IN")}`}
+        variant="profit"
       />
     </div>
   );
 };
-
-const StatCard = ({ label, value, icon }) => (
-  <div className="bg-gradient-to-br from-indigo-500 to-blue-600 text-white p-6 rounded-3xl shadow-[0_8px_30px_rgba(30,64,175,0.25)] flex items-center gap-5 transform hover:scale-[1.02] transition">
-    <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-      <div className="text-3xl">{icon}</div>
-    </div>
+const StatCard = ({ label, value, icon, variant = "quantity" }) => (
+  <div
+    className={`bg-gradient-to-br ${STAT_GRADIENTS[variant] || STAT_GRADIENTS.quantity} text-center justify-center p-6 rounded-3xl shadow-[0_8px_30px_rgba(30,64,175,0.25)] flex items-center gap-5 transform hover:scale-[1.02] transition`}
+  >
 
     <div>
-      <div className="text-xl uppercase tracking-widest font-bold opacity-90">
+      <div className="text-2xl tracking-widest font-bold opacity-90">
         {label}
       </div>
-      <div className="text-4xl font-extrabold tracking-tight mt-1">{value}</div>
+      <div className="text-3xl font-extrabold text-center tracking-tight mt-1">{value}</div>
     </div>
   </div>
 );
-
 const HeatmapCard = ({ hourly }) => (
   <div className="wg-box p-6 rounded-2xl bg-white mt-8 border">
     <h2 className="text-3xl font-bold text-slate-800 tracking-tight">
       Hourly Sales Pattern
     </h2>
 
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
       {Object.entries(hourly).map(([hour, sale]) => (
         <div
           key={hour}
-          className="bg-indigo-50 p-5 rounded-2xl border flex flex-col items-center"
+          className="bg-amber-50 p-5 rounded-2xl border flex flex-col items-center"
         >
-          <div className="text-4xl font-black text-yellow-600">{hour}:00</div>
-          <div className="text-5xl font-bold text-green-600 mt-2">
+          <div className="text-2xl font-black text-yellow-600">{hour}:00</div>
+          <div className="text-3xl font-bold text-green-600 mt-2">
             ₹{parseFloat(sale).toLocaleString("en-IN")}
           </div>
         </div>
@@ -447,11 +518,11 @@ const PaymentMethodsCard = ({ payment }) => (
       Payment Method Summary
     </h2>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
       {Object.entries(payment).map(([method, amount]) => (
         <div
           key={method}
-          className="bg-yellow-200 p-6 rounded-2xl text-2xl font-bold flex justify-between"
+          className="bg-emerald-200 text-emerald-700 p-6 rounded-2xl text-2xl font-bold flex justify-between"
         >
           <span className="uppercase">{method}</span>
           <span>₹{parseFloat(amount).toLocaleString("en-IN")}</span>
@@ -462,7 +533,7 @@ const PaymentMethodsCard = ({ payment }) => (
 );
 
 const HighLowCards = ({ highest, lowest }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-10 ">
     {/* Highest Sale Day */}
     <div
       className="relative p-8 rounded-3xl overflow-hidden
@@ -474,27 +545,26 @@ const HighLowCards = ({ highest, lowest }) => (
       {/* Glow */}
       <div className="absolute inset-0 bg-emerald-300/20 blur-2xl opacity-0 hover:opacity-60 transition-all duration-500"></div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex items-center justify-between">
         <h4
-          className="text-3xl font-extrabold uppercase tracking-wider
+          className="text-3xl font-extrabold  tracking-wider
                      bg-gradient-to-r from-green-700 to-emerald-600 
                      bg-clip-text text-transparent"
         >
           Highest Sale Day
         </h4>
-
-        <div className="text-2xl font-bold text-green-900 mt-4">
-          {highest?.date}
-        </div>
-
+         <h3 className="text-2xl font-bold text-green-900 mt-4">
+           {highest?.date}
+        </h3>
+      </div>
         <div
-          className="text-5xl font-black mt-2 
+          className="text-4xl font-black mt-2 
                       bg-gradient-to-r from-green-700 to-emerald-600 
                       bg-clip-text text-transparent"
         >
           ₹{parseFloat(highest?.sales || 0).toLocaleString("en-IN")}
         </div>
-      </div>
+    
     </div>
 
     {/* Lowest Sale Day */}
@@ -508,117 +578,301 @@ const HighLowCards = ({ highest, lowest }) => (
       {/* Glow */}
       <div className="absolute inset-0 bg-red-300/20 blur-2xl opacity-0 hover:opacity-60 transition-all duration-500"></div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex items-center justify-between">
         <h4
-          className="text-3xl font-extrabold uppercase tracking-wider
-                     bg-gradient-to-r from-red-700 to-rose-600
-                     bg-clip-text text-transparent"
+          className="text-3xl font-extrabold tracking-wider
+               bg-gradient-to-r from-red-700 to-rose-600
+               bg-clip-text text-transparent"
         >
           Lowest Sale Day
         </h4>
 
-        <div className="text-2xl font-bold text-red-900 mt-4">
+        <h3 className="text-2xl font-bold text-red-900">
           {lowest?.date}
-        </div>
+        </h3>
+      </div>
 
-        <div
-          className="text-5xl font-black mt-2 
+      <div
+        className="text-4xl font-black mt-4 
                       bg-gradient-to-r from-red-700 to-rose-600 
                       bg-clip-text text-transparent"
-        >
-          ₹{parseFloat(lowest?.sales || 0).toLocaleString("en-IN")}
-        </div>
+      >
+        ₹{parseFloat(lowest?.sales || 0).toLocaleString("en-IN")}
       </div>
     </div>
   </div>
+  // </div>
 );
 
-const BranchPerformanceCard = ({ branches }) => (
-  <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.05)] p-6 mt-10 border border-slate-200">
-    <h2 className="text-3xl font-bold text-slate-800 mb-5 tracking-tight">
-      Branch Performance
-    </h2>
+const BranchPerformanceCard = ({ branches }) => {
+  const columns = [
+    {
+      name: "Branch",
+      selector: (row) => row.branch,
+      sortable: true,
+      cell: (row) => (
+        <span className="font-bold text-slate-900 text-2xl">
+          {row.branch}
+        </span>
+      ),
+      grow: 2,
+    },
+    {
+      name: "Bills",
+      selector: (row) => row.bills,
+      sortable: true,
+      center: true,
+      cell: (row) => (
+        <span className="font-semibold text-slate-800 text-2xl">
+          {row.bills}
+        </span>
+      ),
+    },
+    {
+      name: "Sales",
+      selector: (row) => parseFloat(row.sales || 0),
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="font-extrabold text-indigo-700 text-2xl">
+          ₹{parseFloat(row.sales || 0).toLocaleString("en-IN")}
+        </span>
+      ),
+    },
+    {
+      name: "Profit",
+      selector: (row) => parseFloat(row.profit || 0),
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="font-extrabold text-green-700 text-2xl">
+          ₹{parseFloat(row.profit || 0).toLocaleString("en-IN")}
+        </span>
+      ),
+    },
+  ];
 
-    <table className="w-full text-2xl overflow-hidden rounded-sm">
-      <thead
-        className="bg-gradient-to-r from-slate-200 to-slate-300
-                 text-slate-800 uppercase tracking-wide"
-      >
-        <tr>
-          <th className="p-4 text-left font-extrabold">Branch</th>
-          <th className="p-4 text-center font-extrabold">Bills</th>
-          <th className="p-4 text-right font-extrabold">Sales</th>
-          <th className="p-4 text-right font-extrabold">Profit</th>
-        </tr>
-      </thead>
+  const customStyles = {
+    table: {
+      style: {
+        backgroundColor: "white",
+      },
+    },
 
-      <tbody>
-        {branches.map((b, i) => (
-          <tr
-            key={i}
-            className="border-b hover:bg-indigo-50 hover:shadow-sm
-                     transition-all duration-200"
-          >
-            <td className="p-4 font-bold text-slate-900">{b.branch}</td>
+    headRow: {
+      style: {
+        background:
+          "linear-gradient(to right, rgb(152, 181, 219), rgb(182, 211, 246))",
+        minHeight: "65px",
+        borderBottom: "1px solid rgb(203, 213, 225)",
+      },
+    },
 
-            <td className="p-4 text-center font-semibold text-slate-800">
-              {b.bills}
-            </td>
+    headCells: {
+      style: {
+        fontSize: "18px",
+        fontWeight: "800",
+        color: "rgb(30, 41, 59)",
+        textTransform: "uppercase",
+        letterSpacing: "0.05em",
+      },
+    },
 
-            <td className="p-4 text-right font-extrabold text-indigo-700">
-              ₹{parseFloat(b.sales).toLocaleString("en-IN")}
-            </td>
+    rows: {
+      style: {
+        minHeight: "70px",
+        borderBottom: "1px solid rgb(226, 232, 240)",
+        transition: "all 0.2s ease",
+      },
 
-            <td className="p-4 text-right font-extrabold text-green-700">
-              ₹{parseFloat(b.profit).toLocaleString("en-IN")}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+      highlightOnHoverStyle: {
+        backgroundColor: "rgb(238, 242, 255)",
+        boxShadow: "0 2px 5px rgba(0,0,0,0.05)",
+        cursor: "pointer",
+      },
+    },
 
-const BrandSalesCard = ({ brandSales }) => (
-  <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.05)] p-6 mt-10 border border-slate-200">
-    <h2 className="text-3xl font-bold text-slate-800 mb-5 tracking-tight">
-      Brand Wise Sales
-    </h2>
+    cells: {
+      style: {
+        fontSize: "20px",
+        padding: "12px 16px",
+      },
+    },
 
-    <table className="w-full text-2xl overflow-hidden rounded-sm">
-      <thead
-        className="bg-gradient-to-r from-slate-200 to-slate-300
-                 text-slate-800 uppercase tracking-wide"
-      >
-        <tr>
-          <th className="p-4 text-left font-extrabold">Brand</th>
-          <th className="p-4 text-center font-extrabold">Qty</th>
-          <th className="p-4 text-right font-extrabold">Amount</th>
-        </tr>
-      </thead>
+    pagination: {
+      style: {
+        fontSize: "18px",
+        minHeight: "65px",
+      },
 
-      <tbody>
-        {brandSales.map((b) => (
-          <tr
-            key={b.id}
-            className="border-b hover:bg-indigo-50 hover:shadow-sm
-                     transition-all duration-200"
-          >
-            <td className="p-4 font-bold text-slate-900">{b.name}</td>
+      pageButtonsStyle: {
+        borderRadius: "6px",
+        height: "40px",
+        width: "40px",
+        padding: "8px",
+        margin: "2px",
+        cursor: "pointer",
+      },
+    },
+  };
 
-            <td className="p-4 text-center font-semibold text-slate-800">
-              {b.qty}
-            </td>
+  return (
+    <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.05)] p-6 mt-10 border border-slate-200">
 
-            <td className="p-4 text-right font-extrabold text-indigo-700">
-              ₹{parseFloat(b.amount).toLocaleString("en-IN")}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+      <h2 className="text-3xl font-bold text-slate-800 mb-5 tracking-tight">
+        Branch Performance
+      </h2>
+
+      <DataTable
+        columns={columns}
+        data={branches || []}
+        customStyles={customStyles}
+        pagination
+        paginationPerPage={10}
+        paginationRowsPerPageOptions={[5, 10, 20, 50]}
+        highlightOnHover
+        responsive
+        striped
+        persistTableHead
+        noDataComponent={
+          <div className="py-10 text-xl font-semibold text-slate-500">
+            No branch data available
+          </div>
+        }
+      />
+    </div>
+  );
+};
+
+const BrandSalesCard = ({ brandSales }) => {
+  const columns = [
+    {
+      name: "Brand",
+      selector: (row) => row.name,
+      sortable: true,
+      cell: (row) => (
+        <span className="font-bold text-slate-900 text-2xl">
+          {row.name}
+        </span>
+      ),
+      grow: 2,
+    },
+    {
+      name: "Qty",
+      selector: (row) => Number(row.qty || 0),
+      sortable: true,
+      center: true,
+      cell: (row) => (
+        <span className="font-semibold text-slate-800 text-2xl">
+          {row.qty}
+        </span>
+      ),
+    },
+    {
+      name: "Amount",
+      selector: (row) => parseFloat(row.amount || 0),
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="font-extrabold text-indigo-700 text-2xl">
+          ₹{parseFloat(row.amount || 0).toLocaleString("en-IN")}
+        </span>
+      ),
+    },
+  ];
+
+  const customStyles = {
+    table: {
+      style: {
+        backgroundColor: "white",
+      },
+    },
+
+    headRow: {
+      style: {
+        background:
+          "linear-gradient(to right, rgb(189, 209, 236), rgb(166, 198, 237))",
+        minHeight: "65px",
+        borderBottom: "1px solid rgb(203, 213, 225)",
+      },
+    },
+
+    headCells: {
+      style: {
+        fontSize: "20px",
+        fontWeight: "800",
+        color: "rgb(30, 41, 59)",
+        textTransform: "uppercase",
+        letterSpacing: "0.05em",
+      },
+    },
+
+    rows: {
+      style: {
+        minHeight: "70px",
+        borderBottom: "1px solid rgb(226, 232, 240)",
+        transition: "all 0.2s ease",
+      },
+
+      highlightOnHoverStyle: {
+        backgroundColor: "rgb(238, 242, 255)",
+        boxShadow: "0 2px 5px rgba(0,0,0,0.05)",
+        cursor: "pointer",
+      },
+    },
+
+    cells: {
+      style: {
+        fontSize: "22px",
+        padding: "12px 16px",
+      },
+    },
+
+    pagination: {
+      style: {
+        fontSize: "18px",
+        minHeight: "65px",
+      },
+
+      pageButtonsStyle: {
+        borderRadius: "6px",
+        height: "40px",
+        width: "40px",
+        padding: "8px",
+        margin: "2px",
+        cursor: "pointer",
+      },
+    },
+  };
+
+  return (
+    <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.05)] p-6 mt-10 border border-slate-200">
+
+      <h2 className="text-3xl font-bold text-slate-800 mb-5 tracking-tight">
+        Brand Wise Sales
+      </h2>
+
+      <DataTable
+        columns={columns}
+        data={brandSales || []}
+        customStyles={customStyles}
+        pagination
+        paginationPerPage={10}
+        paginationRowsPerPageOptions={[5, 10, 20, 50]}
+        highlightOnHover
+        responsive
+        striped
+        persistTableHead
+        noDataComponent={
+          <div className="py-10 text-xl font-semibold text-slate-500">
+            No brand sales data available
+          </div>
+        }
+      />
+
+    </div>
+  );
+};
 
 const customTableStyles = {
   headRow: {
@@ -640,7 +894,7 @@ const customTableStyles = {
   rows: {
     style: {
       minHeight: "85px",
-      fontSize: "16px",
+      fontSize: "20px",
       fontWeight: 600,
       borderBottom: "1px solid #F1F5F9",
       backgroundColor: "#FFFFFF",

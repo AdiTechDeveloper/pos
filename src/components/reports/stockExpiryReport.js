@@ -3,6 +3,7 @@ import DataTable from "react-data-table-component";
 import axios from "axios";
 import Layout from "../layout";
 import { Link } from "react-router-dom";
+import { XCircle, AlertTriangle, Clock, CheckCircle } from "lucide-react";
 
 const StockExpiryReport = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -79,11 +80,14 @@ const StockExpiryReport = () => {
     const expiry = new Date(date);
     const diff = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
 
-    if (diff < 0) return { label: "Expired", class: "bg-danger" };
-    if (diff <= 7) return { label: "Critical", class: "bg-warning" };
-    if (diff <= 30) return { label: "Near Expiry", class: "bg-info" };
+  if (diff < 0)
+      return { label: "Expired", class: "bg-danger", icon: <XCircle size={18} /> };
+    if (diff <= 7)
+      return { label: "Critical", class: "bg-warning", icon: <AlertTriangle size={18} /> };
+    if (diff <= 30)
+      return { label: "Near Expiry", class: "bg-info", icon: <Clock size={18} /> };
 
-    return { label: "Safe", class: "bg-success" };
+    return { label: "Safe", class: "bg-success", icon: <CheckCircle size={18} /> };
   };
 
   const columns = [
@@ -126,8 +130,14 @@ const StockExpiryReport = () => {
       width: "140px",
       cell: (row) => {
         const status = getStatus(row.expiry_date);
-        return (
-          <span className={`status-badge ${status.class}`}>{status.label}</span>
+       return (
+          <span
+            className={`status-badge ${status.class}`}
+            title={status.label}
+            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+          >
+            {status.icon}
+          </span>
         );
       },
     },
@@ -139,15 +149,41 @@ const StockExpiryReport = () => {
         <div className="main-content-wrap">
           {/* Header */}
           <div className="flex items-center justify-between mb-27">
-            <h3>Stock Expiry Report</h3>
+             <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span
+              style={{
+                width: "5px",
+                height: "34px",
+                borderRadius: "999px",
+                background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
+                display: "inline-block",
+              }}
+            />
+            <div>
+              <h3
+                style={{
+                  fontSize: "24px",
+                  fontWeight: 800,
+                  color: "#111827",
+                  margin: 0,
+                  lineHeight: 1.2,
+                }}
+              >
+                Stock Expiry Report
+              </h3>
 
+            </div>
+          </div>
+
+        </div>
             <ul className="breadcrumbs flex items-center gap10">
               <li>
                 <Link to="/">Dashboard</Link>
               </li>
-              <li>
+              {/* <li>
                 <i className="icon-chevron-right"></i>
-              </li>
+              </li> */}
               <li>Reports</li>
               <li>
                 <i className="icon-chevron-right"></i>

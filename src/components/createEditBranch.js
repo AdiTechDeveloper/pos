@@ -94,7 +94,7 @@ const CreateEditBranch = () => {
                 <Form className="wg-form">
                   {/* Name */}
                   <div className="row mb-15">
-                    <fieldset className="col-md-4">
+                    <fieldset className="col-md-3">
                       <div className="body-title">Name *</div>
                       <div className="body-content mb-15">
                         <Field
@@ -110,7 +110,7 @@ const CreateEditBranch = () => {
                         />
                       </div>
                     </fieldset>
-                    <fieldset className="col-md-4">
+                    <fieldset className="col-md-3">
                       <div className="body-title">Address *</div>
                       <div className="body-content">
                         <Field
@@ -126,9 +126,7 @@ const CreateEditBranch = () => {
                         />
                       </div>
                     </fieldset>
-                  </div>
-                  <div className="row mb-15">
-                    <fieldset className="col-md-4 mb-12">
+                     <fieldset className="col-md-2 mb-12">
                       <div className="body-title">State *</div>
                       <div className="body-content">
                         <Field as="select" name="state" className="mb-5">
@@ -193,7 +191,7 @@ const CreateEditBranch = () => {
                       </div>
                     </fieldset>
 
-                    <fieldset className="col-md-4">
+                    <fieldset className="col-md-2">
                       <div className="body-title">Phone *</div>
                       <div className="body-content">
                         <Field
@@ -211,10 +209,18 @@ const CreateEditBranch = () => {
                       </div>
                     </fieldset>
                   </div>
+                
                   {/* SUBMIT BUTTON */}
+                  
+                  <div className="flex col">
                   <button className="tf-button w208" type="submit">
                     {isEdit ? "Update Branch" : "Create Branch"}
                   </button>
+
+                    <button type="button" className="ml-5 tf-button style-1">
+                      <a href="/branch"  style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
+                    </button>
+                    </div>
                 </Form>
               )}
             </Formik>

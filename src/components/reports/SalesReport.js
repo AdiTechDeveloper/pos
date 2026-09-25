@@ -5,6 +5,9 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import Layout from "../layout";
 import { useAppData } from "../../context/AppDataContext";
+import { RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
+import DataTable from "react-data-table-component";
+
 
 const getInvoiceCustomerName = (row) =>
   row.customer?.name ||
@@ -26,7 +29,7 @@ const formatPaymentMethod = (method) => {
   return value || "-";
 };
 
-export default function SalesReport() {
+export default function SalesReport() { 
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
@@ -50,7 +53,7 @@ export default function SalesReport() {
   };
 
   const fetchBranches = () => {
-    appData?.loadBranches(); 
+    appData?.loadBranches();
   };
 
   const fetchReport = async () => {
@@ -437,16 +440,40 @@ export default function SalesReport() {
   return (
     <Layout>
       <div className="p-8 bg-white min-h-screen text-gray-900">
-        <h1 className="text-5xl font-extrabold mb-3 text-gray-900">
-          Sales Report
-        </h1>
-        <p className="text-3xl text-gray-600 mb-6">
-          Overview of sales, collections, profits, and price overrides.
-        </p>
+          <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span
+              style={{
+                width: "5px",
+                height: "34px",
+                borderRadius: "999px",
+                background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
+                display: "inline-block",
+              }}
+            />
+            <div>
+              <h3
+                style={{
+                  fontSize: "24px",
+                  fontWeight: 800,
+                  color: "#111827",
+                  margin: 0,
+                  lineHeight: 1.2,
+                }}
+              >
+              Sales Report
+              </h3>
+
+            </div>
+          </div>
+
+        </div>
 
         {/* FILTERS */}
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6 mt-6 mb-6">
+            <div className="flex justify-between items-end gap-4 w-full">
+
+          <div className="grid grid-cols-1 lg:grid-cols-8 gap-6 mb-6">
             <div>
               <label className="text-2xl font-semibold text-gray-900">
                 Date Range
@@ -536,87 +563,88 @@ export default function SalesReport() {
           )}
 
           <div className="flex flex-col lg:flex-row items-center gap-4 justify-between">
-            <div className="text-gray-600 text-2xl">
-              Filters update automatically when changed.
-            </div>
+          
             <div className="flex flex-wrap gap-4">
               <button
                 onClick={resetFilters}
-                className="bg-blue-600 px-8 py-4 rounded-2xl text-white text-2xl font-semibold hover:bg-blue-700 transition-all"
+                title={loading ? "Loading..." : "Refresh"}
+                className="flex items-center justify-center bg-green-600 text-white h-[40px] w-[40px] rounded-xl shadow-md hover:bg-green-700 transition-colors shrink-0 mb-[2px]"
               >
-                Reset
-              </button>
-              <button
-                onClick={exportToPDF}
-                className="bg-red-600 px-8 py-4 rounded-2xl text-white text-2xl font-semibold hover:bg-red-700 transition-all"
-              >
-                Export PDF
+                <RefreshCw className={loading ? "animate-spin" : ""} size={21} />
               </button>
               <button
                 onClick={exportToExcel}
-                className="bg-emerald-600 px-8 py-4 rounded-2xl text-white text-2xl font-semibold hover:bg-emerald-700 transition-all"
+                title="Export as CSV"
+                className="flex items-center justify-center bg-green-500 text-white w-[40px] h-[40px] rounded-xl hover:bg-green-700 shadow-md"
               >
-                Export Excel
+                <FileSpreadsheet size={21} />
+              </button>
+
+              <button
+                onClick={exportToPDF}
+                title="Export as PDF"
+                className="flex items-center justify-center bg-red-500 text-white w-[40px] h-[40px] rounded-xl hover:bg-red-700 shadow-md"
+              >
+                <FileDown size={21} />
               </button>
             </div>
+          </div>
           </div>
         </div>
 
         {/* KPI CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6 mt-4 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-8 gap-6 mt-6 mb-10">
           <Card
             title="Gross Sales"
             value={k.gross_sales}
-            variant="from-sky-100 to-blue-200"
+            variant="bg-blue-50 text-blue-700 border-blue-200"                                      
           />
           <Card
             title="COGS"
             value={k.total_cogs}
-            variant="from-violet-100 to-fuchsia-200"
+            variant="bg-amber-50 text-amber-700 border-amber-200"
           />
           <Card
             title="Profit"
             value={k.total_profit}
             extra={`Margin ${k.profit_margin_pct}%`}
-            variant="from-emerald-100 to-lime-200"
+            variant="bg-emerald-50 text-emerald-700 border-emerald-200"
           />
           <Card
             title="Collected"
             value={k.total_collected}
-            variant="from-amber-100 to-orange-200"
+            variant="bg-teal-50 text-teal-700 border-teal-200"
           />
           <Card
             title="Outstanding"
             value={k.total_due}
-            variant="from-rose-100 to-pink-200"
+            variant="bg-rose-50 text-rose-700 border-rose-200"
           />
-        </div>
-
-        {/* GST */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <SmallCard label="CGST" value={k.tax_breakdown.cgst} />
+           <SmallCard label="CGST" value={k.tax_breakdown.cgst} />
           <SmallCard label="SGST" value={k.tax_breakdown.sgst} />
           <SmallCard label="IGST" value={k.tax_breakdown.igst} />
         </div>
 
+      
+
         {/* TABS */}
-        <div className="flex flex-wrap gap-3 mb-6 border-b border-gray-200">
-          {["invoices", "products", "payments", "summary", "overrides"].map(
-            (tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-5 py-3 rounded-t-2xl font-semibold text-2xl transition-all ${
-                  activeTab === tab
-                    ? "bg-blue-600 text-white border-b-2 border-blue-600"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                {tab === "summary" ? "SUMMARY" : tab.toUpperCase()}
-              </button>
-            ),
-          )}
-        </div>
+             <div className="flex flex-wrap justify-center gap-3 mt-10 mb-6 border-b border-gray-200 text-center">
+        {["invoices", "products", "payments", "summary", "overrides"].map(
+          (tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-5 py-3 rounded-t-2xl font-semibold text-2xl transition-all ${
+                activeTab === tab
+                  ? "bg-blue-600 text-white border-b-2 border-blue-600"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              }`}
+            >
+              {tab === "summary" ? "SUMMARY" : tab.toUpperCase()}
+            </button>
+          ),
+        )}
+      </div>
 
         {/* TAB CONTENT */}
         {activeTab === "invoices" && <InvoiceTable data={report.invoices} />}
@@ -642,191 +670,255 @@ const Card = ({
   variant = "from-sky-100 to-blue-200",
 }) => (
   <div
-    className={`bg-gradient-to-br ${variant} p-8 rounded-3xl shadow-xl border border-gray-200 hover:-translate-y-1 transform transition-all duration-300`}
+    className={`bg-gradient-to-br ${variant} p-4 m- 6 rounded-3xl shadow-xl border border-gray-200 hover:-translate-y-1 transform transition-all duration-300`}
   >
-    <p className="text-2xl font-semibold text-gray-700 mb-3">{title}</p>
-    <h2 className="text-4xl font-bold text-gray-900">₹{value}</h2>
+    <p className="text-xl font-semibold text-gray-700 mb-3 text-center">{title}</p>
+    <h2 className="text-2xl font-bold text-gray-900 text-center">₹{value}</h2>
     {extra && (
-      <p className="text-2xl text-gray-700 font-medium mt-4">{extra}</p>
+      <p className="text-2xl text-gray-700 font-medium mt-4 text-center">{extra}</p>
     )}
   </div>
 );
 
 const SmallCard = ({ label, value, color = "from-slate-50 to-slate-100" }) => (
   <div
-    className={`bg-gradient-to-r ${color} px-6 py-4 rounded-3xl border border-gray-200 text-gray-900 shadow-sm flex-1`}
+    className={`bg-purple-50 text-purple-700 border-purple-200 px-6 py-4 rounded-3xl border border-gray-200 shadow-sm flex-1`}
   >
-    <p className="text-xl text-gray-600">{label}</p>
-    <p className="text-3xl font-bold mt-2">₹{value}</p>
+    <p className="text-xl text-purple-700 ">{label}</p>
+    <p className="text-3xl font-bold mt-2 text-purple-700">₹{value}</p>
   </div>
 );
 
-const InvoiceTable = ({ data }) => (
-  <div className="overflow-auto bg-white shadow-xl border border-gray-200">
-    <table className="w-full text-lg">
-      <thead className="bg-gradient-to-r from-blue-100 to-cyan-100 border-b border-gray-200">
-        <tr>
-          <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-            Date
-          </th>
-          <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-            Bill No
-          </th>
-          <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-            Customer Name
-          </th>
-          <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-            Mobile No
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Subtotal
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            GST
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Total
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Paid
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Due
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Profit
-          </th>
-          <th className="px-6 py-5 text-center text-2xl font-semibold text-gray-700">
-            Status
-          </th>
-          <th className="px-6 py-5 text-center text-2xl font-semibold text-gray-700">
-            Payment Method
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.rows.map((row) => (
-          <tr
-            key={row.id}
-            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-          >
-            <td className="px-6 py-5 text-2xl text-gray-700">
-              {new Date(row.created_at).toLocaleDateString()}
-            </td>
-            <td className="px-6 py-5 text-2xl font-semibold text-gray-800 break-all whitespace-normal max-w-xs">
-              {row.bill_no}
-            </td>
-            <td className="px-6 py-5 text-2xl text-gray-700">
-              {getInvoiceCustomerName(row)}
-            </td>
-            <td className="px-6 py-5 text-2xl text-gray-700">
-              {getInvoiceCustomerMobile(row)}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl text-gray-700">
-              ₹{row.subtotal}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl text-gray-700">
-              ₹{row.total_gst}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl font-semibold text-gray-900">
-              ₹{row.total_amount}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl text-gray-700">
-              ₹{row.paid_amount}
-            </td>
-            <td
-              className={`px-6 py-5 text-right text-2xl font-semibold ${
-                row.due_amount > 0 ? "text-red-600" : "text-green-600"
-              }`}
-            >
-              ₹{row.due_amount}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl font-semibold text-green-600">
-              ₹{row.total_profit}
-            </td>
-            <td className="px-8 py-6 text-center text-2xl font-semibold">
-              <StatusBadge status={row.payment_status} />
-            </td>
-            <td className="px-6 py-5 text-center text-2xl text-gray-700">
-              {formatPaymentMethod(row.payment_methods)}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-      <tfoot className="bg-gradient-to-r from-gray-50 to-gray-100 border-t-2 border-gray-200 font-semibold text-gray-900">
-        <tr>
-          <td colSpan="4" className="px-6 py-5 text-3xl font-bold">
-            Total
-          </td>
-          <td className="px-6 py-5 text-right text-3xl font-bold">
-            ₹{(Number(data.totals.subtotal) || 0).toFixed(2)}
-          </td>
-          <td className="px-6 py-5 text-right text-3xl font-bold">
-            ₹{(Number(data.totals.total_gst) || 0).toFixed(2)}
-          </td>
-          <td className="px-6 py-5 text-right text-3xl font-bold">
-            ₹{(Number(data.totals.total_amount) || 0).toFixed(2)}
-          </td>
-          <td className="px-6 py-5 text-right text-3xl font-bold">
-            ₹{(Number(data.totals.paid_amount) || 0).toFixed(2)}
-          </td>
-          <td className="px-6 py-5 text-right text-3xl font-bold">
-            ₹{(Number(data.totals.due_amount) || 0).toFixed(2)}
-          </td>
-          <td className="px-6 py-5 text-right text-3xl font-bold text-green-600">
-            ₹{(Number(data.totals.total_profit) || 0).toFixed(2)}
-          </td>
-          <td className="px-6 py-5"></td>
-          <td className="px-6 py-5"></td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
-);
+const InvoiceTable = ({ data }) => {
+  const columns = [
+    {
+      name: "Date",
+      selector: (row) => row.created_at,
+      sortable: true,
+      cell: (row) => (
+        <span className="text-base text-gray-700">
+          {new Date(row.created_at).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      name: "Bill No",
+      selector: (row) => row.bill_no,
+      sortable: true,
+      wrap: true,
+      cell: (row) => (
+        <span className="text-base font-semibold text-gray-800">
+          {row.bill_no}
+        </span>
+      ),
+    },
+    {
+      name: "Customer Name",
+      selector: (row) => getInvoiceCustomerName(row),
+      sortable: true,
+    },
+    {
+      name: "Mobile No",
+      selector: (row) => getInvoiceCustomerMobile(row),
+    },
+    {
+      name: "Subtotal",
+      selector: (row) => row.subtotal,
+      sortable: true,
+      right: true,
+      cell: (row) => <span>₹{row.subtotal}</span>,
+    },
+    {
+      name: "GST",
+      selector: (row) => row.total_gst,
+      sortable: true,
+      right: true,
+      cell: (row) => <span>₹{row.total_gst}</span>,
+    },
+    {
+      name: "Total",
+      selector: (row) => row.total_amount,
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="font-semibold text-gray-900">
+          ₹{row.total_amount}
+        </span>
+      ),
+    },
+    {
+      name: "Paid",
+      selector: (row) => row.paid_amount,
+      sortable: true,
+      right: true,
+      cell: (row) => <span>₹{row.paid_amount}</span>,
+    },
+    {
+      name: "Due",
+      selector: (row) => row.due_amount,
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span
+          className={`font-semibold ${
+            row.due_amount > 0 ? "text-red-600" : "text-green-600"
+          }`}
+        >
+          ₹{row.due_amount}
+        </span>
+      ),
+    },
+    {
+      name: "Profit",
+      selector: (row) => row.total_profit,
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="font-semibold text-green-600">
+          ₹{row.total_profit}
+        </span>
+      ),
+    },
+    {
+      name: "Status",
+      center: true,
+      cell: (row) => <StatusBadge status={row.payment_status} />,
+    },
+    {
+      name: "Payment Method",
+      center: true,
+      cell: (row) => formatPaymentMethod(row.payment_methods),
+    },
+  ];
 
-const ProductTable = ({ data }) => (
-  <div className="overflow-auto bg-white shadow-xl border border-gray-200">
-    <table className="w-full text-lg">
-      <thead className="bg-gradient-to-r from-blue-100 to-cyan-100 border-b border-gray-200">
-        <tr>
-          <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-            Name
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Qty
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Revenue
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Profit
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.rows.map((p) => (
-          <tr
-            key={p.product_id}
-            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-          >
-            <td className="px-6 py-5 text-2xl text-gray-800 font-semibold">
-              {p.product_name}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-              {p.qty_sold}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-              ₹{p.net_revenue}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl font-semibold text-green-600">
-              ₹{p.total_profit}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+  return (
+    <div className="bg-white shadow-xl border border-gray-200 rounded-xl overflow-hidden">
+      <DataTable
+        columns={columns}
+        data={data.rows}
+        pagination
+        highlightOnHover
+        responsive
+        customStyles={{
+          headCells: {
+            style: {
+              fontWeight: 600,
+              fontSize: "16px",
+              color: "#374151",
+              backgroundColor: "#e0f2fe",
+            },
+          },
+          cells: {
+            style: {
+              fontSize: "15px",
+              padding: "14px 16px",
+            },
+          },
+        }}
+      />
+
+      {/* Totals strip - kept separate since DataTable has no <tfoot> */}
+      <div className="grid grid-cols-8 gap-2 bg-gray-100 border-t-2 border-gray-200 px-4 py-4 font-bold text-gray-900 text-2xl">
+        <div className="col-span-1">Total</div>
+        <div className="text-right">
+          ₹{(Number(data.totals.subtotal) || 0).toFixed(2)}
+        </div>
+        <div className="text-right">
+          ₹{(Number(data.totals.total_gst) || 0).toFixed(2)}
+        </div>
+        <div className="text-right">
+          ₹{(Number(data.totals.total_amount) || 0).toFixed(2)}
+        </div>
+        <div className="text-right">
+          ₹{(Number(data.totals.paid_amount) || 0).toFixed(2)}
+        </div>
+        <div className="text-right">
+          ₹{(Number(data.totals.due_amount) || 0).toFixed(2)}
+        </div>
+        <div className="text-right text-green-600">
+          ₹{(Number(data.totals.total_profit) || 0).toFixed(2)}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
+const ProductTable = ({ data }) => {
+  const columns = [
+    {
+      name: "Name",
+      selector: (row) => row.product_name,
+      sortable: true,
+      grow: 2,
+      cell: (row) => (
+        <span className="font-semibold text-gray-800">
+          {row.product_name}
+        </span>
+      ),
+    },
+    {
+      name: "Qty",
+      selector: (row) => row.qty_sold,
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="font-semibold text-gray-700">{row.qty_sold}</span>
+      ),
+    },
+    {
+      name: "Revenue",
+      selector: (row) => row.net_revenue,
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="font-semibold text-gray-700">
+          ₹{row.net_revenue}
+        </span>
+      ),
+    },
+    {
+      name: "Profit",
+      selector: (row) => row.total_profit,
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="font-semibold text-green-600">
+          ₹{row.total_profit}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <div className="bg-white shadow-xl border border-gray-200 rounded-xl overflow-hidden">
+      <DataTable
+        columns={columns}
+        data={data.rows}
+        pagination
+        highlightOnHover
+        responsive
+        customStyles={{
+          headCells: {
+            style: {
+              fontWeight: 600,
+              fontSize: "14px",
+              color: "#374151",
+              backgroundColor: "#e0f2fe",
+            },
+          },
+          cells: {
+            style: {
+              fontSize: "14px",
+              padding: "14px 16px",
+            },
+          },
+        }}
+      />
+    </div>
+  );
+};
 
 const PaymentTable = ({ data }) => (
   <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-200">
@@ -856,151 +948,207 @@ const PaymentTable = ({ data }) => (
 );
 
 // SAFE PAYMENT SUMMARY TABLE COMPONENT
+
+
 const PaymentSummaryTable = ({ summary }) => {
   const summaryEntries = Object.entries(summary || {});
 
-  return (
-    <div className="overflow-auto bg-white shadow-xl border border-gray-200">
-      <table className="w-full text-lg">
-        <thead className="bg-gradient-to-r from-blue-100 to-cyan-100 border-b border-gray-200">
-          <tr>
-            <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-              Payment Method
-            </th>
-            <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-              Total Amount
-            </th>
-            <th className="px-6 py-5 text-center text-2xl font-semibold text-gray-700">
-              Bill Count
-            </th>
-            <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-              Associated Bills
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {summaryEntries.length === 0 ? (
-            <tr>
-              <td colSpan="4" className="px-6 py-8 text-center">
-                <p className="text-2xl text-gray-500 font-semibold">
-                  No payment summary available.
-                </p>
-              </td>
-            </tr>
-          ) : (
-            summaryEntries.map(([method, item]) => {
-              const hasBills =
-                Array.isArray(item?.bills) && item.bills.length > 0;
+  const rows = summaryEntries.map(([method, item]) => ({
+    method,
+    ...item,
+  }));
 
-              return (
-                <tr
-                  key={method}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                >
-                  <td className="px-6 py-5 text-2xl font-bold text-gray-800">
-                    <span className="inline-block px-4 py-2 bg-blue-100 text-blue-900 rounded-xl">
-                      {formatPaymentMethod(method).toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5 text-right text-2xl font-bold text-green-600">
-                    ₹{Number(item?.amount || 0).toFixed(2)}
-                  </td>
-                  <td className="px-6 py-5 text-center text-2xl font-semibold text-gray-800">
-                    {item?.count ?? 0}
-                  </td>
-                  <td className="px-6 py-5 text-left">
-                    {hasBills ? (
-                      <div className="flex flex-wrap gap-2">
-                        {item.bills.map((billNo, idx) => (
-                          <span
-                            key={idx}
-                            className="inline-block px-3 py-2 text-2xl font-mono font-semibold rounded-lg"
-                          >
-                            {billNo}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-gray-500 text-2xl">-</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-        <tfoot className="bg-gradient-to-r from-gray-50 to-gray-100 border-t-2 border-gray-200 font-semibold text-gray-900">
-          <tr>
-            <td className="px-6 py-5 text-3xl font-bold">Total</td>
-            <td className="px-6 py-5 text-right text-3xl font-bold text-green-600">
-              ₹
-              {Object.values(summary || {})
-                .reduce((sum, item) => sum + (Number(item?.amount) || 0), 0)
-                .toFixed(2)}
-            </td>
-            <td className="px-6 py-5 text-center text-3xl font-bold">
-              {Object.values(summary || {}).reduce(
-                (sum, item) => sum + (Number(item?.count) || 0),
-                0,
-              )}
-            </td>
-            <td className="px-6 py-5"></td>
-          </tr>
-        </tfoot>
-      </table>
+  const totalAmount = Object.values(summary || {}).reduce(
+    (sum, item) => sum + (Number(item?.amount) || 0),
+    0,
+  );
+  const totalCount = Object.values(summary || {}).reduce(
+    (sum, item) => sum + (Number(item?.count) || 0),
+    0,
+  );
+
+  const columns = [
+    {
+      name: "Payment Method",
+      selector: (row) => row.method,
+      sortable: true,
+      cell: (row) => (
+        <span className="inline-block px-4 py-2 bg-blue-100 text-blue-900 rounded-xl font-bold text-lg">
+          {formatPaymentMethod(row.method).toUpperCase()}
+        </span>
+      ),
+    },
+    {
+      name: "Total Amount",
+      selector: (row) => row.amount,
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="font-bold text-green-600">
+          ₹{Number(row.amount || 0).toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      name: "Bill Count",
+      selector: (row) => row.count,
+      sortable: true,
+      center: true,
+      cell: (row) => (
+        <span className="font-semibold text-gray-800">{row.count ?? 0}</span>
+      ),
+    },
+    {
+      name: "Associated Bills",
+      grow: 2,
+      cell: (row) => {
+        const hasBills = Array.isArray(row.bills) && row.bills.length > 0;
+        return hasBills ? (
+          <div className="flex flex-wrap gap-2 py-2">
+            {row.bills.map((billNo, idx) => (
+              <span
+                key={idx}
+                className="inline-block px-3 py-1 text-2xl font-mono font-semibold rounded-lg bg-gray-100 text-gray-700"
+              >
+                {billNo}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span className="text-gray-500 text-sm">-</span>
+        );
+      },
+    },
+  ];
+
+  return (
+    <div className="bg-white shadow-xl border border-gray-200 rounded-xl overflow-hidden">
+      <DataTable
+        columns={columns}
+        data={rows}
+        highlightOnHover
+        responsive
+        noDataComponent={
+          <p className="text-base text-gray-500 font-semibold py-8">
+            No payment summary available.
+          </p>
+        }
+        customStyles={{
+          headCells: {
+            style: {
+              fontWeight: 600,
+              fontSize: "14px",
+              color: "#374151",
+              backgroundColor: "#e0f2fe",
+            },
+          },
+          cells: {
+            style: {
+              fontSize: "14px",
+              padding: "14px 16px",
+            },
+          },
+        }}
+      />
+
+      {summaryEntries.length > 0 && (
+        <div className="grid grid-cols-4 gap-2 bg-gray-100 text-2xl border-t-2 border-gray-200 px-4 py-4 font-bold text-gray-900">
+          <div>Total</div>
+          <div className="text-right text-green-600">
+            ₹{totalAmount.toFixed(2)}
+          </div>
+          <div className="text-center">{totalCount}</div>
+          <div></div>
+        </div>
+      )}
     </div>
   );
 };
 
-const OverrideTable = ({ data }) => (
-  <div className="overflow-auto bg-white shadow-xl border border-gray-200">
-    <table className="w-full text-lg">
-      <thead className="bg-gradient-to-r from-blue-100 to-cyan-100 border-b border-gray-200">
-        <tr>
-          <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-            Bill No
-          </th>
-          <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-            Product
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Original
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Override
-          </th>
-          <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-            Leakage
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.rows.map((o, i) => (
-          <tr
-            key={i}
-            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-          >
-            <td className="px-6 py-5 text-2xl font-semibold text-gray-800 break-all whitespace-normal max-w-xs">
-              {o.bill_no}
-            </td>
-            <td className="px-6 py-5 text-2xl font-semibold text-gray-800">
-              {o.product_name}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-              ₹{o.original_price}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-              ₹{o.override_price}
-            </td>
-            <td className="px-6 py-5 text-right text-2xl font-bold text-red-600">
-              ₹{o.value_leakage}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+
+const OverrideTable = ({ data }) => {
+  const columns = [
+    {
+      name: "Bill No",
+      selector: (row) => row.bill_no,
+      sortable: true,
+      wrap: true,
+      cell: (row) => (
+        <span className="font-semibold text-gray-800">{row.bill_no}</span>
+      ),
+    },
+    {
+      name: "Product",
+      selector: (row) => row.product_name,
+      sortable: true,
+      grow: 2,
+      cell: (row) => (
+        <span className="font-semibold text-gray-800">
+          {row.product_name}
+        </span>
+      ),
+    },
+    {
+      name: "Original",
+      selector: (row) => row.original_price,
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="font-semibold text-gray-700">
+          ₹{row.original_price}
+        </span>
+      ),
+    },
+    {
+      name: "Override",
+      selector: (row) => row.override_price,
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="font-semibold text-gray-700">
+          ₹{row.override_price}
+        </span>
+      ),
+    },
+    {
+      name: "Leakage",
+      selector: (row) => row.value_leakage,
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="font-bold text-red-600">₹{row.value_leakage}</span>
+      ),
+    },
+  ];
+
+  return (
+    <div className="bg-white shadow-xl border border-gray-200 rounded-xl overflow-hidden">
+      <DataTable
+        columns={columns}
+        data={data.rows}
+        pagination
+        highlightOnHover
+        responsive
+        customStyles={{
+          headCells: {
+            style: {
+              fontWeight: 600,
+              fontSize: "14px",
+              color: "#374151",
+              backgroundColor: "#e0f2fe",
+            },
+          },
+          cells: {
+            style: {
+              fontSize: "14px",
+              padding: "14px 16px",
+            },
+          },
+        }}
+      />
+    </div>
+  );
+};
 
 const StatusBadge = ({ status }) => {
   const colors = {
@@ -1011,9 +1159,8 @@ const StatusBadge = ({ status }) => {
 
   return (
     <span
-      className={`px-6 py-4 rounded-full text-2xl font-semibold ${
-        colors[status] || "bg-gray-200 text-gray-800 border border-gray-300"
-      }`}
+      className={`px-6 py-4 rounded-full text-2xl font-semibold ${colors[status] || "bg-gray-200 text-gray-800 border border-gray-300"
+        }`}
     >
       {status}
     </span>

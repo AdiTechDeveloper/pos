@@ -55,7 +55,7 @@ export default function LeftSidebar({
           <a href="/dashboard">
             <p className="font-size-24px font-bold text-gray-800">
               {" "}
-              ⬅️ Back To Dashboard
+              ⬅️ 
             </p>
           </a>
         </div>

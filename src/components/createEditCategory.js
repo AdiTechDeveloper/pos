@@ -35,6 +35,19 @@ const CreateEditCategory = () => {
     }
   };
 
+  // Validation Schema
+const validationSchema = Yup.object({
+  name: Yup.string()
+    .required("Name is required")
+    .min(3, "Name must be at least 3 characters long")
+    .max(50, "Name cannot exceed 50 characters"),
+  
+  description: Yup.string()
+    .required("Description is required")
+    .min(10, "Description must be at least 10 characters long")
+    .max(255, "Description cannot exceed 255 characters"),
+});
+
   const fetchCategory = async () => {
     try {
       const response = await axios.get(`${BASE_URL}/api/categories`, {
@@ -55,11 +68,11 @@ const CreateEditCategory = () => {
   }, []);
 
   // Validation Schema
-  const validationSchema = Yup.object({
-    name: Yup.string().required("Name is required"),
-    description: Yup.string().required("Description is required"),
-    // parent_id: Yup.string().required("Parent Id is required"),
-  });
+  // const validationSchema = Yup.object({
+  //   name: Yup.string().required("Name is required"),
+  //   description: Yup.string().required("Description is required"),
+  //   // parent_id: Yup.string().required("Parent Id is required"),
+  // });
 
   // Submit (Create + Update)
   const handleSubmit = async (values) => {
@@ -112,12 +125,13 @@ const CreateEditCategory = () => {
                 <Form className="wg-form">
                   {/* Name */}
                   <div className="row mb-15">
-                    <fieldset className="col-md-6 mb-15">
+                    <fieldset className="col-md-4 mb-15">
                       <div className="body-title">Name *</div>
                       <div className="body-content">
                         <Field
                           type="text"
                           name="name"
+                          maxLength={50} // Prevents typing past 50 characters
                           placeholder="Enter category name"
                           className="mb-5"
                         />
@@ -128,14 +142,35 @@ const CreateEditCategory = () => {
                         />
                       </div>
                     </fieldset>
-                    <fieldset className="col-md-6 mb-15">
+                    <fieldset className="col-md-4 mb-15">
+                      <div className="body-title">Parent Categories *</div>
+                      <div className="body-content">
+                        <Field as="select" name="parent_id" className="mb-5">
+                          <option value="">Select Parent Category</option>
+                          {categories.map((c) => (
+                            <option value={c.id} key={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </Field>
+                        {/* <ErrorMessage
+                        name="parent_id"
+                        className="error-text"
+                        component="div"
+                      /> */}
+                      </div>
+                    </fieldset>
+                      <fieldset className="col-md-4 mb-15">
                       <div className="body-title">Description *</div>
                       <div className="body-content">
                         <Field
                           as="textarea"
+                          rows={1}
                           name="description"
+                          maxLength={255} // Prevents typing past 255 characters
                           className="mb-5 form-control small-textarea"
                           placeholder="Enter description"
+                          
                         />
                         <ErrorMessage
                           name="description"
@@ -145,32 +180,16 @@ const CreateEditCategory = () => {
                       </div>
                     </fieldset>
                   </div>
-                  <fieldset className="col-md-6 mb-15">
-                    <div className="body-title">Parent Categories *</div>
-                    <div className="body-content">
-                      <Field as="select" name="parent_id" className="mb-5">
-                        <option value="">Select Parent Category</option>
-                        {categories.map((c) => (
-                          <option value={c.id} key={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </Field>
-                      {/* <ErrorMessage
-                        name="parent_id"
-                        className="error-text"
-                        component="div"
-                      /> */}
-                    </div>
-                  </fieldset>
+
 
                   <div className="flex col">
                     {/* SUBMIT BUTTON */}
                     <button className="tf-button w208" type="submit">
                       {isEdit ? "Update Category" : "Create Category"}
                     </button>
-                    <button type="button" className="ml-5">
-                      <a href="/category"> Cancel</a>
+                    <button type="button" className="ml-5  tf-button style-1">
+                      <a href="/category" style={{ color: "inherit", textDecoration: "none" }} 
+                      > Cancel</a>
                     </button>
                   </div>
                 </Form>
@@ -181,6 +200,6 @@ const CreateEditCategory = () => {
       </div>
     </Layout>
   );
-};
+};  
 
 export default CreateEditCategory;

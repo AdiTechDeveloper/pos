@@ -16,8 +16,8 @@ const PaymentBreakdown = ({ report, loading }) => {
   if (loading) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
-        <div className="h-5 w-40 bg-gray-100 rounded animate-pulse mb-6" />
-        <div className="h-36 w-full bg-gray-50 rounded animate-pulse" />
+        <div className="h-6 w-48 bg-gray-100 rounded animate-pulse mb-6" />
+        <div className="h-64 w-full bg-gray-50 rounded animate-pulse" />
       </div>
     );
   }
@@ -31,21 +31,21 @@ const PaymentBreakdown = ({ report, loading }) => {
   if (rows.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
-        <h3 className="text-lg font-bold text-gray-800 mb-2">
+        <h3 className="text-3xl font-bold text-gray-800 mb-2">
           Today's Collection
         </h3>
-        <p className="text-sm text-gray-400">No bills created today.</p>
+        <p className="text-xl text-gray-400">No bills created today.</p>
       </div>
     );
   }
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-800">Today's Collection</h3>
-        <span className="text-sm text-gray-400">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-bold text-gray-800">Today's Collection</h3>
+        <span className="text-2xl text-gray-400">
           Collected:{" "}
-          <span className="font-semibold text-gray-700">
+          <span className="text-2xl text-gray-700">
             {rupee(grandTotal)}
           </span>
         </span>
@@ -54,6 +54,9 @@ const PaymentBreakdown = ({ report, loading }) => {
       <DonutChart
         centerLabel="Collected"
         formatValue={rupee}
+        size={220}
+        thickness={28}
+        centered
         data={rows.map((r, i) => ({
           label: r.method,
           value: Number(r.total_collected) || 0,
@@ -62,11 +65,13 @@ const PaymentBreakdown = ({ report, loading }) => {
       />
 
       {due > 0 && (
-        <div className="mt-5 flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
-          <span className="text-sm font-medium text-amber-700">
+        <div className="mt-6 flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-5 py-4">
+          <span className="text-xl font-medium text-amber-700">
             Pending (not yet collected)
           </span>
-          <span className="text-sm font-bold text-amber-700">{rupee(due)}</span>
+          <span className="text-xl font-bold text-amber-700">
+            {rupee(due)}
+          </span>
         </div>
       )}
     </div>

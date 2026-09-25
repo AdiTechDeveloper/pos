@@ -98,7 +98,7 @@ const CreateEditSupplier = () => {
               {() => (
                 <Form className="wg-form">
                   <div className="row mb-12">
-                    <fieldset className="col-md-6">
+                    <fieldset className="col-md-4">
                       <div className="body-title">Name *</div>
                       <div className="body-content mb-15">
                         <Field
@@ -114,7 +114,7 @@ const CreateEditSupplier = () => {
                         />
                       </div>
                     </fieldset>
-                    <fieldset className="col-md-6">
+                    <fieldset className="col-md-4">
                       <div className="body-title">GstIn *</div>
                       <div className="body-content">
                         <Field
@@ -130,9 +130,7 @@ const CreateEditSupplier = () => {
                         />
                       </div>
                     </fieldset>
-                  </div>
-                  <div className="row mb-12">
-                    <fieldset className="col-md-6">
+                     <fieldset className="col-md-4">
                       <div className="body-title">Contact *</div>
                       <div className="body-content mb-15">
                         <Field
@@ -149,6 +147,8 @@ const CreateEditSupplier = () => {
                         />
                       </div>
                     </fieldset>
+                  </div>
+                  <div className="row mb-12">
                     <fieldset className="col-md-6">
                       <div className="body-title">Address *</div>
                       <div className="body-content">
@@ -165,8 +165,7 @@ const CreateEditSupplier = () => {
                         />
                       </div>
                     </fieldset>
-                  </div>
-                  <fieldset className="col-md-6 mb-12">
+                      <fieldset className="col-md-3 mb-12">
                     <div className="body-title">State *</div>
                     <div className="body-content">
                       <Field as="select" name="state" className="mb-5">
@@ -230,14 +229,15 @@ const CreateEditSupplier = () => {
                       />
                     </div>
                   </fieldset>
-
+                  </div>
+                
                   <div className="flex col">
                     {/* SUBMIT BUTTON */}
                     <button className="tf-button w208" type="submit">
                       {isEdit ? "Update Supplier" : "Create Supplier"}
                     </button>
-                    <button type="button" className="ml-5">
-                      <a href="/suppliers"> Cancel</a>
+                    <button type="button" className="ml-5 tf-button style-1">
+                      <a href="/suppliers" style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
                     </button>
                   </div>
                 </Form>
@@ -249,5 +249,5 @@ const CreateEditSupplier = () => {
     </Layout>
   );
 };
-
+ 
 export default CreateEditSupplier;

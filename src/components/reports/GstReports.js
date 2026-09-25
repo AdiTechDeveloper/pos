@@ -6,6 +6,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Layout from "../layout";
 import { useAppData } from "../../context/AppDataContext";
+import { RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
+
 
 const GstReports = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -202,7 +204,7 @@ const GstReports = () => {
         </div>
       ),
     },
-  ];
+  ]; 
 
   return (
     <Layout>
@@ -210,10 +212,34 @@ const GstReports = () => {
         <div className="main-content-wrap">
           {/* HEADER */}
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">
-              GST Output{" "}
-              <span className="text-indigo-600">GST Sales Report</span>
-            </h1>
+            <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span
+              style={{
+                width: "5px",
+                height: "34px",
+                borderRadius: "999px",
+                background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
+                display: "inline-block",
+              }}
+            />
+            <div>
+              <h3
+                style={{
+                  fontSize: "24px",
+                  fontWeight: 800,
+                  color: "#111827",
+                  margin: 0,
+                  lineHeight: 1.2,
+                }}
+              >
+                 GST Output{" "}
+              </h3>
+
+            </div>
+          </div>
+
+        </div>
             <ul className="breadcrumbs flex items-center flex-wrap justify-start gap10">
               <li>
                 <Link to="/">Dashboard</Link>
@@ -234,7 +260,8 @@ const GstReports = () => {
           </div>
 
           <div className="wg-box mb-6 shadow-lg rounded-3xl p-8 border border-slate-200 bg-white">
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
+            <div className="flex justify-between items-end gap-4 w-full">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-6">
               {/* Branch Selection */}
               <div className="flex flex-col">
                 <label className="text-xl font-bold text-slate-500 uppercase mb-2 ml-1 tracking-wide">
@@ -302,26 +329,32 @@ const GstReports = () => {
               <div className="flex items-end">
                 <button
                   onClick={fetchGstReport}
-                  className="bg-green-600 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md"
+                  title={loading ? "Loading..." : "Refresh"}
+                  className="flex items-center justify-center bg-green-600 text-white h-[40px] w-[40px] rounded-xl shadow-md hover:bg-green-700 transition-colors shrink-0 mb-[2px]"
                 >
-                  {loading ? "Loading..." : "Refresh"}
-                </button>
-              </div>
-              <div className="flex items-end">
-                <button
-                  onClick={exportCSV}
-                  className="bg-green-500 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md mr-4 hover:bg-green-700"
-                >
-                  Export CSV
-                </button>
-                <button
-                  onClick={exportPDF}
-                  className="bg-red-500 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md hover:bg-red-700"
-                >
-                  Export PDF
+                  <RefreshCw className={loading ? "animate-spin" : ""} size={21} />
                 </button>
               </div>
             </div>
+              <div className="flex items-end gap-4">
+                <button
+                  onClick={exportCSV}
+                  title="Export as CSV"
+                  className="flex items-center justify-center bg-green-500 text-white w-[40px] h-[40px] rounded-xl hover:bg-green-700 shadow-md"
+                >
+                  <FileSpreadsheet size={21} />
+                </button>
+
+                <button
+                  onClick={exportPDF}
+                  title="Export as PDF"
+                  className="flex items-center justify-center bg-red-500 text-white w-[40px] h-[40px] rounded-xl hover:bg-red-700 shadow-md"
+                >
+                  <FileDown size={21} />
+                </button>
+              </div>
+            </div>
+            
           </div>
 
           <div className="wg-box shadow-2xl rounded-3xl overflow-hidden border border-slate-200">

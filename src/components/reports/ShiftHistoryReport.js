@@ -7,6 +7,8 @@ import { CSVLink } from "react-csv";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import autoTable from "jspdf-autotable";
+import { Check ,  RotateCcw, FileSpreadsheet, FileDown } from "lucide-react";
+
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -45,12 +47,12 @@ const ShiftHistory = () => {
   const fmt = (d) =>
     d
       ? new Date(d).toLocaleString("en-IN", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
       : "—";
 
   const num = (v) => parseFloat(v || 0).toFixed(2);
@@ -407,7 +409,34 @@ const ShiftHistory = () => {
         <div className="main-content-wrap">
           {/* Title */}
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-            <h3>Shift History Report</h3>
+              <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span
+              style={{
+                width: "5px",
+                height: "34px",
+                borderRadius: "999px",
+                background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
+                display: "inline-block",
+              }}
+            />
+            <div>
+              <h3
+                style={{
+                  fontSize: "24px",
+                  fontWeight: 800,
+                  color: "#111827",
+                  margin: 0,
+                  lineHeight: 1.2,
+                }}
+              >
+                Shift History Report
+              </h3>
+
+            </div>
+          </div>
+
+        </div>
             <ul className="breadcrumbs flex items-center flex-wrap justify-start gap10">
               <li>
                 <Link to="/">
@@ -476,9 +505,10 @@ const ShiftHistory = () => {
                   background: bg,
                   border: `1px solid ${border}`,
                   borderRadius: "8px",
-                  padding: "20px 24px",
+                  padding: "12px 10px",
                   flex: "1 1 200px",
-                  minWidth: "220px",
+                  maxWidth: "220px",
+                  alignItems:"center"
                 }}
               >
                 <p
@@ -508,200 +538,154 @@ const ShiftHistory = () => {
           </div>
 
           {/* Filters */}
-          <div className="wg-box mb-20" style={{ padding: "16px 20px" }}>
-            <div
+              <div className="wg-box mb-20" style={{ padding: "16px 20px" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            gap: "12px",
+            alignItems: "flex-end",
+            flexWrap: "nowrap",
+          }}
+        >
+          <div style={{ flex: 1, minWidth: "120px" }}>
+            <label
               style={{
                 fontSize: "14px",
                 fontWeight: "700",
-                color: "#1e293b",
-                marginBottom: "12px",
+                color: "#64748b",
+                display: "block",
+                marginBottom: "6px",
+                textTransform: "uppercase",
               }}
             >
-              Filters
-            </div>
-
-            <div
+              START DATE
+            </label>
+            <input
+              type="date"
+              name="from_date"
+              className="form-control"
               style={{
-                display: "flex",
-                flexDirection: "row",
-                gap: "12px",
-                alignItems: "flex-end",
-                flexWrap: "nowrap",
+                height: "40px",
+                borderRadius: "8px",
+                border: "1px solid #cbd5e1",
+                fontSize: "13px",
+                padding: "0 10px",
+                width: "100%",
+              }}
+              value={filters.from_date}
+              onChange={handleFilterChange}
+            />
+          </div>
+
+          <div style={{ flex: 1, minWidth: "120px" }}>
+            <label
+              style={{
+                fontSize: "14px",
+                fontWeight: "700",
+                color: "#64748b",
+                display: "block",
+                marginBottom: "6px",
+                textTransform: "uppercase",
               }}
             >
-              <div style={{ flex: 1, minWidth: "120px" }}>
-                <label
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: "700",
-                    color: "#64748b",
-                    display: "block",
-                    marginBottom: "6px",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  START DATE
-                </label>
-                <input
-                  type="date"
-                  name="from_date"
-                  className="form-control"
-                  style={{
-                    height: "40px",
-                    borderRadius: "8px",
-                    border: "1px solid #cbd5e1",
-                    fontSize: "13px",
-                    padding: "0 10px",
-                    width: "100%",
-                  }}
-                  value={filters.from_date}
-                  onChange={handleFilterChange}
-                />
-              </div>
-
-              <div style={{ flex: 1, minWidth: "120px" }}>
-                <label
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: "700",
-                    color: "#64748b",
-                    display: "block",
-                    marginBottom: "6px",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  END DATE
-                </label>
-                <input
-                  type="date"
-                  name="to_date"
-                  className="form-control"
-                  style={{
-                    height: "40px",
-                    borderRadius: "8px",
-                    border: "1px solid #cbd5e1",
-                    fontSize: "13px",
-                    padding: "0 10px",
-                    width: "100%",
-                  }}
-                  value={filters.to_date}
-                  onChange={handleFilterChange}
-                />
-              </div>
-
-              <div style={{ flex: 1, minWidth: "130px" }}>
-                <label
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: "700",
-                    color: "#64748b",
-                    display: "block",
-                    marginBottom: "6px",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  CASHIER
-                </label>
-                <select
-                  name="cashier_id"
-                  className="form-control"
-                  value={filters.cashier_id}
-                  onChange={handleFilterChange}
-                  style={{
-                    height: "40px",
-                    borderRadius: "8px",
-                    border: "1px solid #cbd5e1",
-                    fontSize: "13px",
-                    width: "100%",
-                  }}
-                >
-                  <option value="">All Cashiers</option>
-                  {staffList.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: "flex", gap: "8px", minWidth: "160px" }}>
-                <button
-                  onClick={() => {
-                    fetchReport();
-                    fetchTotalSales();
-                  }}
-                  disabled={loading}
-                  style={{
-                    height: "40px",
-                    background: loading ? "#10b981" : "#22c55e",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "6px",
-                    padding: "0 16px",
-                    fontWeight: "600",
-                    fontSize: "13px",
-                    cursor: "pointer",
-                    flex: 1,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {loading ? "Loading..." : "Apply"}
-                </button>
-                <button
-                  onClick={handleClearFilters}
-                  style={{
-                    height: "40px",
-                    background: "#f1f5f9",
-                    color: "#475569",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "6px",
-                    padding: "0 16px",
-                    fontWeight: "600",
-                    fontSize: "13px",
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
-
-            <div className="flex gap-2" style={{ marginTop: "12px" }}>
-              <CSVLink
-                data={exportData}
-                filename={`shift-history-${filters.from_date}.csv`}
-                className="btn btn-primary"
-                style={{
-                  padding: "10px 20px",
-                  background: "#3b82f6",
-                  color: "#fff",
-                  borderRadius: "6px",
-                  textDecoration: "none",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                }}
-              >
-                Export Excel
-              </CSVLink>
-              <button
-                onClick={exportToPDF}
-                className="btn btn-danger"
-                style={{
-                  padding: "10px 20px",
-                  background: "#ef4444",
-                  color: "#fff",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                Export PDF
-              </button>
-            </div>
+              END DATE
+            </label>
+            <input
+              type="date"
+              name="to_date"
+              className="form-control"
+              style={{
+                height: "40px",
+                borderRadius: "8px",
+                border: "1px solid #cbd5e1",
+                fontSize: "13px",
+                padding: "0 10px",
+                width: "100%",
+              }}
+              value={filters.to_date}
+              onChange={handleFilterChange}
+            />
           </div>
+
+          <div style={{ flex: 1, minWidth: "130px" }}>
+            <label
+              style={{
+                fontSize: "14px",
+                fontWeight: "700",
+                color: "#64748b",
+                display: "block",
+                marginBottom: "6px",
+                textTransform: "uppercase",
+              }}
+            >
+              CASHIER
+            </label>
+            <select
+              name="cashier_id"
+              className="form-control"
+              value={filters.cashier_id}
+              onChange={handleFilterChange}
+              style={{
+                height: "40px",
+                borderRadius: "8px",
+                border: "1px solid #cbd5e1",
+                fontSize: "13px",
+                width: "100%",
+              }}
+            >
+              <option value="">All Cashiers</option>
+              {staffList.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              type="button"
+              onClick={() => {
+                fetchReport();
+                fetchTotalSales();
+              }}
+              title="Apply Filters"
+              className="flex items-center justify-center bg-green-600 text-white w-[40px] h-[40px] rounded-xl shadow-md hover:bg-green-700 transition-all"
+            >
+              <Check size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              title="Clear Filters"
+              className="flex items-center justify-center bg-slate-100 text-slate-600 border border-slate-300 w-[40px] h-[40px] rounded-xl hover:bg-slate-200 transition-all"
+            >
+              <RotateCcw size={18} />
+            </button>
+          </div>
+
+          <div style={{ display: "flex", gap: "8px" }}>
+            <CSVLink
+              data={exportData}
+              filename={`shift-history-${filters.from_date}.csv`}
+              title="Export as CSV"
+              className="flex items-center justify-center bg-green-600 text-white w-[40px] h-[40px] rounded-xl hover:bg-green-700 transition-all"
+            >
+              <FileSpreadsheet size={20} />
+            </CSVLink>
+
+            <button
+              type="button"
+              onClick={exportToPDF}
+              title="Export as PDF"
+              className="flex items-center justify-center bg-red-600 text-white w-[40px] h-[40px] rounded-xl hover:bg-red-700 transition-all"
+            >
+              <FileDown size={20} />
+            </button>
+          </div>
+        </div>
+      </div>
 
           {/* Table */}
           <div className="wg-box">

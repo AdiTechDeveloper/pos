@@ -5,6 +5,8 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import Layout from "./layout";
 import { useAppData } from "../context/AppDataContext";
+import { Check, RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
+import DataTable from "react-data-table-component";
 
 const todayString = () => new Date().toISOString().split("T")[0];
 
@@ -33,7 +35,7 @@ const DiscardProducts = () => {
   };
 
   const fetchBranches = useCallback(() => {
-    appData?.loadBranches(); 
+    appData?.loadBranches();
   }, [appData]);
 
   const fetchDiscardItems = useCallback(
@@ -148,7 +150,10 @@ const DiscardProducts = () => {
   const applyFilters = () => {
     const nextFilters = {
       ...filters,
-      date_to: filters.date_range === "custom" && !filters.date_to ? todayString() : filters.date_to,
+      date_to:
+        filters.date_range === "custom" && !filters.date_to
+          ? todayString()
+          : filters.date_to,
     };
 
     setAppliedFilters(nextFilters);
@@ -203,7 +208,9 @@ const DiscardProducts = () => {
       row.product_name || "—",
       row.batch_no || "—",
       row.batch_barcode || "—",
-      row.expiry_date ? new Date(row.expiry_date).toLocaleDateString("en-GB") : "—",
+      row.expiry_date
+        ? new Date(row.expiry_date).toLocaleDateString("en-GB")
+        : "—",
       Number(row.expired_qty || 0),
       `₹${Number(row.cost_price || 0).toFixed(2)}`,
       `₹${Number(row.loss_amount || 0).toFixed(2)}`,
@@ -221,7 +228,11 @@ const DiscardProducts = () => {
     const finalY = doc.lastAutoTable.finalY + 8;
     doc.setFontSize(11);
     doc.setTextColor(220, 38, 38);
-    doc.text(`Total Loss: ₹${Number(report?.total_loss || 0).toFixed(2)}`, 14, finalY);
+    doc.text(
+      `Total Loss: ₹${Number(report?.total_loss || 0).toFixed(2)}`,
+      14,
+      finalY
+    );
 
     doc.save(`Expired_Stock_${Date.now()}.pdf`);
   };
@@ -247,158 +258,206 @@ const DiscardProducts = () => {
   return (
     <Layout>
       <div className="p-8 bg-white min-h-screen text-gray-900">
-        <h1 className="text-5xl font-extrabold mb-3 text-gray-900">
-          Expired Stock
-        </h1>
-        <p className="text-3xl text-gray-600 mb-6">
-          Track expired inventory, batch details, and product loss by branch.
-        </p>
-
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="flex items-center flex-wrap justify-between gap-5 mb-7">
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span
+              style={{
+                width: "5px",
+                height: "34px",
+                borderRadius: "999px",
+                background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
+                display: "inline-block",
+              }}
+            />
             <div>
-              <label className="text-2xl font-semibold text-gray-900">
-                Date Range
-              </label>
-              <select
-                className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
-                value={filters.date_range}
-                onChange={(e) => handleDateRangeChange(e.target.value)}
+              <h3
+                style={{
+                  fontSize: "24px",
+                  fontWeight: 800,
+                  color: "#111827",
+                  margin: 0,
+                  lineHeight: 1.2,
+                }}
               >
-                <option value="all">All</option>
-                <option value="today">Today</option>
-                <option value="yesterday">Yesterday</option>
-                <option value="last_7_days">Last 7 Days</option>
-                <option value="this_month">This Month</option>
-                <option value="custom">Custom</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-2xl font-semibold text-gray-900">
-                Branch
-              </label>
-              <select
-                className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
-                value={filters.branch_id}
-                onChange={(e) =>
-                  setFilters({ ...filters, branch_id: e.target.value })
-                }
+                Expired Products
+              </h3>
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "#6b7280",
+                  margin: "2px 0 0 0",
+                }}
               >
-                <option value="">All Branches</option>
-                {branches.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </option>
-                ))}
-              </select>
+                Track products that have expired or are nearing expiry
+              </p>
             </div>
           </div>
+        </div>
 
-          {filters.date_range === "custom" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6 mb-6">
+          <div className="grid grid-cols-[1fr_auto] items-end gap-4">
+            <div
+              className="grid items-end gap-4"
+              style={{
+                gridTemplateColumns: "repeat(auto-fit, minmax(0, max-content))",
+              }}
+            >
               <div>
                 <label className="text-2xl font-semibold text-gray-900">
-                  From
+                  Date Range
                 </label>
-                <input
-                  type="date"
-                  className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
-                  value={filters.date_from}
-                  onChange={(e) =>
-                    setFilters({ ...filters, date_from: e.target.value })
-                  }
-                />
+                <select
+                  className="block mt-2 rounded-xl border border-gray-300 px-3 py-2.5 text-xl"
+                  value={filters.date_range}
+                  onChange={(e) => handleDateRangeChange(e.target.value)}
+                >
+                  <option value="all">All</option>
+                  <option value="today">Today</option>
+                  <option value="yesterday">Yesterday</option>
+                  <option value="last_7_days">Last 7 Days</option>
+                  <option value="this_month">This Month</option>
+                  <option value="custom">Custom</option>
+                </select>
               </div>
+
               <div>
                 <label className="text-2xl font-semibold text-gray-900">
-                  To
+                  Branch
                 </label>
-                <input
-                  type="date"
-                  className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
-                  value={filters.date_to || todayString()}
+                <select
+                  className="block mt-2 rounded-xl border border-gray-300 px-3 py-2.5 text-xl"
+                  value={filters.branch_id}
                   onChange={(e) =>
-                    setFilters({ ...filters, date_to: e.target.value })
+                    setFilters({ ...filters, branch_id: e.target.value })
                   }
+                >
+                  <option value="">All Branches</option>
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {filters.date_range === "custom" && (
+                <>
+                  <div>
+                    <label className="text-xl font-semibold text-gray-900">
+                      From
+                    </label>
+                    <input
+                      type="date"
+                      className="block mt-2 rounded-xl border border-gray-300 px-3 py-2.5 text-xl"
+                      value={filters.date_from}
+                      onChange={(e) =>
+                        setFilters({ ...filters, date_from: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xl font-semibold text-gray-900">
+                      To
+                    </label>
+                    <input
+                      type="date"
+                      className="block mt-2 rounded-xl border border-gray-300 px-3 py-2.5 text-base"
+                      value={filters.date_to || todayString()}
+                      onChange={(e) =>
+                        setFilters({ ...filters, date_to: e.target.value })
+                      }
+                    />
+                  </div>
+                </>
+              )}
+
+              <div>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search product, batch, branch..."
+                  className="rounded-xl border border-gray-300 px-3 py-2.5 text-xl outline-none focus:border-blue-500 w-64"
                 />
               </div>
             </div>
-          )}
 
-          <div className="flex flex-col lg:flex-row items-center gap-4 justify-between">
-            <div className="w-full lg:w-auto">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search product, batch, branch..."
-                className="w-full lg:w-96 rounded-2xl border border-gray-300 px-4 py-4 text-2xl outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-4">
+            <div className="grid grid-flow-col gap-3">
               <button
                 onClick={resetFilters}
-                className="bg-blue-600 px-8 py-4 rounded-2xl text-white text-2xl font-semibold hover:bg-blue-700 transition-all"
+                title={loading ? "Loading..." : "Refresh"}
+                className="flex items-center justify-center bg-green-600 text-white h-[44px] w-[44px] rounded-xl shadow-md hover:bg-green-700 transition-colors"
               >
-                Reset
+                <RefreshCw className={loading ? "animate-spin" : ""} size={22} />
               </button>
               <button
+                type="button"
                 onClick={applyFilters}
-                className="bg-emerald-600 px-8 py-4 rounded-2xl text-white text-2xl font-semibold hover:bg-emerald-700 transition-all"
+                title="Apply Filters"
+                className="flex items-center justify-center bg-green-600 text-white w-[44px] h-[44px] rounded-xl shadow-md hover:bg-green-700 transition-all"
               >
-                Apply
-              </button>
-              <button
-                onClick={exportToPDF}
-                className="bg-red-600 px-8 py-4 rounded-2xl text-white text-2xl font-semibold hover:bg-red-700 transition-all"
-              >
-                Export PDF
+                <Check size={22} />
               </button>
               <button
                 onClick={exportToExcel}
-                className="bg-emerald-600 px-8 py-4 rounded-2xl text-white text-2xl font-semibold hover:bg-emerald-700 transition-all"
+                title="Export as Excel"
+                className="flex items-center justify-center bg-green-500 text-white w-[44px] h-[44px] rounded-xl hover:bg-green-700 shadow-md"
               >
-                Export Excel
+                <FileSpreadsheet size={22} />
+              </button>
+              <button
+                onClick={exportToPDF}
+                title="Export as PDF"
+                className="flex items-center justify-center bg-red-500 text-white w-[44px] h-[44px] rounded-xl hover:bg-red-700 shadow-md"
+              >
+                <FileDown size={22} />
               </button>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mt-4 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-6 mt-6 mb-10">
           <Card
             title="Total Loss"
             value={Number(report?.total_loss || 0)}
-            variant="from-rose-100 to-pink-200"
+            isCurrency={true}
+            variant="bg-blue-50 text-blue-700 border-blue-200 text-center"
           />
           <Card
             title="Expired Qty"
             value={totalExpiredQty}
-            variant="from-amber-100 to-orange-200"
+            isCurrency={false}
+            variant="bg-amber-50 text-amber-700 border-amber-200 text-center"
           />
           <Card
             title="Batch Count"
             value={filteredRows.length}
-            variant="from-violet-100 to-fuchsia-200"
+            isCurrency={false}
+            variant="bg-emerald-50 text-emerald-700 border-emerald-200 text-center"
           />
           <Card
             title="Branch"
             value={appliedFilters.branch_id ? "Selected" : "All"}
-            variant="from-sky-100 to-blue-200"
+            isCurrency={false}
+            variant="bg-teal-50 text-teal-700 border-teal-200 text-center"
           />
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
           <SmallCard
             label="From"
-            value={report?.from_date ? new Date(report.from_date).toLocaleDateString("en-GB") : "—"}
-            color="from-slate-50 to-slate-100"
+            value={
+              report?.from_date
+                ? new Date(report.from_date).toLocaleDateString("en-GB")
+                : "—"
+            }
+            color="bg-purple-50 text-purple-700 border-purple-200"
           />
           <SmallCard
             label="To"
-            value={report?.to_date ? new Date(report.to_date).toLocaleDateString("en-GB") : "—"}
-            color="from-slate-50 to-slate-100"
+            value={
+              report?.to_date
+                ? new Date(report.to_date).toLocaleDateString("en-GB")
+                : "—"
+            }
+            color="bg-purple-50 text-purple-700 border-purple-200"
           />
         </div>
 
@@ -415,94 +474,12 @@ const DiscardProducts = () => {
             </p>
           </div>
         ) : (
-          <div className="overflow-auto bg-white shadow-xl border border-gray-200">
-            <table className="w-full text-lg">
-              <thead className="bg-gradient-to-r from-blue-100 to-cyan-100 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-                    Branch
-                  </th>
-                  <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-                    Product
-                  </th>
-                  <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-                    Batch No
-                  </th>
-                  <th className="px-6 py-5 text-left text-2xl font-semibold text-gray-700">
-                    Barcode
-                  </th>
-                  <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-                    Expiry Date
-                  </th>
-                  <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-                    Expired Qty
-                  </th>
-                  <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-                    Cost Price
-                  </th>
-                  <th className="px-6 py-5 text-right text-2xl font-semibold text-gray-700">
-                    Loss
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredRows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-6 py-5 text-2xl text-gray-800 font-medium">
-                      {row.branch_name || "—"}
-                    </td>
-                    <td className="px-6 py-5 text-2xl text-gray-800 font-semibold">
-                      {row.product_name || "—"}
-                    </td>
-                    <td className="px-6 py-5 text-2xl text-gray-700">
-                      {row.batch_no || "—"}
-                    </td>
-                    <td className="px-6 py-5 text-2xl text-gray-700">
-                      {row.batch_barcode || "—"}
-                    </td>
-                    <td className="px-6 py-5 text-right text-2xl text-gray-700">
-                      {row.expiry_date
-                        ? new Date(row.expiry_date).toLocaleDateString("en-GB")
-                        : "—"}
-                    </td>
-                    <td className="px-6 py-5 text-right text-2xl font-semibold text-gray-900">
-                      {row.expired_qty || 0}
-                    </td>
-                    <td className="px-6 py-5 text-right text-2xl text-gray-700">
-                      ₹{Number(row.cost_price || 0).toFixed(2)}
-                    </td>
-                    <td className="px-6 py-5 text-right text-2xl font-bold text-red-600">
-                      ₹{Number(row.loss_amount || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-
-              <tfoot className="bg-gradient-to-r from-gray-50 to-gray-100 border-t-2 border-gray-200 font-semibold text-gray-900">
-                {branchTotals.map(({ branch, total }) => (
-                  <tr key={branch} className="bg-amber-50/60">
-                    <td colSpan="7" className="px-6 py-4 text-xl font-bold text-gray-800">
-                      {branch} Total
-                    </td>
-                    <td className="px-6 py-4 text-right text-xl font-bold text-red-600">
-                      ₹{Number(total).toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-                <tr>
-                  <td colSpan="7" className="px-6 py-5 text-3xl font-bold">
-                    Grand Total Loss
-                  </td>
-                  <td className="px-6 py-5 text-right text-3xl font-bold text-red-600">
-                    ₹{Number(report?.total_loss || 0).toFixed(2)}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
+          <div className="bg-white shadow-xl border border-gray-200 rounded-2xl overflow-hidden">
+            <ExpiryReportTable
+              filteredRows={filteredRows}
+              branchTotals={branchTotals}
+              report={report}
+            />
           </div>
         )}
       </div>
@@ -510,22 +487,230 @@ const DiscardProducts = () => {
   );
 };
 
-const Card = ({ title, value, variant = "from-sky-100 to-blue-200" }) => (
+const ExpiryReportTable = ({ filteredRows, branchTotals, report }) => {
+  const columns = [
+    {
+      name: "Branch",
+      selector: (row) => row.branch_name || "",
+      sortable: true,
+      cell: (row) => (
+        <span className="text-xl text-gray-800 font-medium">
+          {row.branch_name || "—"}
+        </span>
+      ),
+      minWidth: "160px",
+    },
+    {
+      name: "Product",
+      selector: (row) => row.product_name || "",
+      sortable: true,
+      cell: (row) => (
+        <span className="text-xl text-gray-800 font-semibold">
+          {row.product_name || "—"}
+        </span>
+      ),
+      minWidth: "200px",
+    },
+    {
+      name: "Batch No",
+      selector: (row) => row.batch_no || "",
+      sortable: true,
+      cell: (row) => (
+        <span className="text-xl text-gray-700">{row.batch_no || "—"}</span>
+      ),
+      minWidth: "150px",
+    },
+    {
+      name: "Barcode",
+      selector: (row) => row.batch_barcode || "",
+      sortable: true,
+      cell: (row) => (
+        <span className="text-xl text-gray-700">{row.batch_barcode || "—"}</span>
+      ),
+      minWidth: "170px",
+    },
+    {
+      name: "Expiry Date",
+      selector: (row) =>
+        row.expiry_date ? new Date(row.expiry_date).getTime() : 0,
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="text-xl text-gray-700">
+          {row.expiry_date
+            ? new Date(row.expiry_date).toLocaleDateString("en-GB")
+            : "—"}
+        </span>
+      ),
+      minWidth: "160px",
+    },
+    {
+      name: "Expired Qty",
+      selector: (row) => Number(row.expired_qty || 0),
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="text-xl font-semibold text-gray-900">
+          {row.expired_qty || 0}
+        </span>
+      ),
+      minWidth: "150px",
+    },
+    {
+      name: "Cost Price",
+      selector: (row) => Number(row.cost_price || 0),
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="text-xl text-gray-700">
+          ₹{Number(row.cost_price || 0).toFixed(2)}
+        </span>
+      ),
+      minWidth: "150px",
+    },
+    {
+      name: "Loss",
+      selector: (row) => Number(row.loss_amount || 0),
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="text-xl font-bold text-red-600">
+          ₹{Number(row.loss_amount || 0).toFixed(2)}
+        </span>
+      ),
+      minWidth: "150px",
+    },
+  ];
+
+  const customStyles = {
+    table: {
+      style: {
+        backgroundColor: "white",
+      },
+    },
+    headRow: {
+      style: {
+        background:
+          "linear-gradient(to right, rgb(219, 234, 254), rgb(207, 250, 254))",
+        minHeight: "70px",
+        borderBottom: "1px solid rgb(229, 231, 235)",
+      },
+    },
+    headCells: {
+      style: {
+        fontSize: "18px",
+        fontWeight: "600",
+        color: "rgb(55, 65, 81)",
+        paddingLeft: "24px",
+        paddingRight: "24px",
+      },
+    },
+    rows: {
+      style: {
+        minHeight: "70px",
+        borderBottom: "1px solid rgb(243, 244, 246)",
+      },
+      highlightOnHoverStyle: {
+        backgroundColor: "rgb(249, 250, 251)",
+        cursor: "pointer",
+      },
+    },
+    cells: {
+      style: {
+        paddingLeft: "24px",
+        paddingRight: "24px",
+      },
+    },
+    pagination: {
+      style: {
+        fontSize: "18px",
+        minHeight: "65px",
+      },
+      pageButtonsStyle: {
+        borderRadius: "6px",
+        height: "40px",
+        width: "40px",
+        padding: "8px",
+        margin: "2px",
+        cursor: "pointer",
+      },
+    },
+  };
+
+  return (
+    <>
+      <DataTable
+        columns={columns}
+        data={filteredRows || []}
+        customStyles={customStyles}
+        pagination
+        paginationPerPage={10}
+        paginationRowsPerPageOptions={[5, 10, 20, 50]}
+        highlightOnHover
+        responsive
+        persistTableHead
+        noDataComponent={
+          <div className="py-10 text-xl font-semibold text-gray-500">
+            No expired products found
+          </div>
+        }
+      />
+
+      {/* Branch Totals */}
+      {branchTotals?.length > 0 && (
+        <div className="border-t-2 border-gray-200">
+          {branchTotals.map(({ branch, total }) => (
+            <div
+              key={branch}
+              className="flex items-center justify-between bg-amber-50/60 border-b border-gray-200 px-6 py-4"
+            >
+              <span className="text-xl font-bold text-gray-800">
+                {branch} Total
+              </span>
+              <span className="text-xl font-bold text-red-600">
+                ₹{Number(total).toFixed(2)}
+              </span>
+            </div>
+          ))}
+
+          {/* Grand Total */}
+          <div className="flex items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-5">
+            <span className="text-xl font-bold text-gray-900">
+              Grand Total Loss
+            </span>
+            <span className="text-3xl font-bold text-red-600">
+              ₹{Number(report?.total_loss || 0).toFixed(2)}
+            </span>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+const Card = ({
+  title,
+  value,
+  isCurrency = false,
+  variant = "from-sky-100 to-blue-200",
+}) => (
   <div
     className={`bg-gradient-to-br ${variant} p-8 rounded-3xl shadow-xl border border-gray-200 hover:-translate-y-1 transform transition-all duration-300`}
   >
     <p className="text-2xl font-semibold text-gray-700 mb-3">{title}</p>
     <h2 className="text-4xl font-bold text-gray-900">
-      {typeof value === "number" ? `₹${value.toFixed(2)}` : value}
+      {isCurrency && typeof value === "number"
+        ? `₹${value.toFixed(2)}`
+        : value}
     </h2>
   </div>
 );
 
 const SmallCard = ({ label, value, color = "from-slate-50 to-slate-100" }) => (
   <div
-    className={`bg-gradient-to-r ${color} px-6 py-4 rounded-3xl border border-gray-200 text-gray-900 shadow-sm flex-1`}
+    className={`bg-gradient-to-r ${color} px-6 py-4 rounded-3xl border border-gray-200 shadow-sm flex-1`}
   >
-    <p className="text-xl text-gray-600">{label}</p>
+    <p className="text-xl">{label}</p>
     <p className="text-3xl font-bold mt-2">{value}</p>
   </div>
 );

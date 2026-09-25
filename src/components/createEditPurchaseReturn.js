@@ -218,7 +218,7 @@ const CreateEditPurchaseReturn = () => {
                 <Form>
                   <div className="container">
                     <div className="row mb-20">
-                      <div className="mb-20 col-md-6">
+                      <div className="mb-20 col-md-2">
                         <label className="mb-8 purchase-label">
                           Purchase Bill No
                         </label>
@@ -248,7 +248,7 @@ const CreateEditPurchaseReturn = () => {
                           component="div"
                         />
                       </div>
-                      <div className="mb-20 col-md-6">
+                      <div className="mb-20 col-md-2">
                         <label className="mb-8 purchase-label">Branch</label>
                         <Field as="select" name="branch_id" className="mb-6">
                           <option value="">Select Branch</option>
@@ -264,7 +264,7 @@ const CreateEditPurchaseReturn = () => {
                           component="div"
                         />
                       </div>
-                      <div className="mb-20 col-md-6">
+                      <div className="mb-20 col-md-2">
                         <label className="mb-8 purchase-label">Supplier</label>
                         <Field as="select" name="supplier_id" className="mb-6">
                           <option value="">Select Supplier</option>
@@ -281,7 +281,7 @@ const CreateEditPurchaseReturn = () => {
                         />
                       </div>
 
-                      <div className="mb-20 col-md-6">
+                      <div className="mb-20 col-md-2">
                         <label
                           className="mb-8 purchase-label"
                           style={{ fontSize: "15px", display: "block" }}
@@ -362,27 +362,39 @@ const CreateEditPurchaseReturn = () => {
                               >
                                 Delete
                               </button>
-                            </div>
-                          </div>
-                        ))}
-
-                        <button
+                                <button
                           type="button"
-                          className="mt-12"
-                          style={{ marginRight: "12px" }}
+                          className="ml-5 tf-button style-1"
+                          style={{ color: "inherit", textDecoration: "none" }} 
                           onClick={() =>
                             push({ purchase_bill_line_id: "", qty: "" })
                           }
                         >
                           + Add Product
                         </button>
+                            </div>
+                          </div>
+                        ))}
+      
+                        {/* <button
+                          type="button"
+                          className="ml-5 tf-button style-1"
+                          style={{ color: "inherit", textDecoration: "none" }} 
+                          onClick={() =>
+                            push({ purchase_bill_line_id: "", qty: "" })
+                          }
+                        >
+                          + Add Product
+                        </button> */}
                       </>
                     )}
                   </FieldArray>
-                  <button type="submit">Save Return Bill</button>
-                  <button type="button" className="ml-5">
-                    <a href="/purchase-return-bill"> Cancel</a>
+            <div className="flex">
+                  <button type="submit" className="ml-5 tf-button style-1" style={{ color: "inherit", textDecoration: "none" }} >Save Return Bill</button>
+                  <button type="button"  className="ml-5 tf-button style-1">
+                    <a href="/purchase-return-bill" style={{ color: "inherit", textDecoration: "none" }} > Cancel</a>
                   </button>
+                  </div>
                 </Form>
               )}
             </Formik>

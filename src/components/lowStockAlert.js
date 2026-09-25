@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { fetchLowStockProducts } from "../utils/reportService";
 import DataTable from "react-data-table-component";
 import { useAppData } from "../context/AppDataContext";
+import { AlertTriangle, XCircle } from "lucide-react";
 
 const LowStockAlert = ({ role, user = {}, filters = {} }) => {
   const [lowStockProducts, setLowStockProducts] = useState([]);
@@ -44,60 +45,69 @@ const LowStockAlert = ({ role, user = {}, filters = {} }) => {
     {
       name: "#",
       selector: (_, index) => index + 1,
-      width: "80px",
+      width: "60px",
       center: true,
+      cell: (_, index) => (
+        <span className="text-xl text-gray-400">{index + 1}</span>
+      ),
     },
     {
       name: "Product",
       cell: (row) => (
-        <div>
-          <div className="font-semibold text-2xl mb-6 mt-6">
+        <div className="py-2">
+          <div className="font-semibold text-xl text-gray-800">
             {row.product_name}
           </div>
-          <div className="text-gray-400 text-2xl mb-6">SKU: {row.sku}</div>
+          <div className="text-gray-400 text-xl mt-0.5">SKU: {row.sku}</div>
         </div>
       ),
-      width: "200px",
       grow: 2,
     },
     {
       name: "Batch No.",
-      cell: (row) => (
-        <div>
-          <div className="text-2xl">{row.batch_no}</div>
-        </div>
-      ),
-      width: "90px",
-      grow: 2,
+      selector: (row) => row.batch_no,
+      cell: (row) => <span className="text-xl text-gray-600">{row.batch_no}</span>,
+      grow: 1,
     },
     {
-      name: "Branch Name",
-      cell: (row) => (
-        <div>
-          <div className="text-2xl">{row.branch_name}</div>
-        </div>
-      ),
-      grow: 2,
+      name: "Branch",
+      selector: (row) => row.branch_name,
+      cell: (row) => <span className="text-xl text-gray-600">{row.branch_name}</span>,
+      grow: 1.5,
     },
     {
       name: "Stock",
-      cell: (row) => <span className="text-2xl">{row.available_qty}</span>,
-      right: true,
+      selector: (row) => row.available_qty,
       sortable: true,
+      right: true,
+      cell: (row) => (
+        <span
+          className={`text-xl font-bold ${
+            row.severity === "out of stock" ? "text-rose-600" : "text-amber-600"
+          }`}
+        >
+          {row.available_qty}
+        </span>
+      ),
     },
     {
       name: "Status",
-      cell: (row) => (
-        <span
-          className={`px-3 py-1 rounded-full text-xl font-medium ${
-            row.severity === "out of stock"
-              ? "bg-red-100 text-red-600"
-              : "bg-yellow-100 text-yellow-700"
-          }`}
-        >
-          {row.severity}
-        </span>
-      ),
+      cell: (row) => {
+        const isOut = row.severity === "out of stock";
+        return (
+          <span
+            title={row.severity}
+            className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xl font-medium ${
+              isOut
+                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                : "bg-amber-50 text-amber-700 border border-amber-200"
+            }`}
+          >
+            {isOut ? <XCircle size={13} /> : <AlertTriangle size={13} />}
+            {row.severity}
+          </span>
+        );
+      },
     },
   ];
 
@@ -106,29 +116,31 @@ const LowStockAlert = ({ role, user = {}, filters = {} }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h3 className="text-4xl font-bold mb-10">Low Stock Alerts</h3>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <h3 className="text-2xl font-bold text-gray-800">Low Stock Alerts</h3>
 
-      {role === "admin" && (
-        <select
-          name="branch_id"
-          value={selectedBranch}
-          onChange={handleChange}
-          className="border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-400 outline-none mb-6"
-        >
-          <option value="">All Branches</option>
-          {branches.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name}
-            </option>
-          ))}
-        </select>
-      )}
+        {role === "admin" && (
+          <select
+            name="branch_id"
+            value={selectedBranch}
+            onChange={handleChange}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-xl focus:ring-2 focus:ring-blue-400 outline-none"
+          >
+            <option value="">All Branches</option>
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
 
       {loading ? (
         <div className="space-y-3 animate-pulse">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-14 bg-gray-200 rounded-lg" />
+            <div key={i} className="h-12 bg-gray-100 rounded-lg" />
           ))}
         </div>
       ) : lowStockProducts.length ? (
@@ -140,11 +152,29 @@ const LowStockAlert = ({ role, user = {}, filters = {} }) => {
           paginationRowsPerPageOptions={[5, 10, 20]}
           highlightOnHover
           responsive
-          striped
-          noDataComponent="No data available"
+          customStyles={{
+            headCells: {
+              style: {
+                fontWeight: 600,
+                fontSize: "14px",
+                textTransform: "uppercase",
+                letterSpacing: "0.03em",
+                color: "#6B7280",
+                backgroundColor: "#F9FAFB",
+              },
+            },
+            cells: {
+              style: {
+                padding: "10px 16px",
+              },
+            },
+          }}
+          noDataComponent={
+            <p className="text-xl text-gray-400 py-8">No data available</p>
+          }
         />
       ) : (
-        <p className="text-gray-500 text-center text-2xl">
+        <p className="text-gray-400 text-center text-xl py-8">
           No low stock items found
         </p>
       )}

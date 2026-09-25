@@ -7,6 +7,9 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Layout from "../layout";
 import { useAppData } from "../../context/AppDataContext";
+import { TrendingUp, TrendingDown, Sparkles, Minus , HeartHandshake } from "lucide-react";
+import { RefreshCw, FileSpreadsheet, FileDown , Star , TriangleAlert} from "lucide-react";
+import { Skull, Zap, Hourglass, ShieldCheck ,  LayersPlus } from "lucide-react";
 
 const StockSummury = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -194,87 +197,86 @@ const StockSummury = () => {
         </div>
       ),
     },
-    {
+           {
       name: "Trend",
       width: "140px",
       cell: (row) => {
         const config = {
           up: {
             label: "Surging",
-            color: "bg-green-500 text-white",
-            icon: "↗",
-            shadow: "shadow-green-200",
+            className: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+            icon: <TrendingUp size={20} />,
           },
           down: {
             label: "Dropping",
-            color: "bg-red-500 text-white",
-            icon: "↘",
-            shadow: "shadow-red-200",
+            className: "bg-rose-50 text-rose-700 border border-rose-200",
+            icon: <TrendingDown size={20} />,
           },
           new: {
             label: "New Arrival",
-            color: "bg-blue-500 text-white",
-            icon: "★",
-            shadow: "shadow-blue-200",
+            className: "bg-green-50 text-green-700 border border-green-200",
+            icon: <LayersPlus size={20} />,
           },
         };
         const style = config[row.trend] || {
           label: "Stable",
-          color: "bg-gray-400 text-white",
-          icon: "→",
-          shadow: "shadow-gray-200",
+          className: "bg-gray-100 text-gray-600 border border-gray-200",
+          icon: <HeartHandshake size={20} />,
         };
 
         return (
           <span
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-sm font-black uppercase tracking-tighter shadow-lg ${style.color} ${style.shadow}`}
+            title={style.label}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${style.className}`}
           >
-            <span className="text-xl">{style.icon}</span> {style.label}
+            {style.icon}
+            {/* {style.label} */}
           </span>
         );
       },
     },
-    {
-      name: "Health Status",
+        {
+      name: "Stock Health",
       grow: 1.5,
       cell: (row) => {
-        if (row.dead_stock) {
+               if (row.dead_stock) {
           return (
-            <div className="flex items-center gap-2 px-4 py-2 bg-red-500 text-red-100 rounded-xl shadow-xl rotate-1">
-              <span className="text-xl font-black italic uppercase tracking-widest">
-                Dead Stock
-              </span>
-            </div>
+            <span
+              title="Dead Stock"
+              className="inline-flex items-center gap-1.5 px-3 py-1 text-white rounded-full text-xs font-medium bg-red-500 border border-red-600"
+            >
+              <TriangleAlert size={20} />
+             
+            </span>
           );
         }
         const health = {
           fast_moving: {
-            bg: "bg-emerald-500",
-            text: "text-emerald-500",
+            className: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+            icon: <Zap size={20} />,
             label: "Fast Moving",
           },
           slow_moving: {
-            bg: "bg-amber-500",
-            text: "text-amber-500",
+            className: "bg-amber-50 text-amber-700 border border-amber-200",
+            icon: <Hourglass size={20} />,
             label: "Slow Moving",
           },
           normal: {
-            bg: "bg-blue-500",
-            text: "text-blue-500",
+            className: "bg-green-100 text-white-700 border border-blue-200",
+            icon: <ShieldCheck size={20} />,
             label: "Healthy",
           },
         };
         const h = health[row.stock_health] || health.normal;
 
         return (
-          <div className="flex items-center gap-3 bg-white border border-gray-100 p-2 pr-4 rounded-2xl shadow-sm">
-            <div
-              className={`w-3 h-3 rounded-full ${h.bg} animate-pulse shadow-[0_0_8px_currentColor] ${h.text}`}
-            ></div>
-            <span className={`text-xl font-black uppercase italic ${h.text}`}>
-              {h.label}
-            </span>
-          </div>
+          <span
+            title={h.label}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${h.className}`}
+          >
+            {h.icon}
+            {/* {h.label} */}
+          </span>
         );
       },
     },
@@ -396,9 +398,9 @@ const StockSummury = () => {
 
           {/* FILTER PANEL */}
           <div className="wg-box mb-6 shadow-lg rounded-2xl p-6 border border-slate-200">
-            <h5 className="text-2xl font-extrabold text-slate-800">Filters</h5>
+            {/* <h5 className="text-2xl font-extrabold text-slate-800">Filters</h5> */}
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
               <FilterField label="Start Date">
                 <input
                   type="date"
@@ -434,14 +436,16 @@ const StockSummury = () => {
                 </select>
               </FilterField>
 
-              <div className="flex items-end">
+             <div className="flex items-end">
                 <button
                   onClick={fetchStockSummury}
-                  className=" bg-green-600 text-white w-full h-[55px] text-2xl font-bold rounded-xl shadow-md"
+                  title={loading ? "Loading..." : "Refresh"}
+                  className="flex items-center justify-center bg-green-600 text-white h-[55px] w-[55px] rounded-xl shadow-md hover:bg-green-700 transition-colors"
                 >
-                  {loading ? "Loading..." : "Refresh"}
+                  <RefreshCw className={loading ? "animate-spin" : ""} size={22} />
                 </button>
               </div>
+
             </div>
           </div>
 
@@ -472,22 +476,25 @@ const StockSummury = () => {
               </div>
 
               {/* Buttons Container */}
-              <div className="flex items-center gap-2">
+               <div className="flex items-center gap-2">
                 <CSVLink
                   data={formatStockData(filteredData)}
                   filename={"stock_summary.csv"}
-                  className="px-4 py-4 bg-green-600 text-xl text-white rounded hover:bg-green-700 hover:text-white"
+                  title="Export as CSV"
+                  className="flex items-center justify-center bg-green-600 text-white h-[48px] w-[48px] rounded hover:bg-green-700"
                 >
-                  Export CSV
+                  <FileSpreadsheet size={20} />
                 </CSVLink>
 
                 <button
                   onClick={exportPDF}
-                  className="px-4 py-4 bg-red-600 text-xl text-white rounded hover:bg-red-700 flex items-center gap-1 hover:text-white"
+                  title="Export as PDF"
+                  className="flex items-center justify-center bg-red-600 text-white h-[48px] w-[48px] rounded hover:bg-red-700"
                 >
-                  <i className="icon-file-text"></i> Export PDF
+                  <FileDown size={20} />
                 </button>
               </div>
+
             </div>
 
             <DataTable

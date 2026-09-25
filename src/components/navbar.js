@@ -2,8 +2,16 @@ import React, { useState, useEffect } from "react";
 import { Link, useHistory, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAppData } from "../context/AppDataContext";
+
 import { PiKeyReturnBold, PiWallet } from "react-icons/pi";
-import { ChevronDown, ChevronUp } from "lucide-react";
+
+import {
+  ChevronDown,
+  ChevronUp,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
+
 import {
   IoHomeOutline,
   IoCubeOutline,
@@ -20,47 +28,123 @@ import {
   IoExitOutline,
 } from "react-icons/io5";
 import { hasFeature } from "../utils/hasFeature";
+import {
+  FaFacebookF,
+  FaTwitter,
+  FaLinkedinIn,
+  FaInstagram,
+} from "react-icons/fa";
+
+import {
+  FiHelpCircle,
+  FiHeadphones,
+  FiFileText,
+} from "react-icons/fi";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const Navbar = () => {
   const history = useHistory();
+  const location = useLocation();
+
   const [isOpen, setIsOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
 
-  const user_detail = JSON.parse(localStorage.getItem("user_detail"));
+  const user_detail = JSON.parse(
+    localStorage.getItem("user_detail") || "null"
+  );
+
   const role = user_detail?.user?.role;
   const store_id = user_detail?.user?.store_id;
 
   const appData = useAppData();
   const store = appData?.store || null;
 
+  /* =========================================================
+      REPORT LINKS
+  ========================================================= */
+
   const reportLinks = [
-    { name: "Stock Summary", path: "/reports/stock-summary" },
-    { name: "Purchase Summary", path: "/reports/purchase-summary" },
-    { name: "Sales Analytics", path: "/reports/sales-analytics" },
-    { name: "GST Output", path: "/reports/gst-output-sales" },
-    { name: "GSTR - 3B", path: "/reports/GSTR3B" },
-    { name: "GSTR1 Summary", path: "/reports/GSTR1-Summary" },
-    { name: "Price Override", path: "/reports/price-override" },
-    { name: "Register Shift", path: "/reports/shift-report" },
-    { name: "Stock Expiry", path: "/reports/stock-expiry-report" },
+    {
+      name: "Stock Summary",
+      path: "/reports/stock-summary",
+    },
+    {
+      name: "Purchase Summary",
+      path: "/reports/purchase-summary",
+    },
+    {
+      name: "Sales Analytics",
+      path: "/reports/sales-analytics",
+    },
+    {
+      name: "GST Output",
+      path: "/reports/gst-output-sales",
+    },
+    {
+      name: "GSTR - 3B",
+      path: "/reports/GSTR3B",
+    },
+    {
+      name: "GSTR1 Summary",
+      path: "/reports/GSTR1-Summary",
+    },
+    {
+      name: "Price Override Summary",
+      path: "/reports/price-override",
+    },
+    {
+      name: "Sales Report",
+      path: "/reports/sales-report",
+    },
+    {
+      name: "Purchase Report",
+      path: "/reports/purchase-report",
+    },
+    {
+      name: "Financial Report",
+      path: "/reports/financial-report",
+    },
+    {
+      name: "Shift History Report",
+      path: "/reports/shift-report",
+    },
+    {
+      name: "Stock Expiry",
+      path: "/reports/stock-expiry-report",
+    },
   ];
 
-  const location = useLocation();
-  const reportPaths = reportLinks.map((item) => item.path);
-  const isReportPath = reportPaths.includes(location.pathname);
   const isActive = (path) => location.pathname === path;
 
+  const isReportPath = reportLinks.some(
+    (item) => location.pathname === item.path
+  );
+
+  /* =========================================================
+      STORE
+  ========================================================= */
+
   useEffect(() => {
-    if (store_id) appData?.loadStore(store_id);
+    if (store_id) {
+      appData?.loadStore(store_id);
+    }
   }, [store_id, appData]);
+
+  /* =========================================================
+      AUTO OPEN REPORTS
+  ========================================================= */
 
   useEffect(() => {
     if (isReportPath) {
       setReportsOpen(true);
     }
   }, [isReportPath]);
+
+  /* =========================================================
+      LOGO
+  ========================================================= */
 
   const DEFAULT_LOGO = "/assets/images/logo/vakaro-full.png";
 
@@ -69,9 +153,19 @@ const Navbar = () => {
       ? DEFAULT_LOGO
       : `${BASE_URL}/storage/${store.logo}`;
 
+  /* =========================================================
+      MOBILE
+  ========================================================= */
+
   const closeSidebar = () => {
-    if (window.innerWidth <= 768) setIsOpen(false);
+    if (window.innerWidth <= 768) {
+      setIsOpen(false);
+    }
   };
+
+  /* =========================================================
+      LOGOUT
+  ========================================================= */
 
   const handleLogout = async () => {
     try {
@@ -83,14 +177,19 @@ const Navbar = () => {
             Authorization: `Bearer ${user_detail?.token}`,
             Accept: "application/json",
           },
-        },
+        }
       );
     } catch (error) {
       console.error("Logout API error:", error);
     }
 
-    localStorage.removeItem("user_detail", "cart_detail", "cart_detail");
+    // removeItem accepts only ONE key
+    localStorage.removeItem("user_detail");
+    localStorage.removeItem("cart_detail");
+    localStorage.removeItem("cart_total");
+
     sessionStorage.clear();
+
     history.push("/");
   };
 
@@ -562,3 +661,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

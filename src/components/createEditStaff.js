@@ -133,7 +133,7 @@ const CreateEditStaff = () => {
     <Layout>
       <div className="main-content-inner">
         <div className="main-content-wrap">
-          <h3 className="mb-8">{isEdit ? "Edit Staff" : "Create Staff"}</h3>
+          <h3 className="mb-8">{isEdit ? "Edit Cashier" : "Create Cashier"}</h3>
 
           <div className="wg-box">
             <Formik
@@ -144,45 +144,29 @@ const CreateEditStaff = () => {
             >
               {({ values, setFieldValue }) => (
                 <Form className="wg-form">
-                  {/* Name */}
-                  <div className="row mb-15">
-                    <fieldset className="col-md-5">
+                  {/* Single Row Container for All Fields */}
+                  <div className="row mb-15 align-items-start">
+                    
+                    {/* Name */}
+                    <fieldset className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-2" : "col-md-3"}`}>
                       <div className="body-title">Name *</div>
                       <div className="body-content mb-15">
-                        <Field
-                          type="text"
-                          name="name"
-                          className="mb-5"
-                          placeholder="Enter staff name"
-                        />
-                        <ErrorMessage
-                          name="name"
-                          component="div"
-                          className="error-text"
-                        />
+                        <Field type="text" name="name" className="mb-5" placeholder="Enter staff name" />
+                        <ErrorMessage name="name" component="div" className="error-text" />
                       </div>
                     </fieldset>
 
                     {/* Username */}
-                    <fieldset className="col-md-5">
+                    <fieldset className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-2" : "col-md-3"}`}>
                       <div className="body-title">Username *</div>
                       <div className="body-content">
-                        <Field
-                          type="text"
-                          name="username"
-                          className="mb-5"
-                          placeholder="Enter username"
-                        />
-                        <ErrorMessage
-                          name="username"
-                          component="div"
-                          className="error-text"
-                        />
+                        <Field type="text" name="username" className="mb-5" placeholder="Enter username" />
+                        <ErrorMessage name="username" component="div" className="error-text" />
                       </div>
                     </fieldset>
-                  </div>
-                  <div className="row mb-15">
-                    <fieldset className="col-md-5">
+
+                    {/* Branch IDs */}
+                    <fieldset className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-2" : "col-md-3"}`}>
                       <div className="body-title">Branch IDs *</div>
                       <div className="body-content mb-15">
                         <Field
@@ -193,7 +177,7 @@ const CreateEditStaff = () => {
                           onChange={(e) => {
                             const selected = Array.from(
                               e.target.selectedOptions,
-                              (option) => Number(option.value),
+                              (option) => Number(option.value)
                             );
                             setFieldValue("branch_ids", selected);
                           }}
@@ -215,17 +199,12 @@ const CreateEditStaff = () => {
                             </option>
                           ))}
                         </Field>
-
-                        <ErrorMessage
-                          name="branch_ids"
-                          component="div"
-                          className="error-text"
-                        />
+                        <ErrorMessage name="branch_ids" component="div" className="error-text" />
                       </div>
                     </fieldset>
 
                     {/* Role */}
-                    <fieldset className="col-md-5">
+                    <fieldset className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-3" : "col-md-3"}`}>
                       <div className="body-title">Role *</div>
                       <div className="body-content">
                         <Field as="select" name="role" className="mb-5">
@@ -233,32 +212,28 @@ const CreateEditStaff = () => {
                           <option value="manager">Manager</option>
                           <option value="cashier">Cashier</option>
                         </Field>
-                        <ErrorMessage
-                          name="role"
-                          component="div"
-                          className="error-text"
-                        />
+                        <ErrorMessage name="role" component="div" className="error-text" />
                       </div>
                     </fieldset>
+
+                    {/* Pin (Conditionally rendered in the same row) */}
+                    {values.role === "cashier" && !isEdit && (
+                      <fieldset className="col-12 col-md-3">
+                        <div className="body-title">Pin *</div>
+                        <div className="body-content mb-15">
+                          <Field
+                            type="text"
+                            name="pin"
+                            maxLength={4}
+                            className="mb-5"
+                            placeholder="4-digit PIN"
+                          />
+                          <ErrorMessage name="pin" component="div" className="error-text" />
+                        </div>
+                      </fieldset>
+                    )}
+
                   </div>
-                  {values.role === "cashier" && !isEdit && (
-                    <fieldset className="col-md-5">
-                      <div className="body-title">Pin *</div>
-                      <div className="body-content mb-15">
-                        <Field
-                          type="text"
-                          name="pin"
-                          maxLength={4}
-                          className="mb-5"
-                        />
-                        <ErrorMessage
-                          name="pin"
-                          component="div"
-                          className="error-text"
-                        />
-                      </div>
-                    </fieldset>
-                  )}
 
                   {values.role === "manager" && (
                     <div className="row mb-15">
@@ -302,10 +277,10 @@ const CreateEditStaff = () => {
                   {/* SUBMIT BUTTON */}
                   <div className="flex">
                     <button className="tf-button w208" type="submit">
-                      {isEdit ? "Update Staff" : "Create Staff"}
+                      {isEdit ? "Update Cashier" : "Create Cashier"}
                     </button>
-                    <button type="button" className="ml-5">
-                      <a href="/staff"> Cancel</a>
+                    <button type="button" className="ml-5 tf-button style-1">
+                      <a href="/staff" style={{ color: "inherit", textDecoration: "none" }}>Cancel</a>
                     </button>
                   </div>
                 </Form>
