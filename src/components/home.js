@@ -10,8 +10,8 @@ import TopLowSellingProducts from "./TopLowSellingProducts";
 import CustomerDuesWidget from "./CustomerDuesWidget";
 import RecentSalesFeed from "./RecentSalesFeed";
 import TaxAndActionsWidget from "./TaxAndActionsWidget";
+import { hasFeature } from "../utils/hasFeature";
 
-/* ---- tiny inline icons (no extra icon-library dependency) ---- */
 const iconProps = {
   width: 18,
   height: 18,
@@ -109,6 +109,7 @@ const Home = () => {
           return;
         }
 
+        // ---------- ADMIN / MANAGER ----------
         const jobs = [];
 
         if (canSales) {
@@ -200,20 +201,123 @@ const Home = () => {
               />
             </div>
           )}
-          <div className="flex flex-col gap-6">
-            <RecentSalesFeed bills={saleBills} loading={loading} />
-            <CustomerDuesWidget dues={customerDues} loading={loading} />
-            <TaxAndActionsWidget
-              taxBreakdown={sk?.tax_breakdown}
-              loading={loading}
-            />
-          </div>
 
-          {role === "manager" && hasFeature("reports_sales") && (
-            <PaymentBreakdown
-              report={todayReport}
-              loading={loading || !todayReport}
-            />
+          {/* ---------------- ADMIN / MANAGER ---------------- */}
+          {nothingEnabled && (
+            <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+              <h3 className="text-2xl font-bold mb-2">Empty Dashboard</h3>
+              <p className="text-gray-500">
+                There is no dashboard features enable for your account. You can
+                use available menus from the left side menu or kindly contact
+                your Admin.
+              </p>
+            </div>
+          )}
+
+          {isBackOffice && (canSales || canPurchase) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+              {canSales && (
+                <StatCard
+                  icon={<IconCart />}
+                  label="Total Sales (Today)"
+                  value={loading || !sk ? "-" : rupee(sk.gross_sales)}
+                  color="#2377FC"
+                  loading={loading}
+                />
+              )}
+              {canPurchase && (
+                <StatCard
+                  icon={<IconInbox />}
+                  label="Total Purchase (Today)"
+                  value={loading || !pk ? "-" : rupee(pk.total_purchase_value)}
+                  color="#F59E0B"
+                  loading={loading}
+                />
+              )}
+              {canSales && (
+                <StatCard
+                  icon={<IconAlertCircle />}
+                  label="Total Dues (Today)"
+                  value={loading || !sk ? "-" : rupee(sk.total_due)}
+                  color="#FC2359"
+                  loading={loading}
+                />
+              )}
+              {canSales && (
+                <StatCard
+                  icon={<IconWallet />}
+                  label="Top Payment Method"
+                  value={
+                    loading || !topMethod
+                      ? "-"
+                      : `${topMethod.method} · ${topMethod.share_pct}%`
+                  }
+                  color="#8B5CF6"
+                  loading={loading}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Payment split + Monthly sales chart (dono sales data par based) */}
+          {isBackOffice && canSales && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <PaymentBreakdown
+                report={todaySales}
+                loading={loading || !todaySales}
+              />
+              <MonthlySalesChart user={user_data} />
+            </div>
+          )}
+
+          {/* Top / Low selling products — this month ki sales report se */}
+          {isBackOffice && canSales && (
+            <div className="mb-8">
+              <TopLowSellingProducts
+                products={monthProducts}
+                loading={loading}
+              />
+            </div>
+          )}
+
+          {/* Bottom widgets */}
+          {isBackOffice && (showLeftCol || showRightCol) && (
+            <div
+              className={`grid grid-cols-1 gap-6 ${
+                showLeftCol && showRightCol ? "lg:grid-cols-2" : ""
+              }`}
+            >
+              {showLeftCol && (
+                <div className="flex flex-col gap-6">
+                  {canFinancial && (
+                    <ProfitLossWidget role={role} user={user_data} />
+                  )}
+                  {canStock && (
+                    <LowStockAlert
+                      role={role}
+                      user={user_data}
+                      filters={{ branch_id: "ALL" }}
+                    />
+                  )}
+                </div>
+              )}
+              {showRightCol && (
+                <div className="flex flex-col gap-6">
+                  {canBills && (
+                    <RecentSalesFeed bills={saleBills} loading={loading} />
+                  )}
+                  {canCustomers && (
+                    <CustomerDuesWidget dues={customerDues} loading={loading} />
+                  )}
+                  {canSales && (
+                    <TaxAndActionsWidget
+                      taxBreakdown={sk?.tax_breakdown}
+                      loading={loading}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
