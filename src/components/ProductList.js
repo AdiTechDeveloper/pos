@@ -9,6 +9,7 @@ export default function ProductList({
   setSelectedCategory,
   setSelectedBrand,
   refreshProducts,
+  branchId,
 }) {
   const resetFilters = () => {
     setSearch("");
@@ -32,6 +33,7 @@ export default function ProductList({
         category_id: selectedCategory,
         brand_id: selectedBrand,
         search,
+        branch_id: branchId,
       });
 
       setProducts(res.data.products || []);
@@ -48,7 +50,7 @@ export default function ProductList({
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [selectedCategory, selectedBrand, search, refreshProducts]);
+  }, [selectedCategory, selectedBrand, search, refreshProducts, branchId]);
 
   useEffect(() => {
     barcodeRef.current?.focus();

@@ -11,6 +11,7 @@ const CreateEditStaff = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { id } = useParams(); // if id exists -> Edit Mode
   const history = useHistory();
+  const [featureCatalog, setFeatureCatalog] = useState({});
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_staff = localStorage.getItem("staff_detail");
@@ -25,6 +26,7 @@ const CreateEditStaff = () => {
     role: "",
     pin: "",
     branch_ids: [],
+    features: [],
   });
 
   const cleanedBranchIds =
@@ -38,13 +40,37 @@ const CreateEditStaff = () => {
         username: incomingStaff.username,
         role: incomingStaff.role,
         pin: incomingStaff.pin,
-        branch_ids: isEdit ? cleanedBranchIds : [], // EDIT → array, CREATE → empty
+        branch_ids: isEdit ? cleanedBranchIds : [],
+        features: [],
       });
+
+      if (isEdit && incomingStaff.role === "manager") {
+        axios
+          .get(`${BASE_URL}/api/staff/${id}/features`, {
+            headers: { Authorization: `Bearer ${user_data.token}` },
+          })
+          .then((res) => {
+            setInitialValues((prev) => ({
+              ...prev,
+              features: res.data.data || [],
+            }));
+            setFeatureCatalog((prev) =>
+              Object.keys(prev).length ? prev : prev,
+            );
+          });
+      }
     }
   };
+
   useEffect(() => {
     loadStaffData();
-    appData?.loadBranches(); 
+    appData?.loadBranches();
+
+    axios
+      .get(`${BASE_URL}/api/features`, {
+        headers: { Authorization: `Bearer ${user_data.token}` },
+      })
+      .then((res) => setFeatureCatalog(res.data.data || {}));
   }, []);
 
   // Validation Schema
@@ -60,7 +86,6 @@ const CreateEditStaff = () => {
   // Submit (Create + Update)
   const handleSubmit = async (values, actions) => {
     try {
-
       let url = "";
       let method = "";
       if (isEdit) {
@@ -84,23 +109,24 @@ const CreateEditStaff = () => {
       });
 
       toast.success(
-        isEdit ? "Staff updated successfully!" : "Staff created successfully!"
+        isEdit ? "Staff updated successfully!" : "Staff created successfully!",
       );
       actions.resetForm();
       history.push("/staff");
     } catch (error) {
       if (error.response && error.response.data) {
-        const apiMessage = error.response.data.message || "An unexpected error occurred.";
-    
+        const apiMessage =
+          error.response.data.message || "An unexpected error occurred.";
+
         toast.error(apiMessage);
         if (error.response.data.errors) {
-        actions.setErrors(error.response.data.errors);
+          actions.setErrors(error.response.data.errors);
+        }
+      } else {
+        console.error("Error saving staff:", error);
+        toast.error("Network error. Please check your connection.");
       }
-    } else {
-     console.error("Error saving staff:", error);
-      toast.error("Network error. Please check your connection.");
     }
-  }
   };
 
   return (
@@ -208,6 +234,45 @@ const CreateEditStaff = () => {
                     )}
 
                   </div>
+
+                  {values.role === "manager" && (
+                    <div className="row mb-15">
+                      <fieldset className="col-md-10">
+                        <div className="body-title">Features *</div>
+                        <div
+                          className="body-content mb-15"
+                          style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: "12px",
+                          }}
+                        >
+                          {Object.entries(featureCatalog).map(([key, info]) => (
+                            <label
+                              key={key}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={values.features.includes(key)}
+                                onChange={(e) => {
+                                  const next = e.target.checked
+                                    ? [...values.features, key]
+                                    : values.features.filter((f) => f !== key);
+                                  setFieldValue("features", next);
+                                }}
+                              />
+                              {info.label}
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+                    </div>
+                  )}
 
                   {/* SUBMIT BUTTON */}
                   <div className="flex">

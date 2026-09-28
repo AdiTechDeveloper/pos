@@ -12,6 +12,9 @@ const CreateStore = () => {
   const { id } = useParams();
   const isEdit = Boolean(id);
 
+  const [featureCatalog, setFeatureCatalog] = useState({});
+  const [selectedFeatures, setSelectedFeatures] = useState([]);
+
   const [editingData, setEditingData] = useState(
     location.state?.storeData || null,
   );
@@ -38,6 +41,29 @@ const CreateStore = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    const user_data = JSON.parse(localStorage.getItem("user_detail"));
+    axios
+      .get(`${BASE_URL}/api/features`, {
+        headers: { Authorization: `Bearer ${user_data?.token}` },
+      })
+      .then((res) => setFeatureCatalog(res.data.data || {}));
+
+    if (isEdit && id) {
+      axios
+        .get(`${BASE_URL}/api/stores/${id}/features`, {
+          headers: { Authorization: `Bearer ${user_data?.token}` },
+        })
+        .then((res) => setSelectedFeatures(res.data.data || []));
+    }
+  }, [id]);
+
+  const toggleFeature = (key) => {
+    setSelectedFeatures((prev) =>
+      prev.includes(key) ? prev.filter((f) => f !== key) : [...prev, key],
+    );
   };
 
   useEffect(() => {
@@ -150,6 +176,9 @@ const CreateStore = () => {
       if (values.logo instanceof File) {
         formData.append("logo", values.logo);
       }
+
+      selectedFeatures.forEach((key) => formData.append("features[]", key));
+      if (selectedFeatures.length === 0) formData.append("features", "");
 
       let response;
 
@@ -446,6 +475,32 @@ const CreateStore = () => {
                           style={{ width: "310px", height: "110px" }}
                         />
                       )}
+                    </div>
+                  </fieldset>
+
+                  <fieldset className="name">
+                    <div className="body-title">Features</div>
+                    <div
+                      className="field-wrapper"
+                      style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}
+                    >
+                      {Object.entries(featureCatalog).map(([key, info]) => (
+                        <label
+                          key={key}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedFeatures.includes(key)}
+                            onChange={() => toggleFeature(key)}
+                          />
+                          {info.label}
+                        </label>
+                      ))}
                     </div>
                   </fieldset>
 

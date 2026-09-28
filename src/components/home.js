@@ -317,6 +317,7 @@ import ProfitLossWidget from "./ProfitLossWidget";
 import LowStockAlert from "./lowStockAlert";
 import StatCard from "./StatCard";
 import PaymentBreakdown from "./PaymentBreakdown";
+import { hasFeature } from "../utils/hasFeature";
 import MonthlySalesChart from "./MonthlySalesChart";
 import TopLowSellingProducts from "./TopLowSellingProducts";
 import CustomerDuesWidget from "./CustomerDuesWidget";
@@ -391,6 +392,73 @@ const Home = () => {
     const load = async () => {
       setLoading(true);
       try {
+        if (role === "superadmin") {
+          const res = await get("/api/stores");
+          setStores(res.data.data);
+        }
+
+        if (role === "manager") {
+          const calls = [];
+          const keys = [];
+
+          if (hasFeature("products")) {
+            calls.push(get("/api/products"));
+            keys.push("products");
+          }
+          if (hasFeature("purchase_bills")) {
+            calls.push(get("/api/purchase-bill"));
+            keys.push("purchaseBills");
+          }
+          calls.push(get("/api/sales-bills"));
+          keys.push("saleBills");
+          calls.push(get("/api/customer/due"));
+          keys.push("customerDues");
+
+          const results = await Promise.all(calls);
+          results.forEach((res, i) => {
+            if (keys[i] === "products") setProducts(res.data.products);
+            if (keys[i] === "purchaseBills") setPurchaseBills(res.data.data);
+            if (keys[i] === "saleBills") setSaleBills(res.data.data);
+            if (keys[i] === "customerDues") setCustomerDues(res.data.data);
+          });
+
+          if (hasFeature("reports_sales")) {
+            try {
+              const tr = await get("/api/reports/sales-report", {
+                date_range: "today",
+                bill_status: "all",
+              });
+              setTodayReport(tr.data);
+            } catch (e) {
+              console.warn("Could not load today's report:", e.message);
+            }
+          }
+        }
+
+        if (role === "admin") {
+          const calls = [];
+          const keys = [];
+
+          if (hasFeature("branch_management")) {
+            calls.push(get("/api/branches"));
+            keys.push("branches");
+          }
+          if (hasFeature("staff_management")) {
+            calls.push(get("/api/staff"));
+            keys.push("staff");
+          }
+          calls.push(get("/api/customer/due"));
+          keys.push("customerDues");
+
+          const results = await Promise.all(calls);
+          results.forEach((res, i) => {
+            if (keys[i] === "branches") setBranchs(res.data.data);
+            if (keys[i] === "staff") setStaffs(res.data.data);
+            if (keys[i] === "customerDues") setCustomerDues(res.data.data);
+          });
+        }
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
         const [sales, purchase, salesMonth, dues] = await Promise.all([
           get("/api/reports/sales-report", { date_range: "today", bill_status: "all" }),
           get("/api/reports/purchase-report", { date_range: "today" }),
@@ -401,8 +469,6 @@ const Home = () => {
         setTodayPurchase(purchase.data);
         setMonthProducts(salesMonth.data?.products?.rows || []);
         setCustomerDues(dues.data.data || []);
-      } catch (err) {
-        console.error("Dashboard load error:", err);
       } finally {
         setLoading(false);
       }
@@ -452,67 +518,30 @@ const Home = () => {
         <div className="main-content-wrap">
           {/* 4 real KPI boxes */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-            <StatCard
-              icon={<IconCart />}
-              label="Total Sales (Today)"
-              value={loading || !sk ? "-" : rupee(sk.gross_sales)}
-              color="#2377FC"
-              loading={loading}
-            />
-            <StatCard
-              icon={<IconInbox />}
-              label="Total Purchase (Today)"
-              value={loading || !pk ? "-" : rupee(pk.total_purchase_value)}
-              color="#F59E0B"
-              loading={loading}
-            />
-            <StatCard
-              icon={<IconAlertCircle />}
-              label="Total Dues (Today)"
-              value={loading || !sk ? "-" : rupee(sk.total_due)}
-              color="#FC2359"
-              loading={loading}
-            />
-            <StatCard
-              icon={<IconWallet />}
-              label="Top Payment Method"
-              value={
-                loading || !topMethod
-                  ? "-"
-                  : `${topMethod.method} · ${topMethod.share_pct}%`
-              }
-              color="#8B5CF6"
-              loading={loading}
-            />
-          </div>
-
-          {/* Payment split (existing, already working) + Monthly sales chart */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <PaymentBreakdown report={todaySales} loading={loading || !todaySales} />
-            <MonthlySalesChart user={user_data} />
-          </div>
-
-          {/* Top / Low selling products - real, from this month's sales report */}
-          <div className="mb-8">
-            <TopLowSellingProducts products={monthProducts} loading={loading} />
-          </div>
-
-          {/* Existing widgets, untouched */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="flex flex-col gap-6">
-              <ProfitLossWidget role={role} user={user_data} />
-              <LowStockAlert
-                role={role}
-                user={user_data}
-                filters={{ branch_id: "ALL" }}
+            {role === "superadmin" && (
+              <StatCard
+                to="/store"
+                icon={<IconStore />}
+                label="Total Store"
+                value={stores.length}
+                color="#22C55E"
+                loading={loading}
               />
-            </div>
+            )}
               <div className="flex flex-col gap-6">
               <RecentSalesFeed bills={saleBills} loading={loading} />
               <CustomerDuesWidget dues={customerDues} loading={loading} />
                <TaxAndActionsWidget taxBreakdown={sk?.tax_breakdown} loading={loading} />
             </div>
+
+          {role === "manager" && hasFeature("reports_sales") && (
+            <PaymentBreakdown
+              report={todayReport}
+              loading={loading || !todayReport}
+            />
+          )}
           </div>
+          // Changes cut
         </div>
       </div>
     </Layout>
