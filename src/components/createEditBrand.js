@@ -37,8 +37,15 @@ const CreateEditBrand = () => {
 
   // Validation Schema
   const validationSchema = Yup.object({
-    name: Yup.string().required("Name is required"),
-    description: Yup.string().required("Description is required"),
+    name: Yup.string()
+      .required("Name is required")
+      .min(3, "Name must be at least 3 characters long")
+      .max(50, "Name cannot exceed 50 characters"),
+    
+    description: Yup.string()
+      .required("Description is required")
+      .min(10, "Description must be at least 10 characters long")
+      .max(255, "Description cannot exceed 255 characters"),
   });
 
   // Submit (Create + Update)

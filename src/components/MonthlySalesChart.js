@@ -28,47 +28,74 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-// TODO (backend): replace this with a single call like
+const cacheKey = (year, monthIdx, branchId) =>
+  `monthlySales:${year}-${monthIdx}:${branchId || "all"}`;
+
+// TODO (backend): replace this whole file with a single call like
 // GET /api/reports/sales-report?date_range=this_year&group_by=month
-// which would return 12 monthly totals in one request instead of 12 separate calls.
+// which would return all 12 monthly totals in ONE request. Until then,
+// this only fetches elapsed months and caches completed ones so repeat
+// dashboard loads only ever make 1 network call (for the current month).
 const MonthlySalesChart = ({ user, branchId }) => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(
+    MONTH_LABELS.map((m) => ({ month: m, sales: 0 })),
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const year = new Date().getFullYear();
+      const now = new Date();
+      const year = now.getFullYear();
+      const currentMonthIdx = now.getMonth(); // 0-based, e.g. Sep = 8
       const token = user?.token;
 
-      const requests = MONTH_LABELS.map((_, i) => {
-        const from = `${year}-${String(i + 1).padStart(2, "0")}-01`;
-        const lastDay = new Date(year, i + 1, 0).getDate();
-        const to = `${year}-${String(i + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+      const results = await Promise.all(
+        MONTH_LABELS.map(async (_, i) => {
+          // Never fetch future months - they're just 0
+          if (i > currentMonthIdx) return 0;
 
-        return axios
-          .get(`${BASE_URL}/api/reports/sales-report`, {
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            params: {
-              date_range: "custom",
-              date_from: from,
-              date_to: to,
-              bill_status: "all",
-              branch_id: branchId || null,
-            },
-          })
-          .then((res) => Number(res.data?.kpis?.gross_sales) || 0)
-          .catch(() => 0);
-      });
+          const key = cacheKey(year, i, branchId);
+          const isCompletedMonth = i < currentMonthIdx;
 
-      const results = await Promise.all(requests);
-      setData(
-        MONTH_LABELS.map((m, i) => ({ month: m, sales: results[i] })),
+          if (isCompletedMonth) {
+            const cached = sessionStorage.getItem(key);
+            if (cached !== null) return Number(cached);
+          }
+
+          const from = `${year}-${String(i + 1).padStart(2, "0")}-01`;
+          const lastDay = new Date(year, i + 1, 0).getDate();
+          const to = `${year}-${String(i + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+          try {
+            const res = await axios.get(`${BASE_URL}/api/reports/sales-report`, {
+              headers: {
+                Accept: "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              params: {
+                date_range: "custom",
+                date_from: from,
+                date_to: to,
+                bill_status: "all",
+                branch_id: branchId || null,
+              },
+            });
+            const value = Number(res.data?.kpis?.gross_sales) || 0;
+
+            // Only cache completed months - current month keeps changing all day
+            if (isCompletedMonth) {
+              sessionStorage.setItem(key, String(value));
+            }
+            return value;
+          } catch {
+            return 0;
+          }
+        }),
       );
+
+      setData(MONTH_LABELS.map((m, i) => ({ month: m, sales: results[i] })));
       setLoading(false);
     };
 
@@ -85,7 +112,7 @@ const MonthlySalesChart = ({ user, branchId }) => {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-      <h3 className="text-3xl font-bold text-gray-800 mb-6">
+      <h3 className="text-lg font-bold text-gray-800 mb-4">
         Monthly Sales ({new Date().getFullYear()})
       </h3>
       <ResponsiveContainer width="100%" height={280}>

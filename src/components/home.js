@@ -321,6 +321,7 @@ import MonthlySalesChart from "./MonthlySalesChart";
 import TopLowSellingProducts from "./TopLowSellingProducts";
 import CustomerDuesWidget from "./CustomerDuesWidget";
 import RecentSalesFeed from "./RecentSalesFeed";
+import TaxAndActionsWidget from "./TaxAndActionsWidget";
 
 /* ---- tiny inline icons (no extra icon-library dependency) ---- */
 const iconProps = {
@@ -506,9 +507,10 @@ const Home = () => {
                 filters={{ branch_id: "ALL" }}
               />
             </div>
-                      <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-6">
               <RecentSalesFeed bills={saleBills} loading={loading} />
               <CustomerDuesWidget dues={customerDues} loading={loading} />
+               <TaxAndActionsWidget taxBreakdown={sk?.tax_breakdown} loading={loading} />
             </div>
           </div>
         </div>
