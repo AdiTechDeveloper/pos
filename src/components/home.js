@@ -1,315 +1,3 @@
-// import React, { useEffect, useState } from "react";
-// import Layout from "./layout";
-// import axios from "axios";
-// import ProfitLossWidget from "./ProfitLossWidget";
-// import TopSellingProducts from "./topSellingProducts";
-// import LowStockAlert from "./lowStockAlert";
-// import StatCard from "./StatCard";
-// import PaymentBreakdown from "./PaymentBreakdown";
-
-// /* ---- tiny inline icons (no extra icon-library dependency) ---- */
-// const iconProps = {
-//   width: 18,
-//   height: 18,
-//   fill: "none",
-//   stroke: "currentColor",
-//   strokeWidth: 2,
-//   strokeLinecap: "round",
-//   strokeLinejoin: "round",
-// };
-// const IconStore = () => (
-//   <svg viewBox="0 0 24 24" {...iconProps}>
-//     <path d="M3 9l1-5h16l1 5" />
-//     <path d="M5 9v10h14V9" />
-//     <path d="M9 21v-6h6v6" />
-//   </svg>
-// );
-// const IconBox = () => (
-//   <svg viewBox="0 0 24 24" {...iconProps}>
-//     <path d="M21 8l-9-5-9 5 9 5 9-5z" />
-//     <path d="M3 8v8l9 5 9-5V8" />
-//     <path d="M12 13v8" />
-//   </svg>
-// );
-// const IconInbox = () => (
-//   <svg viewBox="0 0 24 24" {...iconProps}>
-//     <path d="M22 12h-6l-2 3h-4l-2-3H2" />
-//     <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
-//   </svg>
-// );
-// const IconCart = () => (
-//   <svg viewBox="0 0 24 24" {...iconProps}>
-//     <circle cx="9" cy="21" r="1" />
-//     <circle cx="20" cy="21" r="1" />
-//     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-//   </svg>
-// );
-// const IconUserAlert = () => (
-//   <svg viewBox="0 0 24 24" {...iconProps}>
-//     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-//     <circle cx="9" cy="7" r="4" />
-//     <path d="M19 8v4M19 16h.01" />
-//   </svg>
-// );
-// const IconBranch = () => (
-//   <svg viewBox="0 0 24 24" {...iconProps}>
-//     <line x1="6" y1="3" x2="6" y2="15" />
-//     <circle cx="18" cy="6" r="3" />
-//     <circle cx="6" cy="18" r="3" />
-//     <path d="M18 9a9 9 0 0 1-9 9" />
-//   </svg>
-// );
-// const IconUsers = () => (
-//   <svg viewBox="0 0 24 24" {...iconProps}>
-//     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-//     <circle cx="9" cy="7" r="4" />
-//     <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-//     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-//   </svg>
-// );
-
-// const Home = () => {
-//   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
-//   // superadmin
-//   const [stores, setStores] = useState([]);
-//   // manager
-//   const [products, setProducts] = useState([]);
-//   const [purchaseBills, setPurchaseBills] = useState([]);
-//   const [saleBills, setSaleBills] = useState([]);
-//   const [todayReport, setTodayReport] = useState(null);
-//   // admin
-//   const [branchs, setBranchs] = useState([]);
-//   const [staffs, setStaffs] = useState([]);
-//   // shared (manager + admin)
-//   const [customerDues, setCustomerDues] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const user_data = JSON.parse(localStorage.getItem("user_detail"));
-//   const role = user_data?.user?.role;
-
-//   const authHeaders = {
-//     Accept: "application/json",
-//     Authorization: `Bearer ${user_data?.token}`,
-//   };
-
-//   const get = (path, params) =>
-//     axios.get(`${BASE_URL}${path}`, { headers: authHeaders, params });
-
-//   useEffect(() => {
-//     const load = async () => {
-//       setLoading(true);
-//       try {
-//         if (role === "superadmin") {
-//           const res = await get("/api/stores");
-//           setStores(res.data.data);
-//         }
-
-//         if (role === "manager") {
-//           const [p, pb, sb, cd] = await Promise.all([
-//             get("/api/products"),
-//             get("/api/purchase-bill"),
-//             get("/api/sales-bills"),
-//             get("/api/customer/due"),
-//           ]);
-//           setProducts(p.data.products);
-//           setPurchaseBills(pb.data.data);
-//           setSaleBills(sb.data.data);
-//           setCustomerDues(cd.data.data);
-
-//           try {
-//             const tr = await get("/api/reports/sales-report", {
-//               date_range: "today",
-//               bill_status: "all",
-//             });
-//             setTodayReport(tr.data);
-//           } catch (e) {
-//             console.warn("Could not load today's report:", e.message);
-//           }
-//         }
-
-//         if (role === "admin") {
-//           const [br, st, cd] = await Promise.all([
-//             get("/api/branches"),
-//             get("/api/staff"),
-//             get("/api/customer/due"),
-//           ]);
-//           setBranchs(br.data.data);
-//           setStaffs(st.data.data);
-//           setCustomerDues(cd.data.data);
-//         }
-//       } catch (error) {
-//         console.error("Error loading dashboard data:", error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     if (role) load();
-//   }, [role]);
-
-//   return (
-//     <Layout>
-//       <div className="main-content-inner">
-//         <div className="main-content-wrap">
-//           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-//             {role === "superadmin" && (
-//               <StatCard
-//                 to="/store"
-//                 icon={<IconStore />}
-//                 label="Total Store"
-//                 value={stores.length}
-//                 color="#22C55E"
-//                 loading={loading}
-//               />
-//             )}
-
-//             {role === "manager" && (
-//               <>
-//                 <StatCard
-//                   to="/product"
-//                   icon={<IconBox />}
-//                   label="Total Products"
-//                   value={products.length}
-//                   color="#2377FC"
-//                   loading={loading}
-//                   // TODO: replace with real day-by-day counts + real % change
-//                   trend={1.56}
-//                   series={[
-//                     { v: 4 },
-//                     { v: 6 },
-//                     { v: 5 },
-//                     { v: 8 },
-//                     { v: 7 },
-//                     { v: 9 },
-//                     { v: 8 },
-//                   ]}
-//                 />
-//                 <StatCard
-//                   to="/purchase-bill"
-//                   icon={<IconInbox />}
-//                   label="Total Purchase Bills"
-//                   value={purchaseBills.length}
-//                   color="#FC2359"
-//                   loading={loading}
-//                   // TODO: replace with real day-by-day counts + real % change
-//                   trend={-1.56}
-//                   series={[
-//                     { v: 9 },
-//                     { v: 7 },
-//                     { v: 8 },
-//                     { v: 6 },
-//                     { v: 7 },
-//                     { v: 5 },
-//                     { v: 4 },
-//                   ]}
-//                 />
-//                 <StatCard
-//                   to="/sale-bill"
-//                   icon={<IconCart />}
-//                   label="Total Sale Bills"
-//                   value={saleBills.length}
-//                   color="#23C55E"
-//                   loading={loading}
-//                   // TODO: replace with real day-by-day counts + real % change
-//                   trend={0}
-//                   series={[
-//                     { v: 5 },
-//                     { v: 5 },
-//                     { v: 6 },
-//                     { v: 5 },
-//                     { v: 5 },
-//                     { v: 6 },
-//                     { v: 5 },
-//                   ]}
-//                 />
-//                 <StatCard
-//                   to="/customer-dues"
-//                   icon={<IconUserAlert />}
-//                   label="Total Customer Dues"
-//                   value={customerDues.length}
-//                   color="#F59E0B"
-//                   loading={loading}
-//                   // TODO: replace with real day-by-day counts + real % change
-//                   trend={1.56}
-//                   series={[
-//                     { v: 2 },
-//                     { v: 3 },
-//                     { v: 3 },
-//                     { v: 4 },
-//                     { v: 3 },
-//                     { v: 5 },
-//                     { v: 4 },
-//                   ]}
-//                 />
-//               </>
-//             )}
-
-//             {role === "admin" && (
-//               <>
-//                 <StatCard
-//                   to="/branch"
-//                   icon={<IconBranch />}
-//                   label="Total Branches"
-//                   value={branchs.length}
-//                   color="#FF5200"
-//                   loading={loading}
-//                 />
-//                 <StatCard
-//                   to="/staff"
-//                   icon={<IconUsers />}
-//                   label="Total Staff"
-//                   value={staffs.length}
-//                   color="#8B5CF6"
-//                   loading={loading}
-//                 />
-//                 <StatCard
-//                   to="/customer-dues"
-//                   icon={<IconUserAlert />}
-//                   label="Total Customer Dues"
-//                   value={customerDues.length}
-//                   color="#22C55E"
-//                   loading={loading}
-//                 />
-//               </>
-//             )}
-//           </div>
-
-//           {role === "manager" && (
-//             <PaymentBreakdown
-//               report={todayReport}
-//               loading={loading || !todayReport}
-//             />
-//           )}
-
-//           {["admin", "manager"].includes(role) && (
-//             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//               <div className="flex flex-col gap-6">
-//                 <ProfitLossWidget role={role} user={user_data} />
-//                 <LowStockAlert
-//                   role={role}
-//                   user={user_data}
-//                   filters={{ branch_id: "ALL" }}
-//                 />
-//               </div>
-//               <div className="flex flex-col gap-6 selling-product">
-//                 <TopSellingProducts
-//                   role={role}
-//                   user={user_data}
-//                   filters={{ branch_id: "ALL" }}
-//                 />
-//               </div>
-//             </div>
-//           )}
-//         </div>
-//       </div>
-//     </Layout>
-//   );
-// };
-
-// export default Home;
-
-
-
 import React, { useEffect, useState } from "react";
 import Layout from "./layout";
 import axios from "axios";
@@ -317,11 +5,12 @@ import ProfitLossWidget from "./ProfitLossWidget";
 import LowStockAlert from "./lowStockAlert";
 import StatCard from "./StatCard";
 import PaymentBreakdown from "./PaymentBreakdown";
-import { hasFeature } from "../utils/hasFeature";
 import MonthlySalesChart from "./MonthlySalesChart";
 import TopLowSellingProducts from "./TopLowSellingProducts";
 import CustomerDuesWidget from "./CustomerDuesWidget";
 import RecentSalesFeed from "./RecentSalesFeed";
+// import TaxAndActionsWidget from "./TaxAndActionsWidget";
+import { hasFeature } from "../utils/hasFeature";
 
 /* ---- tiny inline icons (no extra icon-library dependency) ---- */
 const iconProps = {
@@ -333,6 +22,13 @@ const iconProps = {
   strokeLinecap: "round",
   strokeLinejoin: "round",
 };
+const IconStore = () => (
+  <svg viewBox="0 0 24 24" {...iconProps}>
+    <path d="M3 9l1-5h16l1 5" />
+    <path d="M5 9v10h14V9" />
+    <path d="M9 21v-6h6v6" />
+  </svg>
+);
 const IconCart = () => (
   <svg viewBox="0 0 24 24" {...iconProps}>
     <circle cx="9" cy="21" r="1" />
@@ -360,25 +56,48 @@ const IconWallet = () => (
     <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
   </svg>
 );
-const IconUserAlert = () => (
-  <svg viewBox="0 0 24 24" {...iconProps}>
-    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-    <circle cx="9" cy="7" r="4" />
-    <path d="M19 8v4M19 16h.01" />
-  </svg>
-);
 
 const Home = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const role = user_data?.user?.role;
 
+  // ---- feature flags (superadmin ke liye hasFeature hamesha true deta hai) ----
+  // Har widget apne data-source ke feature se bandha hai:
+  //   sales-report            -> reports_sales
+  //   purchase-report         -> reports_purchase
+  //   profit-loss             -> reports_financial
+  //   stock-alerts            -> stock_alerts
+  //   sales-bills             -> sales_bills
+  //   customer/due            -> customers
+  const canSales = hasFeature("reports_sales");
+  const canPurchase = hasFeature("reports_purchase");
+  const canFinancial = hasFeature("reports_financial");
+  const canStock = hasFeature("stock_alerts");
+  const canBills = hasFeature("sales_bills");
+  const canCustomers = hasFeature("customers");
+
+  const isBackOffice = role === "admin" || role === "manager";
+  const nothingEnabled =
+    isBackOffice &&
+    !(
+      canSales ||
+      canPurchase ||
+      canFinancial ||
+      canStock ||
+      canBills ||
+      canCustomers
+    );
+
+  // superadmin
+  const [stores, setStores] = useState([]);
+  // admin + manager
   const [todaySales, setTodaySales] = useState(null);
   const [todayPurchase, setTodayPurchase] = useState(null);
   const [monthProducts, setMonthProducts] = useState([]);
   const [customerDues, setCustomerDues] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [saleBills, setSaleBills] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const authHeaders = {
     Accept: "application/json",
@@ -388,110 +107,73 @@ const Home = () => {
     axios.get(`${BASE_URL}${path}`, { headers: authHeaders, params });
 
   useEffect(() => {
+    if (!role) return;
+
     const load = async () => {
       setLoading(true);
       try {
+        // ---------- SUPERADMIN ----------
         if (role === "superadmin") {
           const res = await get("/api/stores");
-          setStores(res.data.data);
+          setStores(res.data.data || []);
+          return;
         }
 
-        if (role === "manager") {
-          const calls = [];
-          const keys = [];
+        // ---------- ADMIN / MANAGER ----------
+        // Sirf wahi API call hogi jiska feature user ke paas hai — baaki
+        // par 403 aata hi, isliye unhe bulaana hi nahi hai.
+        const jobs = [];
 
-          if (hasFeature("products")) {
-            calls.push(get("/api/products"));
-            keys.push("products");
-          }
-          if (hasFeature("purchase_bills")) {
-            calls.push(get("/api/purchase-bill"));
-            keys.push("purchaseBills");
-          }
-          calls.push(get("/api/sales-bills"));
-          keys.push("saleBills");
-          calls.push(get("/api/customer/due"));
-          keys.push("customerDues");
-
-          const results = await Promise.all(calls);
-          results.forEach((res, i) => {
-            if (keys[i] === "products") setProducts(res.data.products);
-            if (keys[i] === "purchaseBills") setPurchaseBills(res.data.data);
-            if (keys[i] === "saleBills") setSaleBills(res.data.data);
-            if (keys[i] === "customerDues") setCustomerDues(res.data.data);
-          });
-
-          if (hasFeature("reports_sales")) {
-            try {
-              const tr = await get("/api/reports/sales-report", {
-                date_range: "today",
-                bill_status: "all",
-              });
-              setTodayReport(tr.data);
-            } catch (e) {
-              console.warn("Could not load today's report:", e.message);
-            }
-          }
+        if (canSales) {
+          jobs.push([
+            "salesToday",
+            get("/api/reports/sales-report", {
+              date_range: "today",
+              bill_status: "all",
+            }),
+          ]);
+          jobs.push([
+            "salesMonth",
+            get("/api/reports/sales-report", {
+              date_range: "this_month",
+              bill_status: "all",
+            }),
+          ]);
+        }
+        if (canPurchase) {
+          jobs.push([
+            "purchaseToday",
+            get("/api/reports/purchase-report", { date_range: "today" }),
+          ]);
+        }
+        if (canCustomers) {
+          jobs.push(["dues", get("/api/customer/due")]);
+        }
+        if (canBills) {
+          jobs.push(["bills", get("/api/sales-bills")]);
         }
 
-        if (role === "admin") {
-          const calls = [];
-          const keys = [];
+        // allSettled: ek call fail ho jaye to baaki widgets phir bhi load hon
+        const results = await Promise.allSettled(jobs.map(([, p]) => p));
 
-          if (hasFeature("branch_management")) {
-            calls.push(get("/api/branches"));
-            keys.push("branches");
+        results.forEach((r, i) => {
+          const key = jobs[i][0];
+          if (r.status !== "fulfilled") {
+            console.warn(
+              `Dashboard: "${key}" load nahi hua`,
+              r.reason?.message,
+            );
+            return;
           }
-          if (hasFeature("staff_management")) {
-            calls.push(get("/api/staff"));
-            keys.push("staff");
-          }
-          calls.push(get("/api/customer/due"));
-          keys.push("customerDues");
+          const data = r.value.data;
 
-          const results = await Promise.all(calls);
-          results.forEach((res, i) => {
-            if (keys[i] === "branches") setBranchs(res.data.data);
-            if (keys[i] === "staff") setStaffs(res.data.data);
-            if (keys[i] === "customerDues") setCustomerDues(res.data.data);
-          });
-        }
-      } catch (error) {
-        console.error("Error loading dashboard data:", error);
-        const [sales, purchase, salesMonth, dues] = await Promise.all([
-          get("/api/reports/sales-report", { date_range: "today", bill_status: "all" }),
-          get("/api/reports/purchase-report", { date_range: "today" }),
-          get("/api/reports/sales-report", { date_range: "this_month", bill_status: "all" }),
-          get("/api/customer/due"),
-        ]);
-        setTodaySales(sales.data);
-        setTodayPurchase(purchase.data);
-        setMonthProducts(salesMonth.data?.products?.rows || []);
-        setCustomerDues(dues.data.data || []);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (role) load();
-  }, [role]);
-
-    useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const [sales, purchase, salesMonth, dues, bills] = await Promise.all([
-          get("/api/reports/sales-report", { date_range: "today", bill_status: "all" }),
-          get("/api/reports/purchase-report", { date_range: "today" }),
-          get("/api/reports/sales-report", { date_range: "this_month", bill_status: "all" }),
-          get("/api/customer/due"),
-          get("/api/sales-bills"),
-        ]);
-        setTodaySales(sales.data);
-        setTodayPurchase(purchase.data);
-        setMonthProducts(salesMonth.data?.products?.rows || []);
-        setCustomerDues(dues.data.data || []);
-        setSaleBills(bills.data.data || []);
+          if (key === "salesToday") setTodaySales(data);
+          if (key === "salesMonth")
+            setMonthProducts(data?.products?.rows || []);
+          if (key === "purchaseToday") setTodayPurchase(data);
+          if (key === "dues") setCustomerDues(data?.data || []);
+          if (key === "bills") setSaleBills(data?.data || []);
+        });
       } catch (err) {
         console.error("Dashboard load error:", err);
       } finally {
@@ -499,7 +181,8 @@ const Home = () => {
       }
     };
 
-    if (role) load();
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
   const rupee = (v) => `₹${Number(v || 0).toLocaleString("en-IN")}`;
@@ -511,13 +194,17 @@ const Home = () => {
     (a, b) => (b.total_collected || 0) - (a.total_collected || 0),
   )[0];
 
+  // bottom section — kaunse columns dikhane hain
+  const showLeftCol = canFinancial || canStock;
+  const showRightCol = canBills || canCustomers || canSales;
+
   return (
     <Layout>
       <div className="main-content-inner">
         <div className="main-content-wrap">
-          {/* 4 real KPI boxes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-            {role === "superadmin" && (
+          {/* ---------------- SUPERADMIN ---------------- */}
+          {role === "superadmin" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
               <StatCard
                 to="/store"
                 icon={<IconStore />}
@@ -526,91 +213,128 @@ const Home = () => {
                 color="#22C55E"
                 loading={loading}
               />
-            )}
+            </div>
+          )}
 
-            {role === "manager" && (
-              <>
-                {hasFeature("products") && (
-                  <StatCard
-                    to="/product"
-                    icon={<IconBox />}
-                    label="Total Products"
-                    value={products.length}
-                    color="#2377FC"
-                    loading={loading}
-                  />
-                )}
-                {hasFeature("purchase_bills") && (
-                  <StatCard
-                    to="/purchase-bill"
-                    icon={<IconInbox />}
-                    label="Total Purchase Bills"
-                    value={purchaseBills.length}
-                    color="#FC2359"
-                    loading={loading}
-                  />
-                )}
+          {/* ---------------- ADMIN / MANAGER ---------------- */}
+          {nothingEnabled && (
+            <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+              <h3 className="text-2xl font-bold mb-2">
+                Dashboard abhi khaali hai
+              </h3>
+              <p className="text-gray-500">
+                Aapke account ke liye abhi koi dashboard feature enable nahi
+                hai. Left menu se available pages use karein, ya apne admin se
+                features enable karwayein.
+              </p>
+            </div>
+          )}
+
+          {isBackOffice && (canSales || canPurchase) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+              {canSales && (
                 <StatCard
-                  to="/sale-bill"
                   icon={<IconCart />}
-                  label="Total Sale Bills"
-                  value={saleBills.length}
-                  color="#23C55E"
+                  label="Total Sales (Today)"
+                  value={loading || !sk ? "-" : rupee(sk.gross_sales)}
+                  color="#2377FC"
                   loading={loading}
                 />
+              )}
+              {canPurchase && (
                 <StatCard
-                  to="/customer-dues"
-                  icon={<IconUserAlert />}
-                  label="Total Customer Dues"
-                  value={customerDues.length}
+                  icon={<IconInbox />}
+                  label="Total Purchase (Today)"
+                  value={loading || !pk ? "-" : rupee(pk.total_purchase_value)}
                   color="#F59E0B"
                   loading={loading}
                 />
-              </>
-            )}
-
-            {role === "admin" && (
-              <>
-                {hasFeature("branch_management") && (
-                  <StatCard
-                    to="/branch"
-                    icon={<IconBranch />}
-                    label="Total Branches"
-                    value={branchs.length}
-                    color="#FF5200"
-                    loading={loading}
-                  />
-                )}
-                {hasFeature("staff_management") && (
-                  <StatCard
-                    to="/staff"
-                    icon={<IconUsers />}
-                    label="Total Staff"
-                    value={staffs.length}
-                    color="#8B5CF6"
-                    loading={loading}
-                  />
-                )}
+              )}
+              {canSales && (
                 <StatCard
-                  to="/customer-dues"
-                  icon={<IconUserAlert />}
-                  label="Total Customer Dues"
-                  value={customerDues.length}
-                  color="#22C55E"
+                  icon={<IconAlertCircle />}
+                  label="Total Dues (Today)"
+                  value={loading || !sk ? "-" : rupee(sk.total_due)}
+                  color="#FC2359"
                   loading={loading}
                 />
-              </>
-            )}
-          </div>
-
-          {role === "manager" && hasFeature("reports_sales") && (
-            <PaymentBreakdown
-              report={todayReport}
-              loading={loading || !todayReport}
-            />
+              )}
+              {canSales && (
+                <StatCard
+                  icon={<IconWallet />}
+                  label="Top Payment Method"
+                  value={
+                    loading || !topMethod
+                      ? "-"
+                      : `${topMethod.method} · ${topMethod.share_pct}%`
+                  }
+                  color="#8B5CF6"
+                  loading={loading}
+                />
+              )}
+            </div>
           )}
 
-          // Changes cut
+          {/* Payment split + Monthly sales chart (dono sales data par based) */}
+          {isBackOffice && canSales && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <PaymentBreakdown
+                report={todaySales}
+                loading={loading || !todaySales}
+              />
+              <MonthlySalesChart user={user_data} />
+            </div>
+          )}
+
+          {/* Top / Low selling products — this month ki sales report se */}
+          {isBackOffice && canSales && (
+            <div className="mb-8">
+              <TopLowSellingProducts
+                products={monthProducts}
+                loading={loading}
+              />
+            </div>
+          )}
+
+          {/* Bottom widgets */}
+          {isBackOffice && (showLeftCol || showRightCol) && (
+            <div
+              className={`grid grid-cols-1 gap-6 ${
+                showLeftCol && showRightCol ? "lg:grid-cols-2" : ""
+              }`}
+            >
+              {showLeftCol && (
+                <div className="flex flex-col gap-6">
+                  {canFinancial && (
+                    <ProfitLossWidget role={role} user={user_data} />
+                  )}
+                  {canStock && (
+                    <LowStockAlert
+                      role={role}
+                      user={user_data}
+                      filters={{ branch_id: "ALL" }}
+                    />
+                  )}
+                </div>
+              )}
+              {showRightCol && (
+                <div className="flex flex-col gap-6">
+                  {canBills && (
+                    <RecentSalesFeed bills={saleBills} loading={loading} />
+                  )}
+                  {canCustomers && (
+                    <CustomerDuesWidget dues={customerDues} loading={loading} />
+                  )}
+                  {/* {canSales && (
+                    <TaxAndActionsWidget
+                      taxBreakdown={sk?.tax_breakdown}
+                      loading={loading}
+                    />
+                  )} */}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </Layout>

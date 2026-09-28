@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useHistory, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAppData } from "../context/AppDataContext";
+import { hasFeature } from "../utils/hasFeature";
 
 import { PiKeyReturnBold, PiWallet } from "react-icons/pi";
 
@@ -27,7 +28,6 @@ import {
   IoPrintOutline,
   IoExitOutline,
 } from "react-icons/io5";
-import { hasFeature } from "../utils/hasFeature";
 import {
   FaFacebookF,
   FaTwitter,
@@ -35,11 +35,7 @@ import {
   FaInstagram,
 } from "react-icons/fa";
 
-import {
-  FiHelpCircle,
-  FiHeadphones,
-  FiFileText,
-} from "react-icons/fi";
+import { FiHelpCircle, FiHeadphones, FiFileText } from "react-icons/fi";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -51,9 +47,7 @@ const Navbar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
 
-  const user_detail = JSON.parse(
-    localStorage.getItem("user_detail") || "null"
-  );
+  const user_detail = JSON.parse(localStorage.getItem("user_detail") || "null");
 
   const role = user_detail?.user?.role;
   const store_id = user_detail?.user?.store_id;
@@ -62,64 +56,82 @@ const Navbar = () => {
   const store = appData?.store || null;
 
   /* =========================================================
-      REPORT LINKS
+      REPORT LINKS  (feature = is report ko dekhne ke liye
+      zaroori feature; null matlab hamesha dikhega)
   ========================================================= */
 
   const reportLinks = [
     {
       name: "Stock Summary",
       path: "/reports/stock-summary",
+      feature: "stock_alerts",
     },
     {
       name: "Purchase Summary",
       path: "/reports/purchase-summary",
+      feature: "reports_purchase",
     },
     {
       name: "Sales Analytics",
       path: "/reports/sales-analytics",
+      feature: "reports_sales",
     },
     {
       name: "GST Output",
       path: "/reports/gst-output-sales",
+      feature: "reports_gst",
     },
     {
       name: "GSTR - 3B",
       path: "/reports/GSTR3B",
+      feature: "reports_gst",
     },
     {
       name: "GSTR1 Summary",
       path: "/reports/GSTR1-Summary",
+      feature: "reports_gst",
     },
     {
       name: "Price Override Summary",
       path: "/reports/price-override",
+      feature: "reports_purchase",
     },
     {
       name: "Sales Report",
       path: "/reports/sales-report",
+      feature: "reports_sales",
     },
     {
       name: "Purchase Report",
       path: "/reports/purchase-report",
+      feature: "reports_purchase",
     },
     {
       name: "Financial Report",
       path: "/reports/financial-report",
+      feature: "reports_financial",
     },
     {
       name: "Shift History Report",
       path: "/reports/shift-report",
+      feature: "reports_financial",
     },
     {
       name: "Stock Expiry",
       path: "/reports/stock-expiry-report",
+      feature: "stock_alerts",
     },
   ];
+
+  // sirf wahi reports jinka feature user ke paas hai
+  const visibleReportLinks = reportLinks.filter(
+    (item) => !item.feature || hasFeature(item.feature),
+  );
 
   const isActive = (path) => location.pathname === path;
 
   const isReportPath = reportLinks.some(
-    (item) => location.pathname === item.path
+    (item) => location.pathname === item.path,
   );
 
   /* =========================================================
@@ -177,7 +189,7 @@ const Navbar = () => {
             Authorization: `Bearer ${user_detail?.token}`,
             Accept: "application/json",
           },
-        }
+        },
       );
     } catch (error) {
       console.error("Logout API error:", error);
@@ -193,472 +205,828 @@ const Navbar = () => {
     history.push("/");
   };
 
-  // Shared menus for admin + manager
-  const sharedMenus = (
-    <>
-      {hasFeature("suppliers") && (
-        <li className="menu-item">
-          <Link
-            to="/suppliers"
-            className={`menu-item-button ${isActive("/suppliers") ? "active" : ""}`}
-            onClick={closeSidebar}
-          >
-            <div className="icon">
-              <IoStorefrontOutline size={22} />
-            </div>
-            <div className="text">Suppliers</div>
-          </Link>
-        </li>
-      )}
+  /* =========================================================
+      SHARED MENU  (feature = is menu ke liye zaroori feature)
+  ========================================================= */
 
-      {hasFeature("products") && (
-        <li className="menu-item">
-          <Link
-            to="/product"
-            className={`menu-item-button ${isActive("/product") ? "active" : ""}`}
-            onClick={closeSidebar}
-          >
-            <div className="icon">
-              <IoCubeOutline size={22} />
-            </div>
-            <div className="text">Products</div>
-          </Link>
-        </li>
-      )}
+  const sharedMenuItems = [
+    {
+      name: "Suppliers",
+      path: "/suppliers",
+      icon: <IoStorefrontOutline size={20} />,
+      feature: "suppliers",
+    },
+    {
+      name: "Products",
+      path: "/product",
+      icon: <IoCubeOutline size={20} />,
+      feature: "products",
+    },
+    {
+      name: "Print Barcode",
+      path: "/print-barcode",
+      icon: <IoPrintOutline size={20} />,
+      feature: "products",
+    },
+    {
+      name: "Expired Products",
+      path: "/expired-products",
+      icon: <IoExitOutline size={20} />,
+      feature: "products",
+    },
+    {
+      name: "Purchase Bills",
+      path: "/purchase-bill",
+      icon: <IoReceiptOutline size={20} />,
+      feature: "purchase_bills",
+    },
+    {
+      name: "Purchase Return Bills",
+      path: "/purchase-return-bill",
+      icon: <PiKeyReturnBold size={20} />,
+      feature: "purchase_returns",
+    },
+    {
+      name: "Sales Bills",
+      path: "/sale-bill",
+      icon: <IoCartOutline size={20} />,
+      feature: "sales_bills",
+    },
+    {
+      name: "Sales Return",
+      path: "/sales-return/list",
+      icon: <PiKeyReturnBold size={20} />,
+      feature: "sales_returns",
+    },
+    {
+      name: "Advance Payment",
+      path: "/advancepayment",
+      icon: <PiWallet size={20} />,
+      feature: "customers",
+    },
+  ];
 
-      {hasFeature("products") && (
-        <li className="menu-item">
-          <Link
-            to="/print-barcode"
-            className={`menu-item-button ${isActive("/print-barcode") ? "active" : ""}`}
-            onClick={closeSidebar}
-          >
-            <div className="icon">
-              <IoPrintOutline size={22} />
-            </div>
-            <div className="text">Print Barcode</div>
-          </Link>
-        </li>
-      )}
+  /* =========================================================
+      ROLE MENUS
+  ========================================================= */
 
-      {hasFeature("products") && (
-        <li className="menu-item">
-          <Link
-            to="/expired-products"
-            className={`menu-item-button ${isActive("/expired-products") ? "active" : ""}`}
-            onClick={closeSidebar}
-          >
-            <div className="icon">
-              <IoExitOutline size={22} />
-            </div>
-            <div className="text">Expired Products</div>
-          </Link>
-        </li>
-      )}
+  const superadminMenus = [
+    {
+      name: "Stores",
+      path: "/store",
+      icon: <i className="icon-briefcase" />,
+    },
+  ];
 
-      {hasFeature("purchase_bills") && (
-        <li className="menu-item">
-          <Link
-            to="/purchase-bill"
-            className={`menu-item-button ${isActive("/purchase-bill") ? "active" : ""}`}
-            onClick={closeSidebar}
-          >
-            <div className="icon">
-              <IoReceiptOutline size={22} />
-            </div>
-            <div className="text">Purchase Bills</div>
-          </Link>
-        </li>
-      )}
+  const adminMenus = [
+    {
+      name: "Branches",
+      path: "/branch",
+      icon: <i className="icon-briefcase" />,
+      feature: "branch_management",
+    },
+    {
+      name: "Staff",
+      path: "/staff",
+      icon: <i className="icon-user" />,
+      feature: "staff_management",
+    },
 
-      {hasFeature("purchase_returns") && (
-        <li className="menu-item">
-          <Link
-            to="/purchase-return-bill"
-            className={`menu-item-button ${isActive("/purchase-return-bill") ? "active" : ""}`}
-            onClick={closeSidebar}
-          >
-            <div className="icon">
-              <PiKeyReturnBold />
-            </div>
-            <div className="text">Purchase Return Bills</div>
-          </Link>
-        </li>
-      )}
+    ...sharedMenuItems,
 
-      {hasFeature("sales_returns") && (
-        <li className="menu-item">
-          <Link
-            to="/sale-bill"
-            className={`menu-item-button ${isActive("/sale-bill") ? "active" : ""}`}
-            onClick={closeSidebar}
-          >
-            <div className="icon">
-              <IoCartOutline size={22} />
-            </div>
-            <div className="text">Sales Bills</div>
-          </Link>
-        </li>
-      )}
+    // POS feature-gated nahi hai (core flow)
+    {
+      name: "POS",
+      path: "/pos",
+      icon: <IoDesktopOutline size={20} />,
+    },
+  ];
 
-      {/* <li className="menu-item">
-        <Link
-          to="/sales-bill/return"
-          className={`menu-item-button ${isActive("/sales-bill/return") ? "active" : ""}`}
-          onClick={closeSidebar}
-        >
-          <div className="icon">
-            <i className="icon-printer"></i>
-          </div>
-          <div className="text">Sales Return</div>
-        </Link>
-      </li> */}
+  const managerMenus = [
+    {
+      name: "Cashiers",
+      path: "/staff",
+      icon: <i className="icon-user" />,
+      feature: "staff_management",
+    },
+    // Categories aur Brands POS ke liye zaroori hain — hamesha dikhte hain
+    {
+      name: "Categories",
+      path: "/category",
+      icon: <IoGridOutline size={20} />,
+    },
+    {
+      name: "Brands",
+      path: "/brand",
+      icon: <IoPricetagsOutline size={20} />,
+    },
+    {
+      name: "GST Rates",
+      path: "/gst-rates",
+      icon: <IoWalletOutline size={20} />,
+      feature: "gst_rates",
+    },
 
-      {hasFeature("sales_returns") && (
-        <li className="menu-item">
-          <Link
-            to="/sales-return/list"
-            className={`menu-item-button ${isActive("/sales-return/list") ? "active" : ""}`}
-            onClick={closeSidebar}
-          >
-            <div className="icon">
-              {/* <IoReturnUpBack size={22} /> */}
-              <PiKeyReturnBold />
-            </div>
-            <div className="text">Sales Return</div>
-          </Link>
-        </li>
-      )}
+    ...sharedMenuItems,
 
-      {hasFeature("customers") && (
-        <li className="menu-item">
-          <Link
-            to="/advancepayment"
-            className={`menu-item-button ${isActive("/advancepayment") ? "active" : ""}`}
-            onClick={closeSidebar}
-          >
-            <div className="icon">
-              {/* <IoReturnUpBack size={22} /> */}
-              <PiWallet />
-            </div>
-            <div className="text">Advance Payment</div>
-          </Link>
-        </li>
-      )}
+    {
+      name: "POS",
+      path: "/pos",
+      icon: <IoDesktopOutline size={20} />,
+    },
+  ];
 
-      {(hasFeature("stock_alerts") ||
-        hasFeature("reports_purchase") ||
-        hasFeature("reports_sales") ||
-        hasFeature("reports_gst") ||
-        hasFeature("reports_financial")) && (
-        <li className={`menu-item has-children ${reportsOpen ? "active" : ""}`}>
-          <a
-            href="#toggle-reports"
-            className="menu-item-button"
-            onClick={(event) => {
-              event.preventDefault();
-              setReportsOpen((previous) => !previous);
-            }}
-          >
-            <div className="icon">
-              <IoBarChartOutline size={22} />
-            </div>
-            <div className="text">Reports</div>
-            {reportsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </a>
-          <ul
-            className="sub-menu"
-            style={{ display: reportsOpen ? "block" : "none" }}
-          >
-            {[
-              {
-                name: "Stock Summary",
-                path: "/reports/stock-summary",
-                feature: "stock_alerts",
-              },
-              {
-                name: "Purchase Summary",
-                path: "/reports/purchase-summary",
-                feature: "reports_purchase",
-              },
-              {
-                name: "Sales Analytics",
-                path: "/reports/sales-analytics",
-                feature: "reports_sales",
-              },
-              {
-                name: "GST Output",
-                path: "/reports/gst-output-sales",
-                feature: "reports_gst",
-              },
-              {
-                name: "GSTR - 3B",
-                path: "/reports/GSTR3B",
-                feature: "reports_gst",
-              },
-              {
-                name: "GSTR1 Summary",
-                path: "/reports/GSTR1-Summary",
-                feature: "reports_gst",
-              },
-              {
-                name: "Price Override Summary",
-                path: "/reports/price-override",
-                feature: "reports_purchase",
-              },
-              {
-                name: "Sales Report",
-                path: "/reports/sales-report",
-                feature: "reports_sales",
-              },
-              {
-                name: "Purchase Report",
-                path: "/reports/purchase-report",
-                feature: "reports_purchase",
-              },
-              {
-                name: "Financial Report",
-                path: "/reports/financial-report",
-                feature: "reports_financial",
-              },
-              {
-                name: "Shift History Report",
-                path: "/reports/shift-report",
-                feature: null,
-              },
-              {
-                name: "Stock Expiry",
-                path: "/reports/stock-expiry-report",
-                feature: "stock_alerts",
-              },
-            ]
-              .filter((item) => !item.feature || hasFeature(item.feature))
-              .map((item, index) => (
-                <li key={index} className="sub-menu-item">
-                  <Link
-                    to={item.path}
-                    onClick={closeSidebar}
-                    className={isActive(item.path) ? "active" : ""}
-                  >
-                    <div className="text">{item.name}</div>
-                  </Link>
-                </li>
-              ))}
-          </ul>
-        </li>
-      )}
-    </>
+  const getMenuList = () => {
+    let list = [];
+
+    if (role === "superadmin") list = superadminMenus;
+    else if (role === "admin") list = adminMenus;
+    else if (role === "manager") list = managerMenus;
+
+    // jis item pe feature likha hai wo tabhi dikhega jab user ke paas wo feature ho
+    return list.filter((item) => !item.feature || hasFeature(item.feature));
+  };
+
+  const menuList = getMenuList();
+  const posItem = menuList.find((item) => item.path === "/pos");
+  const mainItems = menuList.filter((item) => item.path !== "/pos");
+
+  const isBackOffice = role === "admin" || role === "manager";
+  const showReports = isBackOffice && visibleReportLinks.length > 0;
+
+  /* =========================================================
+      RENDER
+  ========================================================= */
+
+  const renderMenuItem = (item) => (
+    <li key={`${item.path}-${item.name}`} className="app-sidebar-menu-item">
+      <Link
+        to={item.path}
+        className={`app-sidebar-link ${isActive(item.path) ? "active" : ""}`}
+        onClick={closeSidebar}
+        title={isCollapsed ? item.name : undefined}
+      >
+        <span className="app-sidebar-link-icon">{item.icon}</span>
+        <span className="app-sidebar-link-text">{item.name}</span>
+      </Link>
+    </li>
   );
 
   return (
     <>
-      {/* Mobile Button */}
-      <button className="mobile-menu-btn" onClick={() => setIsOpen(!isOpen)}>
-        <i className="icon-menu-left"></i>
+      {/* MOBILE MENU BUTTON */}
+      <button
+        className="app-sidebar-mobile-btn"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className="icon-menu-left"></span>
       </button>
 
-      <div className={`section-menu-left ${isOpen ? "open" : ""}`}>
-        {/* Logo */}
-        <div className="box-logo">
-          <Link to="/dashboard" onClick={closeSidebar}>
-            {logoUrl && (
-              <img
-                src={logoUrl}
-                alt="logo"
-                style={{ height: "70px", marginLeft: "25px" }}
-              />
-            )}
-          </Link>
-        </div>
+      {/* SIDEBAR CSS */}
+      <style>{`
+        /* ---------- MAIN SIDEBAR ---------- */
+        .app-sidebar {
+          width: 280px;
+          height: 100vh;
+          position: fixed;
+          top: 0;
+          left: 0;
+          background: #ffffff;
+          border-right: 1px solid #edf0f5;
+          display: flex;
+          flex-direction: column;
+          z-index: 999;
+          transition: width 0.25s ease, transform 0.25s ease;
+          box-sizing: border-box;
+        }
 
-        <div className="section-menu-left-wrap">
-          <div className="center">
-            {/* Dashboard */}
-            <div className="center-item">
-              <div className="center-heading">Main Home</div>
-              <ul className="menu-list">
-                <li className="menu-item">
-                  <Link
-                    to="/dashboard"
-                    className={`menu-item-button ${isActive("/dashboard") ? "active" : ""}`}
-                  >
-                    <div className="icon">
-                      <IoHomeOutline size={22} />
-                    </div>
-                    <div className="text">Dashboard</div>
-                  </Link>
-                </li>
-              </ul>
-            </div>
+        .app-sidebar.collapsed {
+          width: 78px;
+        }
 
-            {/* Pages */}
-            <div className="center-item">
-              <div className="center-heading">All Page</div>
-              <ul className="menu-list">
-                {role === "superadmin" && (
-                  <li className="menu-item">
-                    <Link
-                      to="/store"
-                      className={`menu-item-button ${isActive("/store") ? "active" : ""}`}
-                    >
-                      <div className="icon">
-                        <i className="icon-briefcase"></i>
-                      </div>
-                      <div className="text">Stores</div>
-                    </Link>
-                  </li>
-                )}
+        /* ---------- HEADER ---------- */
+        .app-sidebar-header {
+          height: 92px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 18px;
+          border-bottom: 1px solid #f1f3f6;
+          flex-shrink: 0;
+        }
 
-                {role === "admin" && (
-                  <>
-                    <li className="menu-item">
-                      <Link
-                        to="/branch"
-                        className={`menu-item-button ${isActive("/branch") ? "active" : ""}`}
-                      >
-                        <div className="icon">
-                          <i className="icon-briefcase"></i>
-                        </div>
-                        <div className="text">Branches</div>
-                      </Link>
-                    </li>
+        .app-sidebar-logo {
+          display: flex;
+          align-items: center;
+          min-width: 0;
+        }
 
-                    {hasFeature("staff_management") && (
-                      <li className="menu-item">
-                        <Link
-                          to="/staff"
-                          className={`menu-item-button ${isActive("/staff") ? "active" : ""}`}
-                        >
-                          <div className="icon">
-                            <i className="icon-user"></i>
-                          </div>
-                          <div className="text">Staff</div>
-                        </Link>
-                      </li>
-                    )}
+        .app-sidebar-logo img {
+          max-width: 180px;
+          /* max-height: 55px; */
+          object-fit: contain;
+          display: block;
+          transition: all 0.25s ease;
+        }
 
-                    {sharedMenus}
+        .app-sidebar.collapsed .app-sidebar-logo img {
+          width: 42px;
+          height: 42px;
+          object-fit: contain;
+        }
 
-                    <li className="menu-item">
-                      <Link
-                        to="/pos"
-                        className={`menu-item-button ${isActive("/pos") ? "active" : ""}`}
-                      >
-                        <div className="icon">
-                          <IoDesktopOutline size={22} />
-                        </div>
-                        <div className="text">POS</div>
-                      </Link>
-                    </li>
+        /* ---------- COLLAPSE BUTTON ---------- */
+        .app-sidebar-collapse-btn {
+          width: 34px;
+          height: 34px;
+          border: 0;
+          background: transparent;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #64748b;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
 
-                    <li className="menu-item">
-                      <Link
-                        to="#"
-                        onClick={handleLogout}
-                        className="menu-item-button"
-                      >
-                        <div className="icon">
-                          <IoLockOpenOutline size={22} />
-                        </div>
-                        <div className="text">Logout</div>
-                      </Link>
-                    </li>
-                  </>
-                )}
+        .app-sidebar-collapse-btn:hover {
+          background: #f1f5f9;
+          color: #2563eb;
+        }
 
-                {role === "manager" && (
-                  <>
-                    {hasFeature("staff_management") && (
-                      <li className="menu-item">
-                        <Link
-                          to="/staff"
-                          className={`menu-item-button ${isActive("/staff") ? "active" : ""}`}
-                        >
-                          <div className="icon">
-                            <i className="icon-user"></i>
-                          </div>
-                          <div className="text">Cashiers</div>
-                        </Link>
-                      </li>
-                    )}
+        /* ---------- SIDEBAR BODY ---------- */
+        .app-sidebar-body {
+          flex: 1;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding: 16px 10px 30px;
+        }
 
-                    <li className="menu-item">
-                      <Link
-                        to="/category"
-                        className={`menu-item-button ${isActive("/category") ? "active" : ""}`}
-                      >
-                        <div className="icon">
-                          <IoGridOutline size={22} />
-                        </div>
-                        <div className="text">Categories</div>
-                      </Link>
-                    </li>
+        .app-sidebar-body::-webkit-scrollbar {
+          width: 5px;
+        }
 
-                    {hasFeature("staff_management") && (
-                      <li className="menu-item">
-                        <Link
-                          to="/brand"
-                          className={`menu-item-button ${isActive("/brand") ? "active" : ""}`}
-                        >
-                          <div className="icon">
-                            <IoPricetagsOutline size={22} />
-                          </div>
-                          <div className="text">Brands</div>
-                        </Link>
-                      </li>
-                    )}
+        .app-sidebar-body::-webkit-scrollbar-track {
+          background: transparent;
+        }
 
-                    {hasFeature("gst_rates") && (
-                      <li className="menu-item">
-                        <Link
-                          to="/gst-rates"
-                          className={`menu-item-button ${isActive("/gst-rates") ? "active" : ""}`}
-                          onClick={closeSidebar}
-                        >
-                          <div className="icon">
-                            <IoWalletOutline size={22} />
-                          </div>
-                          <div className="text">GST Rates</div>
-                        </Link>
-                      </li>
-                    )}
+        .app-sidebar-body::-webkit-scrollbar-thumb {
+          background: #d8dee8;
+          border-radius: 10px;
+        }
 
-                    {sharedMenus}
+        /* ---------- SECTION HEADING ---------- */
+        .app-sidebar-section-title {
+          font-size: 11px;
+          line-height: 16px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          font-weight: 700;
+          color: #a3adbd;
+          padding: 14px 14px 7px;
+          margin-top: 3px;
+        }
 
-                    <li className="menu-item">
-                      <Link
-                        to="/pos"
-                        className={`menu-item-button ${isActive("/pos") ? "active" : ""}`}
-                      >
-                        <div className="icon">
-                          <IoDesktopOutline size={22} />
-                        </div>
-                        <div className="text">POS</div>
-                      </Link>
-                    </li>
+        .app-sidebar.collapsed .app-sidebar-section-title {
+          display: none;
+        }
 
-                    <li className="menu-item">
-                      <Link
-                        to="#"
-                        onClick={handleLogout}
-                        className="menu-item-button"
-                      >
-                        <div className="icon">
-                          <IoLockOpenOutline size={22} />
-                        </div>
-                        <div className="text">Logout</div>
-                      </Link>
-                    </li>
-                  </>
-                )}
-              </ul>
-            </div>
+        /* ---------- MENU LIST ---------- */
+        .app-sidebar-menu {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+        }
+
+        .app-sidebar-menu-item {
+          position: relative;
+          margin: 3px 0;
+        }
+
+        /* ---------- MENU LINK ---------- */
+        .app-sidebar-link {
+          position: relative;
+          min-height: 46px;
+          width: 100%;
+          padding: 0 14px;
+          display: flex;
+          align-items: center;
+          gap: 13px;
+          border: none;
+          border-radius: 10px;
+          background: transparent;
+          color: #111827;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 500;
+          line-height: 20px;
+          box-sizing: border-box;
+          cursor: pointer;
+          transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        /* ---------- ICON ---------- */
+        .app-sidebar-link-icon {
+          width: 22px;
+          min-width: 22px;
+          height: 22px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #111827;
+          transition: color 0.2s ease;
+        }
+
+        .app-sidebar-link-icon svg {
+          stroke-width: 1.8;
+        }
+
+        .app-sidebar-link-icon i {
+          font-size: 19px;
+        }
+
+        /* ---------- TEXT ---------- */
+        .app-sidebar-link-text {
+          /* flex: 1; */
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        /* ---------- HOVER ---------- */
+        .app-sidebar-link:hover {
+          background: #f7f9fc;
+          color: #111827;
+          text-decoration: none;
+        }
+
+        .app-sidebar-link:hover .app-sidebar-link-icon {
+          color: #2563eb;
+        }
+
+        /* ---------- ACTIVE ITEM ---------- */
+        .app-sidebar-link.active {
+          background: #eaf2ff;
+          color: #2563eb;
+          font-weight: 600;
+        }
+
+        .app-sidebar-link.active .app-sidebar-link-icon {
+          color: #2563eb;
+        }
+
+        .app-sidebar-link.active::before {
+          content: "";
+          position: absolute;
+          left: -10px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 4px;
+          height: 34px;
+          background: #2878f0;
+          border-radius: 0 5px 5px 0;
+        }
+
+        /* ---------- CHEVRON ---------- */
+        .app-sidebar-chevron {
+          width: 18px;
+          height: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #111827;
+          flex-shrink: 0;
+        }
+
+        /* ---------- COLLAPSED MENU ---------- */
+        .app-sidebar.collapsed .app-sidebar-link {
+          justify-content: center;
+          padding: 0;
+          gap: 0;
+        }
+
+        .app-sidebar.collapsed .app-sidebar-link-text,
+        .app-sidebar.collapsed .app-sidebar-chevron {
+          display: none;
+        }
+
+        .app-sidebar.collapsed .app-sidebar-link.active::before {
+          left: -10px;
+        }
+
+        /* ---------- REPORT SUBMENU ---------- */
+        .app-sidebar-submenu {
+          list-style: none;
+          margin: 2px 0 8px;
+          padding: 2px 0 2px 38px;
+        }
+
+        .app-sidebar-submenu-item {
+          position: relative;
+          margin: 1px 0;
+        }
+
+        .app-sidebar-submenu-link {
+          position: relative;
+          min-height: 34px;
+          display: flex;
+          align-items: center;
+          padding: 6px 10px 6px 14px;
+          border-radius: 7px;
+          color: #64748b;
+          text-decoration: none;
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.2s ease;
+        }
+
+        .app-sidebar-submenu-link::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          width: 5px;
+          height: 5px;
+          border: 1px solid #b9c3d1;
+          transform: rotate(45deg);
+        }
+
+        .app-sidebar-submenu-link:hover {
+          background: #f7f9fc;
+          color: #2563eb;
+        }
+
+        .app-sidebar-submenu-link.active {
+          background: #eff6ff;
+          color: #2563eb;
+          font-weight: 600;
+        }
+
+        .app-sidebar-submenu-link.active::before {
+          border-color: #2563eb;
+          background: #2563eb;
+        }
+
+        .app-sidebar.collapsed .app-sidebar-submenu {
+          display: none !important;
+        }
+
+        /* ---------- MOBILE BUTTON ---------- */
+        .app-sidebar-mobile-btn {
+          display: none;
+          position: fixed;
+          top: 15px;
+          left: 15px;
+          width: 42px;
+          height: 42px;
+          border: none;
+          border-radius: 8px;
+          background: #2563eb;
+          color: #ffffff;
+          z-index: 1100;
+          cursor: pointer;
+          align-items: center;
+          justify-content: center;
+        }
+
+        /* ---------- MOBILE ---------- */
+        @media (max-width: 768px) {
+          .app-sidebar {
+            width: 280px;
+            transform: translateX(-100%);
+            box-shadow: 5px 0 25px rgba(15, 23, 42, 0.12);
+          }
+
+          .app-sidebar.open {
+            transform: translateX(0);
+          }
+
+          .app-sidebar.collapsed {
+            width: 280px;
+          }
+
+          .app-sidebar-mobile-btn {
+            display: flex;
+          }
+
+          .app-sidebar-collapse-btn {
+            display: none;
+          }
+
+          .app-sidebar.collapsed .app-sidebar-link-text,
+          .app-sidebar.collapsed .app-sidebar-chevron {
+            display: block;
+          }
+
+          .app-sidebar.collapsed .app-sidebar-link {
+            justify-content: flex-start;
+            padding: 0 14px;
+            gap: 13px;
+          }
+
+          .app-sidebar.collapsed .app-sidebar-section-title {
+            display: block;
+          }
+
+          .app-sidebar.collapsed .app-sidebar-submenu {
+            display: block !important;
+          }
+        }
+
+        /* ---------- SUPPORT SECTION ---------- */
+        .app-sidebar-support {
+          margin-top: 8px;
+        }
+
+        .app-sidebar-support .support-title {
+          margin-top: 8px;
+          margin-bottom: 4px;
+        }
+
+        /* ---------- SOCIAL ICONS ---------- */
+        .app-sidebar-social {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 10px 20px;
+        }
+
+        .app-sidebar-social-btn {
+          width: 44px;
+          height: 44px;
+          border: 1px solid #edf0f5;
+          border-radius: 11px;
+          background: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #b3bdcc;
+          text-decoration: none;
+          transition: all 0.2s ease;
+        }
+
+        .app-sidebar-social-btn svg {
+          width: 17px;
+          height: 17px;
+        }
+
+        .app-sidebar-social-btn:hover {
+          border-color: #2878f0;
+          color: #2878f0;
+          background: #f7faff;
+          transform: translateY(-2px);
+        }
+
+        /* ---------- CONTACT CARD ---------- */
+        .app-sidebar-contact-card {
+          margin: 28px 0 10px;
+          padding: 16px;
+          border: 1px solid #edf0f5;
+          border-radius: 14px;
+          background: #ffffff;
+          text-align: center;
+          box-sizing: border-box;
+        }
+
+        .app-sidebar-avatar {
+          width: 100%;
+          height: 150px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 8px;
+          overflow: hidden;
+        }
+
+        .app-sidebar-avatar img {
+          width: 233px;
+          height: 184px;
+          object-fit: cover;
+          display: block;
+        }
+
+        .app-sidebar-contact-card h3 {
+          margin: 6px 0 8px;
+          font-size: 18px;
+          line-height: 26px;
+          font-weight: 700;
+          color: #111827;
+        }
+
+        .app-sidebar-contact-card p {
+          margin: 0 0 18px;
+          font-size: 13px;
+          line-height: 18px;
+          color: #64748b;
+        }
+
+        .app-sidebar-contact-btn {
+          width: 100%;
+          height: 50px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-sizing: border-box;
+          border-radius: 12px;
+          background: #2878f0;
+          color: #ffffff;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 600;
+          transition: all 0.2s ease;
+        }
+
+        .app-sidebar-contact-btn:hover {
+          background: #1768df;
+          color: #ffffff;
+          text-decoration: none;
+          transform: translateY(-1px);
+        }
+      `}</style>
+
+      {/* SIDEBAR */}
+      <aside
+        className={`app-sidebar ${isOpen ? "open" : ""} ${
+          isCollapsed ? "collapsed" : ""
+        }`}
+      >
+        {/* HEADER */}
+        <div className="app-sidebar-header">
+          <div className="app-sidebar-logo">
+            <Link to="/dashboard" onClick={closeSidebar}>
+              {logoUrl && <img src={logoUrl} alt="logo" />}
+            </Link>
           </div>
         </div>
-      </div>
+
+        {/* BODY */}
+        <div className="app-sidebar-body">
+          <div className="app-sidebar-section-title">Main Home</div>
+          <ul className="app-sidebar-menu">
+            <li className="app-sidebar-menu-item">
+              <Link
+                to="/dashboard"
+                className={`app-sidebar-link ${
+                  isActive("/dashboard") ? "active" : ""
+                }`}
+                onClick={closeSidebar}
+                title={isCollapsed ? "Dashboard" : undefined}
+              >
+                <span className="app-sidebar-link-icon">
+                  <IoHomeOutline size={20} />
+                </span>
+                <span className="app-sidebar-link-text">Dashboard</span>
+              </Link>
+            </li>
+          </ul>
+
+          <div className="app-sidebar-section-title">All Page</div>
+          <ul className="app-sidebar-menu">
+            {/* feature-filtered menu items (POS ko chhodkar) */}
+            {mainItems.map(renderMenuItem)}
+
+            {/* REPORTS — sirf wahi sub-links jinka feature user ke paas hai */}
+            {showReports && (
+              <li className="app-sidebar-menu-item">
+                <button
+                  type="button"
+                  className={`app-sidebar-link ${isReportPath ? "active" : ""}`}
+                  style={{ fontFamily: "inherit", textAlign: "left" }}
+                  onClick={() => setReportsOpen((prev) => !prev)}
+                  title={isCollapsed ? "Reports" : undefined}
+                >
+                  <span className="app-sidebar-link-icon">
+                    <IoBarChartOutline size={20} />
+                  </span>
+                  <span className="app-sidebar-link-text">Reports</span>
+                  <span
+                    className="app-sidebar-chevron"
+                    style={{ marginLeft: "auto" }}
+                  >
+                    {reportsOpen ? (
+                      <ChevronUp size={16} />
+                    ) : (
+                      <ChevronDown size={16} />
+                    )}
+                  </span>
+                </button>
+
+                {reportsOpen && (
+                  <ul className="app-sidebar-submenu">
+                    {visibleReportLinks.map((item) => (
+                      <li key={item.path} className="app-sidebar-submenu-item">
+                        <Link
+                          to={item.path}
+                          className={`app-sidebar-submenu-link ${
+                            isActive(item.path) ? "active" : ""
+                          }`}
+                          onClick={closeSidebar}
+                        >
+                          {item.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            )}
+
+            {/* POS (feature-gated nahi) */}
+            {posItem && renderMenuItem(posItem)}
+
+            {/* LOGOUT — admin + manager dono ke liye */}
+            {isBackOffice && (
+              <li className="app-sidebar-menu-item">
+                <button
+                  type="button"
+                  className="app-sidebar-link"
+                  style={{ fontFamily: "inherit", textAlign: "left" }}
+                  onClick={handleLogout}
+                  title={isCollapsed ? "Logout" : undefined}
+                >
+                  <span className="app-sidebar-link-icon">
+                    <IoLockOpenOutline size={20} />
+                  </span>
+                  <span className="app-sidebar-link-text">Logout</span>
+                </button>
+              </li>
+            )}
+          </ul>
+
+          {/* SUPPORT SECTION */}
+          <div className="app-sidebar-support">
+            {!isCollapsed && (
+              <div className="app-sidebar-support">
+                <div className="app-sidebar-section-title support-title">
+                  Connect Us
+                </div>
+
+                <div className="app-sidebar-social">
+                  <a
+                    href="https://www.facebook.com/vakarosoftware"
+                    className="app-sidebar-social-btn"
+                    aria-label="Facebook"
+                  >
+                    <FaFacebookF />
+                  </a>
+
+                  <a
+                    href="https://www.linkedin.com/company/vakaroofficial/"
+                    className="app-sidebar-social-btn"
+                    aria-label="LinkedIn"
+                  >
+                    <FaLinkedinIn />
+                  </a>
+
+                  <a
+                    href="https://www.instagram.com/vakaro_official/"
+                    className="app-sidebar-social-btn"
+                    aria-label="Instagram"
+                  >
+                    <FaInstagram />
+                  </a>
+                </div>
+
+                <div className="app-sidebar-contact-card">
+                  {/* AVATAR */}
+                  <div className="app-sidebar-avatar">
+                    <img
+                      src="/assets/images/avatar/avatar.png"
+                      alt="Contact Support"
+                    />
+                  </div>
+
+                  {/* TITLE */}
+                  <h3>Hi, how can we help?</h3>
+
+                  {/* DESCRIPTION */}
+                  <p>
+                    Contact us if you have any
+                    <br />
+                    assistance, we will contact you as
+                    <br />
+                    soon as possible
+                  </p>
+
+                  {/* BUTTON */}
+                  <a
+                    style={{ color: "white", textDecoration: "none" }}
+                    href="https://vakaro.in/contact"
+                    className="app-sidebar-contact-btn"
+                    onClick={closeSidebar}
+                    target="_blank"
+                  >
+                    Contact
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </aside>
     </>
   );
 };
 
 export default Navbar;
-
