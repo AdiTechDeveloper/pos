@@ -37,9 +37,11 @@ const CreateEditGstRates = () => {
 
   // Validation Schema
   const validationSchema = Yup.object({
-    rate: Yup.string().required("Rate is required"),
+    rate: Yup.string().required("Rate is required")
+    .matches(/^[0-9]$/, "Only Digit allowed"),
     // description: Yup.string().required("Description is required"),
   });
+  
 
   // Submit (Create + Update)
   const handleSubmit = async (values) => {
@@ -120,7 +122,7 @@ const CreateEditGstRates = () => {
                         {/* <ErrorMessage
                           name="description"
                           className="error-text"
-                          component="div"
+                          component="div"CGST
                         /> */}
                       </div>
                     </fieldset>

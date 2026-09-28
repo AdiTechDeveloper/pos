@@ -45,8 +45,29 @@ const CreateEditSupplier = () => {
 
   // Validation Schema
   const validationSchema = Yup.object({
-    name: Yup.string().required("Name is required"),
-    state: Yup.string().required("State is required"),
+    name: Yup.string()
+      .required("Name is required")
+      .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
+      .max(100, "Name cannot exceed 100 characters"),
+
+    gstin: Yup.string()
+      .required("GSTIN is required")
+      .length(15, "GSTIN must be exactly 15 characters")
+      .matches(
+        /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
+        "Invalid GSTIN format (e.g., 22AAAAA0000A1Z5)"
+      ),
+
+    contact: Yup.string()
+      .required("Contact number is required")
+      .matches(/^[0-9]{10}$/, "Contact number must be exactly 10 digits"),
+
+    address: Yup.string()
+      .required("Address is required")
+      .max(255, "Address cannot exceed 255 characters"),
+
+    state: Yup.string()
+      .required("State is required"),
   });
 
   // Submit (Create + Update)
@@ -106,6 +127,7 @@ const CreateEditSupplier = () => {
                           name="name"
                           className="mb-5"
                           placeholder="Enter supplier name"
+                          maxLength={50} // Prevents typing past 50 characters
                         />
                         <ErrorMessage
                           name="name"
@@ -122,6 +144,7 @@ const CreateEditSupplier = () => {
                           name="gstin"
                           className="mb-5"
                           placeholder="Enter GST no."
+                          maxLength={15} // Prevents typing past 50 characters
                         />
                         <ErrorMessage
                           name="gstin"
@@ -130,7 +153,7 @@ const CreateEditSupplier = () => {
                         />
                       </div>
                     </fieldset>
-                     <fieldset className="col-md-4">
+                    <fieldset className="col-md-4">
                       <div className="body-title">Contact *</div>
                       <div className="body-content mb-15">
                         <Field
@@ -139,6 +162,10 @@ const CreateEditSupplier = () => {
                           maxLength={10}
                           className="mb-5"
                           placeholder="Enter mobile no."
+                          onInput={(e) => {
+                            e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
+                          }}
+
                         />
                         <ErrorMessage
                           name="contact"
@@ -165,72 +192,72 @@ const CreateEditSupplier = () => {
                         />
                       </div>
                     </fieldset>
-                      <fieldset className="col-md-3 mb-12">
-                    <div className="body-title">State *</div>
-                    <div className="body-content">
-                      <Field as="select" name="state" className="mb-5">
-                        <option value="">Select state</option>
+                    <fieldset className="col-md-3 mb-12">
+                      <div className="body-title">State *</div>
+                      <div className="body-content">
+                        <Field as="select" name="state" className="mb-5">
+                          <option value="">Select state</option>
 
-                        {/* States */}
-                        <option value="Andhra Pradesh">Andhra Pradesh</option>
-                        <option value="Arunachal Pradesh">
-                          Arunachal Pradesh
-                        </option>
-                        <option value="Assam">Assam</option>
-                        <option value="Bihar">Bihar</option>
-                        <option value="Chhattisgarh">Chhattisgarh</option>
-                        <option value="Goa">Goa</option>
-                        <option value="Gujarat">Gujarat</option>
-                        <option value="Haryana">Haryana</option>
-                        <option value="Himachal Pradesh">
-                          Himachal Pradesh
-                        </option>
-                        <option value="Jharkhand">Jharkhand</option>
-                        <option value="Karnataka">Karnataka</option>
-                        <option value="Kerala">Kerala</option>
-                        <option value="Madhya Pradesh">Madhya Pradesh</option>
-                        <option value="Maharashtra">Maharashtra</option>
-                        <option value="Manipur">Manipur</option>
-                        <option value="Meghalaya">Meghalaya</option>
-                        <option value="Mizoram">Mizoram</option>
-                        <option value="Nagaland">Nagaland</option>
-                        <option value="Odisha">Odisha</option>
-                        <option value="Punjab">Punjab</option>
-                        <option value="Rajasthan">Rajasthan</option>
-                        <option value="Sikkim">Sikkim</option>
-                        <option value="Tamil Nadu">Tamil Nadu</option>
-                        <option value="Telangana">Telangana</option>
-                        <option value="Tripura">Tripura</option>
-                        <option value="Uttar Pradesh">Uttar Pradesh</option>
-                        <option value="Uttarakhand">Uttarakhand</option>
-                        <option value="West Bengal">West Bengal</option>
+                          {/* States */}
+                          <option value="Andhra Pradesh">Andhra Pradesh</option>
+                          <option value="Arunachal Pradesh">
+                            Arunachal Pradesh
+                          </option>
+                          <option value="Assam">Assam</option>
+                          <option value="Bihar">Bihar</option>
+                          <option value="Chhattisgarh">Chhattisgarh</option>
+                          <option value="Goa">Goa</option>
+                          <option value="Gujarat">Gujarat</option>
+                          <option value="Haryana">Haryana</option>
+                          <option value="Himachal Pradesh">
+                            Himachal Pradesh
+                          </option>
+                          <option value="Jharkhand">Jharkhand</option>
+                          <option value="Karnataka">Karnataka</option>
+                          <option value="Kerala">Kerala</option>
+                          <option value="Madhya Pradesh">Madhya Pradesh</option>
+                          <option value="Maharashtra">Maharashtra</option>
+                          <option value="Manipur">Manipur</option>
+                          <option value="Meghalaya">Meghalaya</option>
+                          <option value="Mizoram">Mizoram</option>
+                          <option value="Nagaland">Nagaland</option>
+                          <option value="Odisha">Odisha</option>
+                          <option value="Punjab">Punjab</option>
+                          <option value="Rajasthan">Rajasthan</option>
+                          <option value="Sikkim">Sikkim</option>
+                          <option value="Tamil Nadu">Tamil Nadu</option>
+                          <option value="Telangana">Telangana</option>
+                          <option value="Tripura">Tripura</option>
+                          <option value="Uttar Pradesh">Uttar Pradesh</option>
+                          <option value="Uttarakhand">Uttarakhand</option>
+                          <option value="West Bengal">West Bengal</option>
 
-                        {/* Union Territories (optional) */}
-                        <option value="Andaman and Nicobar Islands">
-                          Andaman and Nicobar Islands
-                        </option>
-                        <option value="Chandigarh">Chandigarh</option>
-                        <option value="Dadra and Nagar Haveli and Daman and Diu">
-                          Dadra and Nagar Haveli and Daman and Diu
-                        </option>
-                        <option value="Delhi">Delhi</option>
-                        <option value="Jammu and Kashmir">
-                          Jammu and Kashmir
-                        </option>
-                        <option value="Ladakh">Ladakh</option>
-                        <option value="Lakshadweep">Lakshadweep</option>
-                        <option value="Puducherry">Puducherry</option>
-                      </Field>
+                          {/* Union Territories (optional) */}
+                          <option value="Andaman and Nicobar Islands">
+                            Andaman and Nicobar Islands
+                          </option>
+                          <option value="Chandigarh">Chandigarh</option>
+                          <option value="Dadra and Nagar Haveli and Daman and Diu">
+                            Dadra and Nagar Haveli and Daman and Diu
+                          </option>
+                          <option value="Delhi">Delhi</option>
+                          <option value="Jammu and Kashmir">
+                            Jammu and Kashmir
+                          </option>
+                          <option value="Ladakh">Ladakh</option>
+                          <option value="Lakshadweep">Lakshadweep</option>
+                          <option value="Puducherry">Puducherry</option>
+                        </Field>
 
-                      <ErrorMessage
-                        name="state"
-                        className="error-text"
-                        component="div"
-                      />
-                    </div>
-                  </fieldset>
+                        <ErrorMessage
+                          name="state"
+                          className="error-text"
+                          component="div"
+                        />
+                      </div>
+                    </fieldset>
                   </div>
-                
+
                   <div className="flex col">
                     {/* SUBMIT BUTTON */}
                     <button className="tf-button w208" type="submit">
@@ -249,5 +276,5 @@ const CreateEditSupplier = () => {
     </Layout>
   );
 };
- 
+
 export default CreateEditSupplier;

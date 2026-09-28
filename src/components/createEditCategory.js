@@ -67,12 +67,6 @@ const validationSchema = Yup.object({
     fetchCategory();
   }, []);
 
-  // Validation Schema
-  // const validationSchema = Yup.object({
-  //   name: Yup.string().required("Name is required"),
-  //   description: Yup.string().required("Description is required"),
-  //   // parent_id: Yup.string().required("Parent Id is required"),
-  // });
 
   // Submit (Create + Update)
   const handleSubmit = async (values) => {
