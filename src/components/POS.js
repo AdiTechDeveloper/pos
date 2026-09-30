@@ -158,9 +158,7 @@ export default function POSApp() {
       <div className="flex items-center justify-center h-screen">
         <div className="bg-white p-8 rounded-2xl shadow-lg text-center">
           <h3 className="text-2xl font-bold mb-4">Select a Branch</h3>
-          <p className="text-gray-500 mb-6">
-            Choose a branch for POS Screen.
-          </p>
+          <p className="text-gray-500 mb-6">Choose a branch for POS Screen.</p>
           <select
             className="border p-3 rounded-lg text-lg"
             defaultValue=""
@@ -202,12 +200,14 @@ export default function POSApp() {
         refreshProducts={refreshProducts}
         addToCart={addToCart}
         handleProductSelection={handleProductSelection}
+        branchId={role === "admin" ? selectedBranchId : undefined}
       />
       <CartPanel
         cart={cart}
         setCart={setCart}
         triggerRefresh={triggerRefresh}
         onPriceUpdated={() => setRefreshProducts((prev) => prev + 1)}
+        branchId={role === "admin" ? selectedBranchId : undefined}
       />
     </div>
   );

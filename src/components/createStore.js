@@ -66,6 +66,14 @@ const CreateStore = () => {
     );
   };
 
+  const featureKeys = Object.keys(featureCatalog);
+  const allFeaturesSelected =
+    featureKeys.length > 0 && featureKeys.every((key) => selectedFeatures.includes(key));
+
+  const toggleAllFeatures = () => {
+    setSelectedFeatures(allFeaturesSelected ? [] : featureKeys);
+  };
+
   useEffect(() => {
     if (isEdit && !editingData) {
       fetchStore();
@@ -478,29 +486,131 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
-                  <fieldset className="name">
-                    <div className="body-title">Features</div>
+                  <fieldset
+                    className="name"
+                    style={{ border: "none", padding: 0, margin: 0 }}
+                  >
                     <div
-                      className="field-wrapper"
-                      style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "16px",
+                        marginBottom: "14px",
+                        flexWrap: "wrap",
+                      }}
                     >
-                      {Object.entries(featureCatalog).map(([key, info]) => (
-                        <label
-                          key={key}
+                      <div
+                        className="body-title"
+                        style={{
+                          fontWeight: 600,
+                          fontSize: "16px",
+                          color: "#1f2937",
+                          margin: 0,
+                        }}
+                      >
+                        Features
+                        <span
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
+                            marginLeft: "8px",
+                            padding: "3px 9px",
+                            borderRadius: "999px",
+                            backgroundColor: "#f1f5f9",
+                            color: "#64748b",
+                            fontSize: "12px",
+                            fontWeight: 500,
                           }}
                         >
-                          <input
-                            type="checkbox"
-                            checked={selectedFeatures.includes(key)}
-                            onChange={() => toggleFeature(key)}
-                          />
-                          {info.label}
-                        </label>
-                      ))}
+                          {selectedFeatures.length} of {featureKeys.length} selected
+                        </span>
+                      </div>
+
+                      <label
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          padding: "8px 12px",
+                          border: "1px solid #bfdbfe",
+                          borderRadius: "6px",
+                          backgroundColor: allFeaturesSelected ? "#dbeafe" : "#f8fafc",
+                          color: "#1d4ed8",
+                          cursor: featureKeys.length ? "pointer" : "not-allowed",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          opacity: featureKeys.length ? 1 : 0.6,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={allFeaturesSelected}
+                          onChange={toggleAllFeatures}
+                          disabled={!featureKeys.length}
+                          style={{
+                            width: "16px",
+                            height: "16px",
+                            accentColor: "#2563eb",
+                            cursor: featureKeys.length ? "pointer" : "not-allowed",
+                          }}
+                        />
+                        Select all
+                      </label>
+                    </div>
+
+                    <div
+                      className="field-wrapper"
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fill, minmax(160px, 1fr))",
+                        gap: "14px",
+                      }}
+                    >
+                      {Object.entries(featureCatalog).map(([key, info]) => {
+                        const isSelected = selectedFeatures.includes(key);
+
+                        return (
+                          <label
+                            key={key}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              padding: "13px 14px",
+                              borderRadius: "6px",
+                              border: isSelected
+                                ? "1px solid #60a5fa"
+                                : "1px solid #e2e8f0",
+                              backgroundColor: isSelected
+                                ? "#eff6ff"
+                                : "#ffffff",
+                              color: isSelected ? "#1d4ed8" : "#374151",
+                              cursor: "pointer",
+                              fontWeight: isSelected ? 600 : 400,
+                              transition: "all 0.2s ease",
+                              boxShadow: isSelected
+                                ? "0 4px 10px rgba(37, 99, 235, 0.12)"
+                                : "0 2px 5px rgba(15, 23, 42, 0.05)",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleFeature(key)}
+                              style={{
+                                width: "16px",
+                                height: "16px",
+                                accentColor: "#3b82f6",
+                                cursor: "pointer",
+                              }}
+                            />
+                            {info.icon && <span>{info.icon}</span>}
+                            <span style={{ fontSize: "14px" }}>
+                              {info.label}
+                            </span>
+                          </label>
+                        );
+                      })}
                     </div>
                   </fieldset>
 

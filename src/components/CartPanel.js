@@ -24,6 +24,7 @@ export default function CartPanel({
   setCart,
   triggerRefresh,
   onPriceUpdated,
+  branchId,
 }) {
   const history = useHistory();
   const [showPayment, setShowPayment] = useState(false);
@@ -228,6 +229,7 @@ export default function CartPanel({
         lines,
         selected_date: selectedDate,
       };
+      if (branchId) createPayload.branch_id = branchId;
       if (payment_type) createPayload.payment_type = payment_type;
       if (customer) createPayload.customer = customer;
       if (points_redeemed > 0) createPayload.points_redeemed = points_redeemed;

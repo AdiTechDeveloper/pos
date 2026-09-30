@@ -23,10 +23,10 @@ export const getCategories = () =>
 export const getBrands = () =>
   axios.get(`${BASE_URL}/api/brands`, { headers: getAuthHeader() });
 
-export const scanBarcode = (barcode) =>
+export const scanBarcode = (barcode, branchId) =>
   axios.post(
     `${BASE_URL}/api/sales/scan`,
-    { barcode },
+    { barcode, ...(branchId ? { branch_id: branchId } : {}) },
     { headers: getAuthHeader() },
   );
 

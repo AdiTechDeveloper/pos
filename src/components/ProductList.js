@@ -33,7 +33,7 @@ export default function ProductList({
         category_id: selectedCategory,
         brand_id: selectedBrand,
         search,
-        branch_id: branchId,
+        ...(branchId ? { branch_id: branchId } : {}),
       });
 
       setProducts(res.data.products || []);
@@ -135,7 +135,7 @@ export default function ProductList({
 
   const handleBarcodeScan = async () => {
     try {
-      const res = await scanBarcode(barcode.trim());
+      const res = await scanBarcode(barcode.trim(), branchId);
 
       const data = res.data || res;
 

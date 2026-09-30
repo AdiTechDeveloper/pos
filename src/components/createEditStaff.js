@@ -12,6 +12,7 @@ const CreateEditStaff = () => {
   const { id } = useParams(); // if id exists -> Edit Mode
   const history = useHistory();
   const [featureCatalog, setFeatureCatalog] = useState({});
+  const featureKeys = Object.keys(featureCatalog);
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_staff = localStorage.getItem("staff_detail");
@@ -133,7 +134,7 @@ const CreateEditStaff = () => {
     <Layout>
       <div className="main-content-inner">
         <div className="main-content-wrap">
-          <h3 className="mb-8">{isEdit ? "Edit Cashier" : "Create Cashier"}</h3>
+          <h3 className="mb-8">{isEdit ? "Edit Staff" : "Create Staff"}</h3>
 
           <div className="wg-box">
             <Formik
@@ -146,27 +147,50 @@ const CreateEditStaff = () => {
                 <Form className="wg-form">
                   {/* Single Row Container for All Fields */}
                   <div className="row mb-15 align-items-start">
-                    
                     {/* Name */}
-                    <fieldset className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-2" : "col-md-3"}`}>
+                    <fieldset
+                      className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-2" : "col-md-3"}`}
+                    >
                       <div className="body-title">Name *</div>
                       <div className="body-content mb-15">
-                        <Field type="text" name="name" className="mb-5" placeholder="Enter staff name" />
-                        <ErrorMessage name="name" component="div" className="error-text" />
+                        <Field
+                          type="text"
+                          name="name"
+                          className="mb-5"
+                          placeholder="Enter staff name"
+                        />
+                        <ErrorMessage
+                          name="name"
+                          component="div"
+                          className="error-text"
+                        />
                       </div>
                     </fieldset>
 
                     {/* Username */}
-                    <fieldset className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-2" : "col-md-3"}`}>
+                    <fieldset
+                      className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-2" : "col-md-3"}`}
+                    >
                       <div className="body-title">Username *</div>
                       <div className="body-content">
-                        <Field type="text" name="username" className="mb-5" placeholder="Enter username" />
-                        <ErrorMessage name="username" component="div" className="error-text" />
+                        <Field
+                          type="text"
+                          name="username"
+                          className="mb-5"
+                          placeholder="Enter username"
+                        />
+                        <ErrorMessage
+                          name="username"
+                          component="div"
+                          className="error-text"
+                        />
                       </div>
                     </fieldset>
 
                     {/* Branch IDs */}
-                    <fieldset className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-2" : "col-md-3"}`}>
+                    <fieldset
+                      className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-2" : "col-md-3"}`}
+                    >
                       <div className="body-title">Branch IDs *</div>
                       <div className="body-content mb-15">
                         <Field
@@ -177,7 +201,7 @@ const CreateEditStaff = () => {
                           onChange={(e) => {
                             const selected = Array.from(
                               e.target.selectedOptions,
-                              (option) => Number(option.value)
+                              (option) => Number(option.value),
                             );
                             setFieldValue("branch_ids", selected);
                           }}
@@ -199,12 +223,18 @@ const CreateEditStaff = () => {
                             </option>
                           ))}
                         </Field>
-                        <ErrorMessage name="branch_ids" component="div" className="error-text" />
+                        <ErrorMessage
+                          name="branch_ids"
+                          component="div"
+                          className="error-text"
+                        />
                       </div>
                     </fieldset>
 
                     {/* Role */}
-                    <fieldset className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-3" : "col-md-3"}`}>
+                    <fieldset
+                      className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-3" : "col-md-3"}`}
+                    >
                       <div className="body-title">Role *</div>
                       <div className="body-content">
                         <Field as="select" name="role" className="mb-5">
@@ -212,7 +242,11 @@ const CreateEditStaff = () => {
                           <option value="manager">Manager</option>
                           <option value="cashier">Cashier</option>
                         </Field>
-                        <ErrorMessage name="role" component="div" className="error-text" />
+                        <ErrorMessage
+                          name="role"
+                          component="div"
+                          className="error-text"
+                        />
                       </div>
                     </fieldset>
 
@@ -228,47 +262,168 @@ const CreateEditStaff = () => {
                             className="mb-5"
                             placeholder="4-digit PIN"
                           />
-                          <ErrorMessage name="pin" component="div" className="error-text" />
+                          <ErrorMessage
+                            name="pin"
+                            component="div"
+                            className="error-text"
+                          />
                         </div>
                       </fieldset>
                     )}
-
                   </div>
 
                   {values.role === "manager" && (
                     <div className="row mb-15">
                       <fieldset className="col-md-10">
-                        <div className="body-title">Features *</div>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: "16px",
+                            marginBottom: "14px",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <div
+                            className="body-title"
+                            style={{
+                              margin: 0,
+                              fontWeight: 600,
+                              fontSize: "16px",
+                              color: "#1f2937",
+                            }}
+                          >
+                            Features *
+                            <span
+                              style={{
+                                marginLeft: "8px",
+                                padding: "3px 9px",
+                                borderRadius: "999px",
+                                backgroundColor: "#f1f5f9",
+                                color: "#64748b",
+                                fontSize: "12px",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {values.features.length} of {featureKeys.length}{" "}
+                              selected
+                            </span>
+                          </div>
+
+                          <label
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              padding: "8px 12px",
+                              border: "1px solid #bfdbfe",
+                              borderRadius: "6px",
+                              backgroundColor:
+                                featureKeys.length > 0 &&
+                                featureKeys.every((key) =>
+                                  values.features.includes(key),
+                                )
+                                  ? "#dbeafe"
+                                  : "#f8fafc",
+                              color: "#1d4ed8",
+                              cursor: featureKeys.length
+                                ? "pointer"
+                                : "not-allowed",
+                              fontSize: "13px",
+                              fontWeight: 600,
+                              opacity: featureKeys.length ? 1 : 0.6,
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={
+                                featureKeys.length > 0 &&
+                                featureKeys.every((key) =>
+                                  values.features.includes(key),
+                                )
+                              }
+                              onChange={(e) =>
+                                setFieldValue(
+                                  "features",
+                                  e.target.checked ? featureKeys : [],
+                                )
+                              }
+                              disabled={!featureKeys.length}
+                              style={{
+                                width: "16px",
+                                height: "16px",
+                                accentColor: "#2563eb",
+                                cursor: featureKeys.length
+                                  ? "pointer"
+                                  : "not-allowed",
+                              }}
+                            />
+                            Select all
+                          </label>
+                        </div>
+
                         <div
                           className="body-content mb-15"
                           style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: "12px",
+                            display: "grid",
+                            gridTemplateColumns:
+                              "repeat(auto-fill, minmax(160px, 1fr))",
+                            gap: "14px",
                           }}
                         >
-                          {Object.entries(featureCatalog).map(([key, info]) => (
-                            <label
-                              key={key}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "4px",
-                              }}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={values.features.includes(key)}
-                                onChange={(e) => {
-                                  const next = e.target.checked
-                                    ? [...values.features, key]
-                                    : values.features.filter((f) => f !== key);
-                                  setFieldValue("features", next);
+                          {Object.entries(featureCatalog).map(([key, info]) => {
+                            const isSelected = values.features.includes(key);
+
+                            return (
+                              <label
+                                key={key}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "10px",
+                                  padding: "13px 14px",
+                                  borderRadius: "6px",
+                                  border: isSelected
+                                    ? "1px solid #60a5fa"
+                                    : "1px solid #e2e8f0",
+                                  backgroundColor: isSelected
+                                    ? "#eff6ff"
+                                    : "#ffffff",
+                                  color: isSelected ? "#1d4ed8" : "#374151",
+                                  cursor: "pointer",
+                                  fontWeight: isSelected ? 600 : 400,
+                                  transition: "all 0.2s ease",
+                                  boxShadow: isSelected
+                                    ? "0 4px 10px rgba(37, 99, 235, 0.12)"
+                                    : "0 2px 5px rgba(15, 23, 42, 0.05)",
                                 }}
-                              />
-                              {info.label}
-                            </label>
-                          ))}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    const next = e.target.checked
+                                      ? [...values.features, key]
+                                      : values.features.filter(
+                                          (f) => f !== key,
+                                        );
+                                    setFieldValue("features", next);
+                                  }}
+                                  style={{
+                                    width: "16px",
+                                    height: "16px",
+                                    accentColor: "#3b82f6",
+                                    cursor: "pointer",
+                                  }}
+                                />
+                                {info.icon && <span>{info.icon}</span>}
+                                <span style={{ fontSize: "14px" }}>
+                                  {info.label}
+                                </span>
+                              </label>
+                            );
+                          })}
                         </div>
                       </fieldset>
                     </div>
@@ -277,10 +432,15 @@ const CreateEditStaff = () => {
                   {/* SUBMIT BUTTON */}
                   <div className="flex">
                     <button className="tf-button w208" type="submit">
-                      {isEdit ? "Update Cashier" : "Create Cashier"}
+                      {isEdit ? "Update Satff" : "Create Staff"}
                     </button>
                     <button type="button" className="ml-5 tf-button style-1">
-                      <a href="/staff" style={{ color: "inherit", textDecoration: "none" }}>Cancel</a>
+                      <a
+                        href="/staff"
+                        style={{ color: "inherit", textDecoration: "none" }}
+                      >
+                        Cancel
+                      </a>
                     </button>
                   </div>
                 </Form>
