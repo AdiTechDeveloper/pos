@@ -336,10 +336,10 @@ const CreatePurchaseReplace = () => {
                         >
                           Replace Date
                         </label>
-                        <FormikDatePicker
+                        <Field
                           type="date"
                           name="return_date"
-                          className="mb-6"
+                          className="form-control"
                         />
                         <ErrorMessage
                           name="return_date"
@@ -625,7 +625,7 @@ const CreatePurchaseReplace = () => {
 
                       </>
                     )}
-                  </FieldArray> 
+                  </FieldArray>
                   <div className="flex col">
                     <button
                       type="submit"
@@ -634,7 +634,7 @@ const CreatePurchaseReplace = () => {
                       Save Replace Bill
                     </button>
 
-                    <button type="button"  className="ml-5 tf-button style-1">
+                    <button type="button" className="ml-5 tf-button style-1">
                       <a href="/purchase-return-bill" style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
                     </button>
                   </div>

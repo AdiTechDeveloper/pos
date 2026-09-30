@@ -48,7 +48,7 @@ const CreateEditSupplier = () => {
     name: Yup.string()
       .required("Name is required")
       .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
-      .max(100, "Name cannot exceed 100 characters"),
+      .max(30, "Name cannot exceed 30 characters"),
 
     gstin: Yup.string()
       .required("GSTIN is required")
@@ -119,7 +119,7 @@ const CreateEditSupplier = () => {
               {() => (
                 <Form className="wg-form">
                   <div className="row mb-12">
-                    <fieldset className="col-md-4">
+                    <fieldset className="col-md-3">
                       <div className="body-title">Name *</div>
                       <div className="body-content mb-15">
                         <Field
@@ -127,7 +127,7 @@ const CreateEditSupplier = () => {
                           name="name"
                           className="mb-5"
                           placeholder="Enter supplier name"
-                          maxLength={50} // Prevents typing past 50 characters
+                          maxLength={30}  //Prevents typing past 30 characters
                         />
                         <ErrorMessage
                           name="name"
@@ -136,7 +136,7 @@ const CreateEditSupplier = () => {
                         />
                       </div>
                     </fieldset>
-                    <fieldset className="col-md-4">
+                    <fieldset className="col-md-3">
                       <div className="body-title">GstIn *</div>
                       <div className="body-content">
                         <Field
@@ -153,7 +153,7 @@ const CreateEditSupplier = () => {
                         />
                       </div>
                     </fieldset>
-                    <fieldset className="col-md-4">
+                    <fieldset className="col-md-2">
                       <div className="body-title">Contact *</div>
                       <div className="body-content mb-15">
                         <Field
@@ -174,9 +174,7 @@ const CreateEditSupplier = () => {
                         />
                       </div>
                     </fieldset>
-                  </div>
-                  <div className="row mb-12">
-                    <fieldset className="col-md-6">
+                       <fieldset className="col-md-3">
                       <div className="body-title">Address *</div>
                       <div className="body-content">
                         <Field
@@ -192,7 +190,10 @@ const CreateEditSupplier = () => {
                         />
                       </div>
                     </fieldset>
-                    <fieldset className="col-md-3 mb-12">
+                  </div>
+                  <div className="row mb-12">
+                  
+                    <fieldset className="col-md-2 mb-12">
                       <div className="body-title">State *</div>
                       <div className="body-content">
                         <Field as="select" name="state" className="mb-5">

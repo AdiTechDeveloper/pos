@@ -40,11 +40,23 @@ const CreateEditBranch = () => {
   }, []);
 
   const validationSchema = Yup.object({
-    name: Yup.string().required("Name is required"),
-    address: Yup.string().required("Address is required"),
+    name: Yup.string()
+        .required("Name is required")
+        .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
+        .max(30, "Name cannot exceed 30 characters"),
+  
+   address: Yup.string()
+        .required("Address is required")
+        .max(255, "Address cannot exceed 255 characters"),
+  
     state: Yup.string().required("State is required"),
-    phone: Yup.string().required("Phone is required"),
+  
+      phone: Yup.string()
+        .required("phone number is required")
+        .matches(/^[0-9]{10}$/, "phone number must be exactly 10 digits"),
   });
+
+  
 
   const handleSubmit = async (values) => {
     try {
@@ -102,6 +114,7 @@ const CreateEditBranch = () => {
                           name="name"
                           placeholder="Enter branch name"
                           className="mb-5"
+                          maxLength={30}  //Prevents typing past 30 characters
                         />
                         <ErrorMessage
                           name="name"
@@ -200,6 +213,9 @@ const CreateEditBranch = () => {
                           className="mb-5"
                           placeholder="Enter branch phone no."
                           maxLength={10}
+                            onInput={(e) => {
+                            e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
+                          }}
                         />
                         <ErrorMessage
                           name="phone"

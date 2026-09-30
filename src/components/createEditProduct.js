@@ -138,9 +138,20 @@ const CreateEditProduct = () => {
 
   // Validation Schema
   const validationSchema = Yup.object({
-    name: Yup.string().required("Product Name is required"),
+     name: Yup.string()
+          .required("Name is required")
+          .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
+          .max(30, "Name cannot exceed 30 characters"),
+
+    sku : Yup.string()
+          .min(8,"SKU must be at least 8 letter long.")
+          .max(12, "SKU cannot exceed 12 characters"),
+    brand_id: Yup.string().required("Brand is required"),
+    category_id: Yup.string().required("Category  is required"),
+    
   });
 
+ 
   // Submit (Create + Update)
   const handleSubmit = async (values) => {
     try {
@@ -279,6 +290,7 @@ const CreateEditProduct = () => {
                             name="sku"
                             placeholder="Enter SKU"
                             className="mb-5"
+                            maxlength={12}
                           />
                           <ErrorMessage
                             name="sku"
