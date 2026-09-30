@@ -6,6 +6,8 @@ import CartPanel from "./CartPanel";
 import { toast } from "react-toastify";
 import RegisterModal from "./OpenRegisterModal";
 
+import "../../src/assets/css/pos.css";
+
 export default function POSApp() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedBrand, setSelectedBrand] = useState(null);
@@ -180,35 +182,49 @@ export default function POSApp() {
     );
   }
 
-  return (
-    <div className="pos-flex h-screen bg-gray-100">
-      <RegisterModal
-        isOpen={showModal}
-        branchId={selectedBranchId}
-        onRegisterOpened={() => setShowModal(false)}
-      />
+ return (
+  <div
+    className="pos-shell"
+    style={{
+      position: "fixed",
+      inset: 0,
+      display: "grid",
+      gridTemplateColumns: "210px minmax(0, 1fr) 430px",
+      width: "100vw",
+      height: "100vh",
+      overflow: "hidden",
+      background: "#f6f8fb",
+    }}
+  >
+    <RegisterModal
+      isOpen={showModal}
+      branchId={selectedBranchId}
+      onRegisterOpened={() => setShowModal(false)}
+    />
 
-      <LeftSidebar
-        selectedCategory={selectedCategory}
-        selectedBrand={selectedBrand}
-        setCategory={setSelectedCategory}
-        setBrand={setSelectedBrand}
-      />
-      <ProductList
-        selectedCategory={selectedCategory}
-        selectedBrand={selectedBrand}
-        setSelectedCategory={setSelectedCategory}
-        setSelectedBrand={setSelectedBrand}
-        refreshProducts={refreshProducts}
-        addToCart={addToCart}
-        handleProductSelection={handleProductSelection}
-      />
-      <CartPanel
-        cart={cart}
-        setCart={setCart}
-        triggerRefresh={triggerRefresh}
-        onPriceUpdated={() => setRefreshProducts((prev) => prev + 1)}
-      />
-    </div>
-  );
+    <LeftSidebar
+      selectedCategory={selectedCategory}
+      selectedBrand={selectedBrand}
+      setCategory={setSelectedCategory}
+      setBrand={setSelectedBrand}
+    />
+
+    <ProductList
+      selectedCategory={selectedCategory}
+      selectedBrand={selectedBrand}
+      setSelectedCategory={setSelectedCategory}
+      setSelectedBrand={setSelectedBrand}
+      refreshProducts={refreshProducts}
+      addToCart={addToCart}
+      handleProductSelection={handleProductSelection}
+    />
+
+    <CartPanel
+      cart={cart}
+      setCart={setCart}
+      triggerRefresh={triggerRefresh}
+      onPriceUpdated={() => setRefreshProducts((prev) => prev + 1)}
+    />
+  </div>
+);
 }

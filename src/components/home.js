@@ -9,7 +9,7 @@ import MonthlySalesChart from "./MonthlySalesChart";
 import TopLowSellingProducts from "./TopLowSellingProducts";
 import CustomerDuesWidget from "./CustomerDuesWidget";
 import RecentSalesFeed from "./RecentSalesFeed";
-import TaxAndActionsWidget from "./TaxAndActionsWidget";
+// import TaxAndActionsWidget from "./TaxAndActionsWidget";
 import { hasFeature } from "../utils/hasFeature";
 
 const iconProps = {
@@ -18,7 +18,7 @@ const iconProps = {
   fill: "none",
   stroke: "currentColor",
   strokeWidth: 2,
-  strokeLinecap: "round",
+  strokeLinecap: "round", 
   strokeLinejoin: "round",
 };
 const IconStore = () => (
@@ -88,6 +88,7 @@ const Home = () => {
   const [customerDues, setCustomerDues] = useState([]);
   const [saleBills, setSaleBills] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [recentInvoices, setRecentInvoices] = useState([]);
 
   const authHeaders = {
     Accept: "application/json",
@@ -155,8 +156,10 @@ const Home = () => {
           const data = r.value.data;
 
           if (key === "salesToday") setTodaySales(data);
-          if (key === "salesMonth")
+          if (key === "salesMonth"){
             setMonthProducts(data?.products?.rows || []);
+           setRecentInvoices(data?.invoices?.rows || []); // has customer names
+}
           if (key === "purchaseToday") setTodayPurchase(data);
           if (key === "dues") setCustomerDues(data?.data || []);
           if (key === "bills") setSaleBills(data?.data || []);
@@ -304,17 +307,17 @@ const Home = () => {
               {showRightCol && (
                 <div className="flex flex-col gap-6">
                   {canBills && (
-                    <RecentSalesFeed bills={saleBills} loading={loading} />
+                    <RecentSalesFeed bills={recentInvoices} loading={loading} />
                   )}
                   {canCustomers && (
                     <CustomerDuesWidget dues={customerDues} loading={loading} />
                   )}
-                  {canSales && (
+                  {/* {canSales && (
                     <TaxAndActionsWidget
                       taxBreakdown={sk?.tax_breakdown}
                       loading={loading}
                     />
-                  )}
+                  )} */}
                 </div>
               )}
             </div>
@@ -323,6 +326,9 @@ const Home = () => {
       </div>
     </Layout>
   );
+
+
+  
 };
 
 export default Home;

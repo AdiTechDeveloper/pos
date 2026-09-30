@@ -189,7 +189,7 @@ export default function ProductList({
   };
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
+    <div className="pos-products">
       <div className="flex gap-6 mb-12">
         <input
           ref={barcodeRef}
@@ -240,7 +240,7 @@ export default function ProductList({
             </p>
             <button
               onClick={resetFilters}
-              className="mt-8 px-6 py-3 text-2xl rounded-xl bg-blue-600 text-white shadow hover:bg-blue-700 transition"
+              className="mt-8 px-6 py-3 text-xl rounded-xl bg-blue-600 text-white shadow hover:bg-blue-700 transition"
             >
               Reset Filters
             </button>

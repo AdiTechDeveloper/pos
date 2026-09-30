@@ -48,17 +48,34 @@ export default function LeftSidebar({
   }, []);
 
   return (
-    <div className="w-80 bg-gray-50 h-screen border-r shadow-lg flex flex-col">
+    <div className="pos-sidebar">
       {/* HEADER */}
       {role !== "cashier" && (
-        <div className="p-8 border-b">
-          <a href="/dashboard">
-            <p className="font-size-24px font-bold text-gray-800">
-              {" "}
-              ⬅️ 
-            </p>
-          </a>
-        </div>
+        <div className="pos-sidebar-header">
+    <a
+      href="/dashboard"
+      className="pos-back-button"
+      aria-label="Back to dashboard"
+      title="Back to dashboard"
+    >
+      <span className="pos-back-icon">
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M19 12H5" />
+          <path d="M12 19l-7-7 7-7" />
+        </svg>
+      </span>
+      <span className="pos-back-text">Back to dashboard</span>
+    </a>
+  </div>
       )}
 
       <div className="p-8 border-b">
@@ -117,3 +134,8 @@ export default function LeftSidebar({
     </div>
   );
 }
+
+
+
+
+ 

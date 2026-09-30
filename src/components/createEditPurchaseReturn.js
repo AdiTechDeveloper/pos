@@ -21,7 +21,7 @@ const CreateEditPurchaseReturn = () => {
   const [purchaseBillId, setPurchaseBillId] = useState("");
   const [newPurchaseBill, setNewPurchaseBill] = useState("");
   const [error, setError] = useState("");
-  const [fieldValue, setFieldValue] = useState(() => () => {});
+  const [fieldValue, setFieldValue] = useState(() => () => { });
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_purchase_return_bill = localStorage.getItem(
@@ -53,9 +53,9 @@ const CreateEditPurchaseReturn = () => {
         return_date: incomingReturnBill.return_date || "",
         lines: incomingReturnBill.lines?.length
           ? incomingReturnBill.lines.map((line) => ({
-              purchase_bill_line_id: line.purchase_line_id?.toString() || "",
-              qty: line.qty || "",
-            }))
+            purchase_bill_line_id: line.purchase_line_id?.toString() || "",
+            qty: line.qty || "",
+          }))
           : initialValues.lines,
       });
     }
@@ -157,8 +157,12 @@ const CreateEditPurchaseReturn = () => {
   const validationSchema = Yup.object().shape({
     purchase_bill_id: Yup.string().required("Purchase Bill Id is required"),
     branch_id: Yup.string().required("Branch is required"),
-    supplier_id: Yup.string().required("Supplier is required"),
-    return_date: Yup.string().required("Return Date is required"),
+    supplier_id: Yup.string()
+      .required("Supplier is required"),
+    return_date: Yup.string()
+      .required("Return Date is required")
+      .matches(/^[0-9]$/, "Only Digits allowed"),
+
     lines: Yup.array()
       .min(1, "At least one product is required")
       .of(
@@ -288,9 +292,9 @@ const CreateEditPurchaseReturn = () => {
                         >
                           Return Date
                         </label>
-                        <FormikDatePicker
+                        <Field
+                          type="date"
                           name="return_date"
-                          placeholder="dd-mm-yyyy"
                           className="form-control"
                         />
                         <ErrorMessage
@@ -362,20 +366,20 @@ const CreateEditPurchaseReturn = () => {
                               >
                                 Delete
                               </button>
-                                <button
-                          type="button"
-                          className="ml-5 tf-button style-1"
-                          style={{ color: "inherit", textDecoration: "none" }} 
-                          onClick={() =>
-                            push({ purchase_bill_line_id: "", qty: "" })
-                          }
-                        >
-                          + Add Product
-                        </button>
+                              <button
+                                type="button"
+                                className="ml-5 tf-button style-1"
+                                style={{ color: "inherit", textDecoration: "none" }}
+                                onClick={() =>
+                                  push({ purchase_bill_line_id: "", qty: "" })
+                                }
+                              >
+                                + Add Product
+                              </button>
                             </div>
                           </div>
                         ))}
-      
+
                         {/* <button
                           type="button"
                           className="ml-5 tf-button style-1"
@@ -389,11 +393,11 @@ const CreateEditPurchaseReturn = () => {
                       </>
                     )}
                   </FieldArray>
-            <div className="flex">
-                  <button type="submit" className="ml-5 tf-button style-1" style={{ color: "inherit", textDecoration: "none" }} >Save Return Bill</button>
-                  <button type="button"  className="ml-5 tf-button style-1">
-                    <a href="/purchase-return-bill" style={{ color: "inherit", textDecoration: "none" }} > Cancel</a>
-                  </button>
+                  <div className="flex">
+                    <button type="submit" className="ml-5 tf-button style-1" style={{ color: "inherit", textDecoration: "none" }} >Save Return Bill</button>
+                    <button type="button" className="ml-5 tf-button style-1">
+                      <a href="/purchase-return-bill" style={{ color: "inherit", textDecoration: "none" }} > Cancel</a>
+                    </button>
                   </div>
                 </Form>
               )}

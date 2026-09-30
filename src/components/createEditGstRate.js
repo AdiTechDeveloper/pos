@@ -38,7 +38,7 @@ const CreateEditGstRates = () => {
   // Validation Schema
   const validationSchema = Yup.object({
     rate: Yup.string().required("Rate is required")
-    .matches(/^[0-9]$/, "Only Digit allowed"),
+    // .matches(/^[0-9]$/, "Only Digit allowed"),
     // description: Yup.string().required("Description is required"),
   });
   
@@ -98,7 +98,7 @@ const CreateEditGstRates = () => {
                       <div className="body-title">Rate *</div>
                       <div className="body-content">
                         <Field
-                          type="text"
+                          type="number"
                           name="rate"
                           placeholder="Enter GST rate"
                           className="mb-5"

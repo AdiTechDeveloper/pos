@@ -75,13 +75,22 @@ const CreateEditStaff = () => {
 
   // Validation Schema
   const validationSchema = Yup.object({
-    name: Yup.string().required("Name is required"),
-    username: Yup.string().required("Username is required"),
+   name: Yup.string()
+        .required("Name is required")
+        .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
+        .max(30, "Name cannot exceed 30 characters"),
+     username: Yup.string()
+        .required("Username is required")
+        .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
+        .max(30, "Name cannot exceed 30 characters"),
+    
     role: Yup.string().required("Role is required"),
     branch_ids: Yup.array()
       .min(1, "At least one branch is required")
       .required("Branch is required"),
   });
+
+  
 
   // Submit (Create + Update)
   const handleSubmit = async (values, actions) => {
@@ -151,7 +160,7 @@ const CreateEditStaff = () => {
                     <fieldset className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-2" : "col-md-3"}`}>
                       <div className="body-title">Name *</div>
                       <div className="body-content mb-15">
-                        <Field type="text" name="name" className="mb-5" placeholder="Enter staff name" />
+                        <Field type="text" name="name" className="mb-5" placeholder="Enter staff name"  maxLength={30}  />
                         <ErrorMessage name="name" component="div" className="error-text" />
                       </div>
                     </fieldset>
@@ -160,7 +169,7 @@ const CreateEditStaff = () => {
                     <fieldset className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-2" : "col-md-3"}`}>
                       <div className="body-title">Username *</div>
                       <div className="body-content">
-                        <Field type="text" name="username" className="mb-5" placeholder="Enter username" />
+                        <Field type="text" name="username" className="mb-5" placeholder="Enter username"  maxLength={30}   />
                         <ErrorMessage name="username" component="div" className="error-text" />
                       </div>
                     </fieldset>

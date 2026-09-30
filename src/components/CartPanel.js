@@ -368,11 +368,11 @@ export default function CartPanel({
 
   return (
     <>
-      <div className="w-1/3 bg-gray-50 border-l shadow-2xl p-10 flex flex-col">
+      <div className="pos-cart">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex flex-col gap-2">
-            <h2 className="font-extrabold text-5xl">Cart</h2>
+            <h2 className="font-extrabold text-5xl">Current Orders</h2>
             {role === "cashier" && (
               <span
                 style={{

@@ -1,0 +1,548 @@
+:root {
+  --vakaro-cashier-navy: #102c5d;
+  --vakaro-cashier-blue: #176bd2;
+  --vakaro-cashier-blue-soft: #edf5ff;
+  --vakaro-cashier-green: #83d42e;
+  --vakaro-cashier-ink: #17243a;
+  --vakaro-cashier-muted: #7d8ca1;
+  --vakaro-cashier-line: #e2eaf3;
+  --vakaro-cashier-page: #f5f8fc;
+}
+
+.vakaro-cashier-page {
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) minmax(480px, 0.92fr);
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--vakaro-cashier-page);
+}
+
+/* Left visual panel */
+
+.vakaro-cashier-visual {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 44px clamp(34px, 6vw, 96px);
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 15% 17%,
+      rgba(176, 226, 255, 0.62),
+      transparent 27%
+    ),
+    radial-gradient(
+      circle at 85% 86%,
+      rgba(200, 241, 255, 0.85),
+      transparent 30%
+    ),
+    #ffffff;
+}
+
+.vakaro-cashier-visual::before,
+.vakaro-cashier-visual::after {
+  position: absolute;
+  content: "";
+  border: 1px solid #e0effb;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.vakaro-cashier-visual::before {
+  top: -250px;
+  right: -210px;
+  width: 590px;
+  height: 590px;
+}
+
+.vakaro-cashier-visual::after {
+  bottom: -300px;
+  left: -250px;
+  width: 560px;
+  height: 560px;
+}
+
+.vakaro-cashier-visual-inner {
+  position: relative;
+  z-index: 1;
+  width: min(680px, 100%);
+  margin: 0 auto;
+}
+
+.vakaro-cashier-brand {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 13px;
+  /* border: 1px solid #dceaf7; */
+  border-radius: 12px;
+  /* background: rgba(255, 255, 255, 0.88); */
+  /* box-shadow: 0 8px 20px rgba(39, 105, 169, 0.08); */
+}
+
+.vakaro-cashier-brand img {
+  display: block;
+  width: 300px;
+  height: auto;
+}
+
+.vakaro-cashier-visual-kicker {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 42px 0 12px;
+  color: #5d7c9f;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+
+.vakaro-cashier-visual-kicker::before {
+  width: 24px;
+  height: 2px;
+  content: "";
+  border-radius: 2px;
+  background: var(--vakaro-cashier-blue);
+}
+
+.vakaro-cashier-visual h1 {
+  max-width: 520px;
+  margin: 0;
+  color: var(--vakaro-cashier-ink);
+  font-size: clamp(42px, 5vw, 68px);
+  line-height: 0.98;
+  letter-spacing: -3px;
+}
+
+.vakaro-cashier-visual h1 span {
+  color: var(--vakaro-cashier-blue);
+}
+
+.vakaro-cashier-visual-copy {
+  max-width: 500px;
+  margin: 20px 0 0;
+  color: #6d7f94;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.vakaro-cashier-visual-art {
+  display: block;
+  width: min(650px, 100%);
+  max-height: 340px;
+  margin: 30px auto 0;
+  object-fit: contain;
+}
+
+.vakaro-cashier-visual-footer {
+  position: absolute;
+  right: clamp(34px, 6vw, 96px);
+  bottom: 28px;
+  left: clamp(34px, 6vw, 96px);
+  z-index: 1;
+  color: #7790a8;
+  font-size: 11px;
+}
+
+.vakaro-cashier-visual-footer::before {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  content: "";
+  border-radius: 50%;
+  background: var(--vakaro-cashier-green);
+  box-shadow: 0 0 0 4px rgba(131, 212, 46, 0.14);
+  vertical-align: middle;
+}
+
+.vakaro-cashier-visual-footer strong {
+  color: var(--vakaro-cashier-blue);
+}
+
+/* Right form panel */
+
+.vakaro-cashier-form-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 42px clamp(28px, 7vw, 100px);
+  background: #fbfcfe;
+}
+
+.vakaro-cashier-card {
+  width: min(470px, 100%);
+  padding: 30px;
+  border: 1px solid #e4ebf3;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 24px 60px rgba(26, 66, 111, 0.08),
+    0 4px 12px rgba(26, 66, 111, 0.03);
+}
+
+.vakaro-cashier-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.vakaro-cashier-eyebrow {
+  margin: 0 0 9px;
+  color: var(--vakaro-cashier-blue);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.vakaro-cashier-card h2 {
+  margin: 0;
+  color: var(--vakaro-cashier-ink);
+  font-size: 28px;
+  letter-spacing: -1.2px;
+}
+
+.vakaro-cashier-lock {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 13px;
+  color: var(--vakaro-cashier-blue);
+  background: var(--vakaro-cashier-blue-soft);
+  font-size: 19px;
+}
+
+.vakaro-cashier-description {
+  margin: 11px 0 25px;
+  color: var(--vakaro-cashier-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* Three-step progress indicator */
+
+.vakaro-cashier-stepper {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-bottom: 30px;
+}
+
+.vakaro-cashier-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #9aa7b7;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.vakaro-cashier-step:not(:last-child)::after {
+  position: absolute;
+  top: 14px;
+  left: calc(50% + 18px);
+  width: calc(100% - 36px);
+  height: 1px;
+  content: "";
+  background: #dfe7f0;
+}
+
+.vakaro-cashier-step-bubble {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 29px;
+  height: 29px;
+  place-items: center;
+  border: 1px solid #dbe5ef;
+  border-radius: 50%;
+  color: #8796a8;
+  background: #ffffff;
+  font-size: 11px;
+}
+
+.vakaro-cashier-step.is-active,
+.vakaro-cashier-step.is-complete {
+  color: var(--vakaro-cashier-blue);
+}
+
+.vakaro-cashier-step.is-active
+  .vakaro-cashier-step-bubble,
+.vakaro-cashier-step.is-complete
+  .vakaro-cashier-step-bubble {
+  border-color: var(--vakaro-cashier-blue);
+  color: #ffffff;
+  background: var(--vakaro-cashier-blue);
+}
+
+.vakaro-cashier-step.is-complete
+  .vakaro-cashier-step-bubble {
+  border-color: var(--vakaro-cashier-green);
+  background: var(--vakaro-cashier-green);
+}
+
+/* Forms */
+
+.vakaro-cashier-step-content {
+  animation: vakaro-cashier-appear 0.2s ease-out;
+}
+
+@keyframes vakaro-cashier-appear {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vakaro-cashier-step-content h3 {
+  margin: 0 0 7px;
+  color: var(--vakaro-cashier-ink);
+  font-size: 18px;
+}
+
+.vakaro-cashier-step-subtitle {
+  margin: 0 0 20px;
+  color: var(--vakaro-cashier-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.vakaro-cashier-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.vakaro-cashier-field {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.vakaro-cashier-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: #53647a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.vakaro-cashier-field input,
+.vakaro-cashier-field select {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--vakaro-cashier-line);
+  border-radius: 9px;
+  outline: none;
+  color: var(--vakaro-cashier-ink);
+  background: #ffffff;
+  font-size: 13px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.vakaro-cashier-field input::placeholder {
+  color: #aab4c2;
+}
+
+.vakaro-cashier-field input:focus,
+.vakaro-cashier-field select:focus {
+  border-color: #78a9ee;
+  box-shadow: 0 0 0 4px #e8f1ff;
+}
+
+.vakaro-cashier-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 7px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 9px;
+  color: #ffffff;
+  background: linear-gradient(100deg, #176ad5, #2c7ff0);
+  box-shadow: 0 9px 18px rgba(37, 107, 215, 0.2);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.vakaro-cashier-button:hover:not(:disabled) {
+  box-shadow: 0 12px 22px rgba(37, 107, 215, 0.28);
+  transform: translateY(-1px);
+  color: #fff !important;
+}
+
+.vakaro-cashier-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.vakaro-cashier-pin-input {
+  letter-spacing: 8px;
+  text-align: center;
+  font-size: 19px !important;
+}
+
+.vakaro-cashier-error {
+  display: block;
+  margin-top: 7px;
+  color: #dc2626;
+  font-size: 11px;
+}
+
+.vakaro-cashier-branch-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 13px;
+  border: 1px solid #dceafb;
+  border-radius: 11px;
+  background: #f5f9ff;
+}
+
+.vakaro-cashier-branch-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--vakaro-cashier-blue);
+  background: #e4f0ff;
+}
+
+.vakaro-cashier-branch-preview small {
+  display: block;
+  margin-bottom: 3px;
+  color: #8392a5;
+  font-size: 10px;
+}
+
+.vakaro-cashier-branch-preview strong {
+  color: var(--vakaro-cashier-ink);
+  font-size: 12px;
+}
+
+.vakaro-cashier-back-button,
+.vakaro-cashier-change-button {
+  display: block;
+  width: fit-content;
+  margin: 15px auto 0;
+  padding: 0;
+  border: 0;
+  color: #8090a4;
+  background: transparent;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.vakaro-cashier-back-button:hover,
+.vakaro-cashier-change-button:hover {
+  color: var(--vakaro-cashier-blue);
+}
+
+.vakaro-cashier-card-footer {
+  margin: 25px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid #edf1f6;
+  color: #9aa6b5;
+  text-align: center;
+  font-size: 14px;
+}
+
+.vakaro-cashier-card-footer a {
+  color: var(--vakaro-cashier-blue);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.vakaro-cashier-card-footer a:hover {
+  text-decoration: underline;
+}
+
+.vakaro-cashier-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  min-height: 120px;
+  color: var(--vakaro-cashier-muted);
+  font-size: 12px;
+}
+
+.vakaro-cashier-loading p {
+  margin: 0;
+}
+
+.vakaro-cashier-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #dce9f8;
+  border-top-color: var(--vakaro-cashier-blue);
+  border-radius: 50%;
+  animation: vakaro-cashier-spin 0.8s linear infinite;
+}
+
+@keyframes vakaro-cashier-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 900px) {
+  .vakaro-cashier-page {
+    display: block;
+  }
+
+  .vakaro-cashier-visual {
+    display: none;
+  }
+
+  .vakaro-cashier-form-side {
+    min-height: 100vh;
+    padding: 28px 20px;
+  }
+}
+
+.vakaro-cashier-lock svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.vakaro-cashier-branch-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
