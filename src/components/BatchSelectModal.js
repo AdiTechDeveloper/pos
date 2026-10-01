@@ -17,6 +17,9 @@ export default function BatchSelectModal({ options, onSelect, onClose }) {
               </div>
 
               <div className="text-right">
+                <p className="text-gray-500 font-semibold">
+                  Expiry Date: {o.expiry_date}
+                </p>
                 <p className="text-2xl font-bold text-blue-700">
                   ₹{o.selling_price}
                 </p>

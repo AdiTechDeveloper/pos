@@ -35,6 +35,10 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
   const [redeemPoints, setRedeemPoints] = useState(false);
   const [pointsToRedeem, setPointsToRedeem] = useState("");
 
+  const [filteredSuggestions, setFilteredSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [allCustomers, setAllCustomers] = useState([]); // NEW: name search ke liye saare customers
+
   const parse = (v) => (parseFloat(v) ? parseFloat(v) : 0);
 
   const maxRedeemablePoints = Math.min(loyaltyBalance, total / POINT_VALUE);
@@ -75,6 +79,27 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
 
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
+
+  // NEW: modal khulte hi customers ki list ek baar load karo (name suggestion ke liye)
+  useEffect(() => {
+    axios
+      .get(`${BASE_URL}/api/customers`, { headers: getAuthHeader() })
+      .then((res) => {
+        const payload = res.data;
+        let list = payload?.data ?? payload?.customers ?? payload;
+
+        // agar Laravel pagination hai to asli list list.data mein hoti hai
+        if (list && !Array.isArray(list) && Array.isArray(list.data)) {
+          list = list.data;
+        }
+
+        setAllCustomers(Array.isArray(list) ? list : []);
+      })
+      .catch((err) => {
+        console.error("Customer list fetch error", err);
+        setAllCustomers([]);
+      });
+  }, []);
 
   useEffect(() => {
     if (customerMobile.length === 10) {
@@ -139,6 +164,61 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     }
   }, [customerMobile]);
 
+  useEffect(() => {
+    if (paymentType === "online") {
+      setCashGiven(Number(netTotal.toFixed(2)));
+    }
+  }, [paymentType, netTotal]);
+
+  // NEW: name type karne par matching customers dhundo
+  const searchCustomersByName = (value) => {
+    const q = value.trim().toLowerCase();
+
+    // 2 letters se kam pe suggestion nahi (1 karna ho to 2 ko 1 kar do)
+    if (q.length < 2) {
+      setFilteredSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const matches = allCustomers
+      .filter((c) => (c.name || "").toLowerCase().includes(q))
+      .sort((a, b) => {
+        // jo naam us text se shuru hota hai wo upar aaye
+        const aStarts = (a.name || "").toLowerCase().startsWith(q) ? 0 : 1;
+        const bStarts = (b.name || "").toLowerCase().startsWith(q) ? 0 : 1;
+        return aStarts - bStarts;
+      })
+      .slice(0, 8);
+
+    setFilteredSuggestions(matches);
+    setShowSuggestions(matches.length > 0);
+  };
+
+  // NEW: suggestion pe click karne par saari details fill karo
+  const selectCustomer = (c) => {
+    // mobile ke wahi rules jo mobile input mein hain
+    const mobile = String(c.mobile || "")
+      .replace(/\s+/g, "")
+      .replace(/\D/g, "")
+      .replace(/^0+/, "")
+      .slice(0, 10);
+
+    setCustomerName(c.name || "");
+    setCustomerAdd1(c.add1 || "");
+    setCustomerAdd2(c.add2 || "");
+    setCustomerArea(c.area || "");
+    setCustomerCity(c.city || "");
+
+    // mobile set hote hi upar wala effect due/wallet/loyalty le aata hai
+    setCustomerMobile(mobile);
+    setMobileError(mobile.length === 10 ? "" : "Enter 10 digit mobile number");
+    setNameError("");
+
+    setShowSuggestions(false);
+    setFilteredSuggestions([]);
+  };
+
   const keypad = (k) => {
     setCashGiven((prev) => {
       prev = prev || "";
@@ -150,6 +230,10 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
   };
 
   const handleMethod = (type) => {
+    if (paymentType === "online" && type !== "online") {
+      setCashGiven(null);
+    }
+
     setPaymentType(type);
   };
 
@@ -591,12 +675,15 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                     </div>
                   )}
                 </div>
-                <div>
+
+                {/* NEW: relative wrapper + suggestion dropdown */}
+                <div className="relative">
                   <label className="text-xl font-bold text-slate-500">
                     CUSTOMER NAME
                   </label>
                   <input
                     type="text"
+                    autoComplete="off"
                     className={`mt-1 w-full p-3 text-xl font-semibold text-slate-900 border-2 rounded-xl ${
                       nameError ? "border-red-500" : "border-slate-200"
                     }`}
@@ -614,8 +701,17 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                       if (value.trim() !== "") {
                         setNameError("");
                       }
+
+                      // NEW: matching customers dikhao
+                      searchCustomersByName(value);
+                    }}
+                    onFocus={() => searchCustomersByName(customerName)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") setShowSuggestions(false);
                     }}
                     onBlur={() => {
+                      setShowSuggestions(false);
+
                       // Trigger "required" error if they leave it empty
                       if (!customerName.trim()) {
                         setNameError("Name is required");
@@ -626,6 +722,34 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                     <div className="text-red-600 text-sm font-semibold mt-1">
                       {nameError}
                     </div>
+                  )}
+
+                  {/* NEW: suggestions list */}
+                  {showSuggestions && filteredSuggestions.length > 0 && (
+                    <ul className="absolute left-0 top-full mt-1 z-30 min-w-full w-[22rem] max-w-[90vw] max-h-72 overflow-y-auto bg-white border-2 border-slate-200 rounded-xl shadow-xl">
+                      {filteredSuggestions.map((c) => (
+                        <li
+                          key={c.id}
+                          // onMouseDown + preventDefault: input blur hone se pehle select ho jaye
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            selectCustomer(c);
+                          }}
+                          className="px-4 py-3 cursor-pointer border-b border-slate-100 last:border-b-0 hover:bg-blue-50"
+                        >
+                          <div className="text-lg font-bold text-slate-900">
+                            {c.name}
+                          </div>
+                          <div className="text-base font-medium text-slate-500">
+                            {c.mobile}
+                            {(c.area || c.city) &&
+                              ` • ${[c.area, c.city]
+                                .filter(Boolean)
+                                .join(", ")}`}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
                   )}
                 </div>
               </div>
@@ -777,6 +901,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                         e.target.value === "" ? null : Number(e.target.value),
                       )
                     }
+                    readOnly={paymentType === "online"}
                   />
                   <span className="text-sm text-slate-400 font-bold">INR</span>
                 </div>
@@ -831,7 +956,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                 </div>
               )}
 
-            {(["cash", "split", "online"].includes(paymentType) ||
+            {(["cash", "split"].includes(paymentType) ||
               (paymentType === "wallet" && walletBalance < netTotal)) && (
               <>
                 <div className="grid grid-cols-4 gap-2">
