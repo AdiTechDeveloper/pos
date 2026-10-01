@@ -234,7 +234,7 @@ const CreateStore = () => {
       <div className="main-content-inner">
         <div className="main-content-wrap">
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-            <h3>Store Information</h3>
+            <h3>Store Details</h3>
             <ul className="breadcrumbs flex items-center gap10">
               <li>
                 <Link to="/dashboard">
@@ -253,7 +253,7 @@ const CreateStore = () => {
                 <i className="icon-chevron-right"></i>
               </li>
               <li>
-                <div className="text-tiny">Store Information</div>
+                <div className="text-tiny">Store Details</div>
               </li>
             </ul>
           </div>
@@ -266,87 +266,80 @@ const CreateStore = () => {
               enableReinitialize
             >
               {({ isSubmitting, setFieldValue, values }) => (
-                <Form className="form-new-product form-style-1">
+                <Form
+                  className="form-new-product form-style-1"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(4, 1fr)",
+                    columnGap: "20px",
+                    rowGap: "20px",
+                  }}
+                >
                   {/* NAME */}
-                  <fieldset className="name">
-                    <div className="body-title">
-                      Store Name <span className="tf-color-1">*</span>
-                    </div>
-                    <div className="field-wrapper">
+                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div className="body-title">
+                        Store Name <span className="tf-color-1">*</span>
+                      </div>
                       <Field
                         type="text"
                         name="name"
                         placeholder="Enter store name"
                         readOnly={isEdit}
+                        style={{ width: "100%" }}
                       />
-                      <ErrorMessage
-                        name="name"
-                        component="p"
-                        className="error-text"
-                      />
+                      <ErrorMessage name="name" component="p" className="error-text" />
                     </div>
                   </fieldset>
 
-                  {/* TAGLINE (optional) */}
-                  <fieldset className="name">
-                    <div className="body-title">Tagline</div>
-                    <div className="field-wrapper">
+                  {/* TAGLINE */}
+                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div className="body-title">Tagline</div>
                       <Field
                         type="text"
                         name="tagline"
                         placeholder="Enter store tagline (optional)"
+                        style={{ width: "100%" }}
                       />
-                      <ErrorMessage
-                        name="tagline"
-                        component="p"
-                        className="error-text"
-                      />
+                      <ErrorMessage name="tagline" component="p" className="error-text" />
                     </div>
                   </fieldset>
 
                   {/* ADDRESS */}
-                  <fieldset className="name">
-                    <div className="body-title">
-                      Address <span className="tf-color-1">*</span>
-                    </div>
-                    <div className="field-wrapper">
+                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div className="body-title">
+                        Address <span className="tf-color-1">*</span>
+                      </div>
                       <Field
                         type="text"
                         name="address"
                         placeholder="Enter address"
+                        style={{ width: "100%" }}
                       />
-                      <ErrorMessage
-                        name="address"
-                        component="p"
-                        className="error-text"
-                      />
+                      <ErrorMessage name="address" component="p" className="error-text" />
                     </div>
                   </fieldset>
 
                   {/* STATE */}
-                  <fieldset className="state">
-                    <div className="body-title">
-                      State <span className="tf-color-1">*</span>
-                    </div>
-                    <div className="field-wrapper">
-                      <div className="select flex-grow">
-                        <Field as="select" name="state">
+                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div className="body-title">
+                        State <span className="tf-color-1">*</span>
+                      </div>
+                      <div className="select flex-grow" style={{ width: "100%" }}>
+                        <Field as="select" name="state" style={{ width: "100%" }}>
                           <option value="">Select state</option>
-
-                          {/* States */}
                           <option value="Andhra Pradesh">Andhra Pradesh</option>
-                          <option value="Arunachal Pradesh">
-                            Arunachal Pradesh
-                          </option>
+                          <option value="Arunachal Pradesh">Arunachal Pradesh</option>
                           <option value="Assam">Assam</option>
                           <option value="Bihar">Bihar</option>
                           <option value="Chhattisgarh">Chhattisgarh</option>
                           <option value="Goa">Goa</option>
                           <option value="Gujarat">Gujarat</option>
                           <option value="Haryana">Haryana</option>
-                          <option value="Himachal Pradesh">
-                            Himachal Pradesh
-                          </option>
+                          <option value="Himachal Pradesh">Himachal Pradesh</option>
                           <option value="Jharkhand">Jharkhand</option>
                           <option value="Karnataka">Karnataka</option>
                           <option value="Kerala">Kerala</option>
@@ -366,8 +359,6 @@ const CreateStore = () => {
                           <option value="Uttar Pradesh">Uttar Pradesh</option>
                           <option value="Uttarakhand">Uttarakhand</option>
                           <option value="West Bengal">West Bengal</option>
-
-                          {/* Union Territories (optional) */}
                           <option value="Andaman and Nicobar Islands">
                             Andaman and Nicobar Islands
                           </option>
@@ -376,52 +367,44 @@ const CreateStore = () => {
                             Dadra and Nagar Haveli and Daman and Diu
                           </option>
                           <option value="Delhi">Delhi</option>
-                          <option value="Jammu and Kashmir">
-                            Jammu and Kashmir
-                          </option>
+                          <option value="Jammu and Kashmir">Jammu and Kashmir</option>
                           <option value="Ladakh">Ladakh</option>
                           <option value="Lakshadweep">Lakshadweep</option>
                           <option value="Puducherry">Puducherry</option>
                         </Field>
                       </div>
-                      <ErrorMessage
-                        name="state"
-                        component="p"
-                        className="error-text"
-                      />
+                      <ErrorMessage name="state" component="p" className="error-text" />
                     </div>
                   </fieldset>
 
                   {/* PHONE */}
-                  <fieldset className="name">
-                    <div className="body-title">
-                      Phone <span className="tf-color-1">*</span>
-                    </div>
-                    <div className="field-wrapper">
+                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div className="body-title">
+                        Phone <span className="tf-color-1">*</span>
+                      </div>
                       <Field
                         type="text"
                         name="phone"
                         placeholder="Enter phone number"
                         maxLength={10}
+                        style={{ width: "100%" }}
                       />
-                      <ErrorMessage
-                        name="phone"
-                        component="p"
-                        className="error-text"
-                      />
+                      <ErrorMessage name="phone" component="p" className="error-text" />
                     </div>
                   </fieldset>
 
-                  {/* CONTACT PERSON NAME */}
-                  <fieldset className="name">
-                    <div className="body-title">
-                      Contact Person <span className="tf-color-1">*</span>
-                    </div>
-                    <div className="field-wrapper">
+                  {/* CONTACT PERSON */}
+                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div className="body-title">
+                        Contact Person <span className="tf-color-1">*</span>
+                      </div>
                       <Field
                         type="text"
                         name="contact_person_name"
                         placeholder="Enter contact person name"
+                        style={{ width: "100%" }}
                       />
                       <ErrorMessage
                         name="contact_person_name"
@@ -432,30 +415,91 @@ const CreateStore = () => {
                   </fieldset>
 
                   {/* GSTIN */}
-                  <fieldset className="name">
-                    <div className="body-title">
-                      GSTIN <span className="tf-color-1">*</span>
-                    </div>
-                    <div className="field-wrapper">
+                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div className="body-title">
+                        GSTIN <span className="tf-color-1">*</span>
+                      </div>
                       <Field
                         type="text"
                         name="gstin"
                         placeholder="Enter GSTIN"
+                        style={{ width: "100%" }}
+                      />
+                      <ErrorMessage name="gstin" component="p" className="error-text" />
+                    </div>
+                  </fieldset>
+
+                  {/* USERNAME */}
+                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div className="body-title">
+                        Username <span className="tf-color-1">*</span>
+                      </div>
+                      <Field
+                        type="text"
+                        name="username"
+                        placeholder="Enter username"
+                        style={{ width: "100%" }}
+                      />
+                      <ErrorMessage name="username" component="p" className="error-text" />
+                    </div>
+                  </fieldset>
+
+                  {/* PASSWORD */}
+                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div className="body-title">
+                        Password {!isEdit && <span className="tf-color-1">*</span>}
+                      </div>
+                      <Field
+                        type="text"
+                        name="password"
+                        placeholder={
+                          isEdit
+                            ? "Leave blank to keep current password"
+                            : "Enter password"
+                        }
+                        style={{ width: "100%" }}
+                      />
+                      <ErrorMessage name="password" component="p" className="error-text" />
+                    </div>
+                  </fieldset>
+
+                  {/* CONFIRM PASSWORD */}
+                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div className="body-title">
+                        Confirm Password{" "}
+                        {!isEdit && <span className="tf-color-1">*</span>}
+                      </div>
+                      <Field
+                        type="text"
+                        name="password_confirmation"
+                        placeholder="Re-enter password"
+                        style={{ width: "100%" }}
                       />
                       <ErrorMessage
-                        name="gstin"
+                        name="password_confirmation"
                         component="p"
                         className="error-text"
                       />
                     </div>
                   </fieldset>
 
-                  {/* LOGO UPLOAD */}
-                  <fieldset className="name">
-                    <div className="body-title">
-                      Logo {!isEdit && <span className="tf-color-1">*</span>}
-                    </div>
-                    <div className="field-wrapper">
+                  {/* LOGO UPLOAD — spans full row, has a preview image */}
+                  <fieldset
+                    style={{
+                      border: "none",
+                      padding: 0,
+                      margin: 0,
+                      gridColumn: "1 / -1",
+                    }}
+                  >
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div className="body-title">
+                        Logo {!isEdit && <span className="tf-color-1">*</span>}
+                      </div>
                       <input
                         type="file"
                         name="logo"
@@ -463,14 +507,10 @@ const CreateStore = () => {
                         onChange={(event) => {
                           setFieldValue("logo", event.currentTarget.files[0]);
                         }}
+                        style={{ width: "100%" }}
                       />
-                      <ErrorMessage
-                        name="logo"
-                        component="p"
-                        className="error-text"
-                      />
+                      <ErrorMessage name="logo" component="p" className="error-text" />
 
-                      {/* Preview */}
                       {values.logo !== null && (
                         <img
                           src={
@@ -486,199 +526,136 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
+                  {/* FEATURES — spans full row, too wide/varied for a single column */}
                   <fieldset
-                    className="name"
-                    style={{ border: "none", padding: 0, margin: 0 }}
+                    style={{
+                      border: "none",
+                      padding: 0,
+                      margin: 0,
+                      gridColumn: "1 / -1",
+                    }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "16px",
-                        marginBottom: "14px",
-                        flexWrap: "wrap",
-                      }}
-                    >
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                       <div
-                        className="body-title"
                         style={{
-                          fontWeight: 600,
-                          fontSize: "16px",
-                          color: "#1f2937",
-                          margin: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: "16px",
+                          flexWrap: "wrap",
                         }}
                       >
-                        Features
-                        <span
+                        <div
+                          className="body-title"
                           style={{
-                            marginLeft: "8px",
-                            padding: "3px 9px",
-                            borderRadius: "999px",
-                            backgroundColor: "#f1f5f9",
-                            color: "#64748b",
-                            fontSize: "12px",
-                            fontWeight: 500,
+                            fontWeight: 600,
+                            fontSize: "16px",
+                            color: "#1f2937",
+                            margin: 0,
                           }}
                         >
-                          {selectedFeatures.length} of {featureKeys.length} selected
-                        </span>
-                      </div>
-
-                      <label
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          padding: "8px 12px",
-                          border: "1px solid #bfdbfe",
-                          borderRadius: "6px",
-                          backgroundColor: allFeaturesSelected ? "#dbeafe" : "#f8fafc",
-                          color: "#1d4ed8",
-                          cursor: featureKeys.length ? "pointer" : "not-allowed",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          opacity: featureKeys.length ? 1 : 0.6,
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={allFeaturesSelected}
-                          onChange={toggleAllFeatures}
-                          disabled={!featureKeys.length}
-                          style={{
-                            width: "16px",
-                            height: "16px",
-                            accentColor: "#2563eb",
-                            cursor: featureKeys.length ? "pointer" : "not-allowed",
-                          }}
-                        />
-                        Select all
-                      </label>
-                    </div>
-
-                    <div
-                      className="field-wrapper"
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "repeat(auto-fill, minmax(160px, 1fr))",
-                        gap: "14px",
-                      }}
-                    >
-                      {Object.entries(featureCatalog).map(([key, info]) => {
-                        const isSelected = selectedFeatures.includes(key);
-
-                        return (
-                          <label
-                            key={key}
+                          Features
+                          <span
                             style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "10px",
-                              padding: "13px 14px",
-                              borderRadius: "6px",
-                              border: isSelected
-                                ? "1px solid #60a5fa"
-                                : "1px solid #e2e8f0",
-                              backgroundColor: isSelected
-                                ? "#eff6ff"
-                                : "#ffffff",
-                              color: isSelected ? "#1d4ed8" : "#374151",
-                              cursor: "pointer",
-                              fontWeight: isSelected ? 600 : 400,
-                              transition: "all 0.2s ease",
-                              boxShadow: isSelected
-                                ? "0 4px 10px rgba(37, 99, 235, 0.12)"
-                                : "0 2px 5px rgba(15, 23, 42, 0.05)",
+                              marginLeft: "8px",
+                              padding: "3px 9px",
+                              borderRadius: "999px",
+                              backgroundColor: "#f1f5f9",
+                              color: "#64748b",
+                              fontSize: "12px",
+                              fontWeight: 500,
                             }}
                           >
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleFeature(key)}
+                            {selectedFeatures.length} of {featureKeys.length} selected
+                          </span>
+                        </div>
+
+                        <label
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            padding: "8px 12px",
+                            border: "1px solid #bfdbfe",
+                            borderRadius: "6px",
+                            backgroundColor: allFeaturesSelected ? "#dbeafe" : "#f8fafc",
+                            color: "#1d4ed8",
+                            cursor: featureKeys.length ? "pointer" : "not-allowed",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            opacity: featureKeys.length ? 1 : 0.6,
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={allFeaturesSelected}
+                            onChange={toggleAllFeatures}
+                            disabled={!featureKeys.length}
+                            style={{
+                              width: "16px",
+                              height: "16px",
+                              accentColor: "#2563eb",
+                              cursor: featureKeys.length ? "pointer" : "not-allowed",
+                            }}
+                          />
+                          Select all
+                        </label>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:  "repeat(10, 1fr)",
+                          gap: "14px",
+                        }}
+                      >
+                        {Object.entries(featureCatalog).map(([key, info]) => {
+                          const isSelected = selectedFeatures.includes(key);
+
+                          return (
+                            <label
+                              key={key}
                               style={{
-                                width: "16px",
-                                height: "16px",
-                                accentColor: "#3b82f6",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                padding: "13px 14px",
+                                borderRadius: "6px",
+                                border: isSelected
+                                  ? "1px solid #60a5fa"
+                                  : "1px solid #e2e8f0",
+                                backgroundColor: isSelected ? "#eff6ff" : "#ffffff",
+                                color: isSelected ? "#1d4ed8" : "#374151",
                                 cursor: "pointer",
+                                fontWeight: isSelected ? 600 : 400,
+                                transition: "all 0.2s ease",
+                                boxShadow: isSelected
+                                  ? "0 4px 10px rgba(37, 99, 235, 0.12)"
+                                  : "0 2px 5px rgba(15, 23, 42, 0.05)",
                               }}
-                            />
-                            {info.icon && <span>{info.icon}</span>}
-                            <span style={{ fontSize: "14px" }}>
-                              {info.label}
-                            </span>
-                          </label>
-                        );
-                      })}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleFeature(key)}
+                                style={{
+                                  width: "16px",
+                                  height: "16px",
+                                  accentColor: "#3b82f6",
+                                  cursor: "pointer",
+                                }}
+                              />
+                              {info.icon && <span>{info.icon}</span>}
+                              <span style={{ fontSize: "14px" }}>{info.label}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
                     </div>
                   </fieldset>
 
-                  {/* username */}
-                  <fieldset className="name">
-                    <div className="body-title">
-                      Username <span className="tf-color-1">*</span>
-                    </div>
-                    <div className="field-wrapper">
-                      <Field
-                        type="text"
-                        name="username"
-                        placeholder="Enter username"
-                      />
-                      <ErrorMessage
-                        name="username"
-                        component="p"
-                        className="error-text"
-                      />
-                    </div>
-                  </fieldset>
-
-                  {/* password */}
-                  <fieldset className="name">
-                    <div className="body-title">
-                      Password{" "}
-                      {!isEdit && <span className="tf-color-1">*</span>}
-                    </div>
-                    <div className="field-wrapper">
-                      <Field
-                        type="text"
-                        name="password"
-                        placeholder={
-                          isEdit
-                            ? "Leave blank to keep current password"
-                            : "Enter password"
-                        }
-                      />
-                      <ErrorMessage
-                        name="password"
-                        component="p"
-                        className="error-text"
-                      />
-                    </div>
-                  </fieldset>
-
-                  {/* confirm-password */}
-                  <fieldset className="name">
-                    <div className="body-title">
-                      Confirm Password{" "}
-                      {!isEdit && <span className="tf-color-1">*</span>}
-                    </div>
-                    <div className="field-wrapper">
-                      <Field
-                        type="text"
-                        name="password_confirmation"
-                        placeholder="Re-enter password"
-                      />
-                      <ErrorMessage
-                        name="password_confirmation"
-                        component="p"
-                        className="error-text"
-                      />
-                    </div>
-                  </fieldset>
-
-                  {/* SUBMIT */}
-                  <div className="bot">
+                  {/* SUBMIT — spans full row */}
+                  <div className="bot" style={{ gridColumn: "1 / -1" }}>
                     <button
                       className="tf-button w208"
                       type="submit"
@@ -692,7 +669,12 @@ const CreateStore = () => {
                           ? "Update"
                           : "Save"}
                     </button>
+                    <button type="button" className="ml-5 tf-button style-1">
+                      <a href="/store"  style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
+                    </button>
                   </div>
+
+                 
                 </Form>
               )}
             </Formik>

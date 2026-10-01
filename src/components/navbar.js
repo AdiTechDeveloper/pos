@@ -6,12 +6,7 @@ import { hasFeature } from "../utils/hasFeature";
 
 import { PiKeyReturnBold, PiWallet } from "react-icons/pi";
 
-import {
-  ChevronDown,
-  ChevronUp,
-  PanelLeftClose,
-  PanelLeftOpen,
-} from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 import {
   IoHomeOutline,
@@ -27,15 +22,9 @@ import {
   IoLockOpenOutline,
   IoPrintOutline,
   IoExitOutline,
+  IoPeopleOutline,
 } from "react-icons/io5";
-import {
-  FaFacebookF,
-  FaTwitter,
-  FaLinkedinIn,
-  FaInstagram,
-} from "react-icons/fa";
-
-import { FiHelpCircle, FiHeadphones, FiFileText } from "react-icons/fi";
+import { FaFacebookF, FaLinkedinIn, FaInstagram } from "react-icons/fa";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -55,16 +44,11 @@ const Navbar = () => {
   const appData = useAppData();
   const store = appData?.store || null;
 
-  /* =========================================================
-      REPORT LINKS  (feature = is report ko dekhne ke liye
-      zaroori feature; null matlab hamesha dikhega)
-  ========================================================= */
-
   const reportLinks = [
     {
       name: "Stock Summary",
       path: "/reports/stock-summary",
-      feature: "stock_alerts",
+      feature: "reports_stock",
     },
     {
       name: "Purchase Summary",
@@ -94,7 +78,7 @@ const Navbar = () => {
     {
       name: "Price Override Summary",
       path: "/reports/price-override",
-      feature: "reports_purchase",
+      feature: "price_override",
     },
     {
       name: "Sales Report",
@@ -114,7 +98,7 @@ const Navbar = () => {
     {
       name: "Shift History Report",
       path: "/reports/shift-report",
-      feature: "reports_financial",
+      feature: "reports_shift",
     },
     {
       name: "Stock Expiry",
@@ -123,7 +107,6 @@ const Navbar = () => {
     },
   ];
 
-  // sirf wahi reports jinka feature user ke paas hai
   const visibleReportLinks = reportLinks.filter(
     (item) => !item.feature || hasFeature(item.feature),
   );
@@ -205,11 +188,23 @@ const Navbar = () => {
     history.push("/");
   };
 
-  /* =========================================================
-      SHARED MENU  (feature = is menu ke liye zaroori feature)
-  ========================================================= */
-
   const sharedMenuItems = [
+    {
+      name: "Categories",
+      path: "/category",
+      icon: <IoGridOutline size={20} />,
+    },
+    {
+      name: "Brands",
+      path: "/brand",
+      icon: <IoPricetagsOutline size={20} />,
+    },
+    {
+      name: "GST Rates",
+      path: "/gst-rates",
+      icon: <IoWalletOutline size={20} />,
+      feature: "gst_rates",
+    },
     {
       name: "Suppliers",
       path: "/suppliers",
@@ -232,7 +227,7 @@ const Navbar = () => {
       name: "Expired Products",
       path: "/expired-products",
       icon: <IoExitOutline size={20} />,
-      feature: "products",
+      feature: "stock_alerts",
     },
     {
       name: "Purchase Bills",
@@ -250,7 +245,6 @@ const Navbar = () => {
       name: "Sales Bills",
       path: "/sale-bill",
       icon: <IoCartOutline size={20} />,
-      feature: "sales_bills",
     },
     {
       name: "Sales Return",
@@ -262,6 +256,12 @@ const Navbar = () => {
       name: "Advance Payment",
       path: "/advancepayment",
       icon: <PiWallet size={20} />,
+      feature: "advance_payments",
+    },
+    {
+      name: "Customers",
+      path: "/customers",
+      icon: <IoPeopleOutline size={20} />,
       feature: "customers",
     },
   ];
@@ -278,6 +278,12 @@ const Navbar = () => {
     },
   ];
 
+  const posMenuItem = {
+    name: "POS",
+    path: "/pos",
+    icon: <IoDesktopOutline size={20} />,
+  };
+
   const adminMenus = [
     {
       name: "Branches",
@@ -291,15 +297,8 @@ const Navbar = () => {
       icon: <i className="icon-user" />,
       feature: "staff_management",
     },
-
     ...sharedMenuItems,
-
-    // POS feature-gated nahi hai (core flow)
-    {
-      name: "POS",
-      path: "/pos",
-      icon: <IoDesktopOutline size={20} />,
-    },
+    posMenuItem,
   ];
 
   const managerMenus = [
@@ -309,31 +308,8 @@ const Navbar = () => {
       icon: <i className="icon-user" />,
       feature: "staff_management",
     },
-    // Categories aur Brands POS ke liye zaroori hain — hamesha dikhte hain
-    {
-      name: "Categories",
-      path: "/category",
-      icon: <IoGridOutline size={20} />,
-    },
-    {
-      name: "Brands",
-      path: "/brand",
-      icon: <IoPricetagsOutline size={20} />,
-    },
-    {
-      name: "GST Rates",
-      path: "/gst-rates",
-      icon: <IoWalletOutline size={20} />,
-      feature: "gst_rates",
-    },
-
     ...sharedMenuItems,
-
-    {
-      name: "POS",
-      path: "/pos",
-      icon: <IoDesktopOutline size={20} />,
-    },
+    posMenuItem,
   ];
 
   const getMenuList = () => {
@@ -343,7 +319,6 @@ const Navbar = () => {
     else if (role === "admin") list = adminMenus;
     else if (role === "manager") list = managerMenus;
 
-    // jis item pe feature likha hai wo tabhi dikhega jab user ke paas wo feature ho
     return list.filter((item) => !item.feature || hasFeature(item.feature));
   };
 
@@ -886,7 +861,6 @@ const Navbar = () => {
             {/* feature-filtered menu items (POS ko chhodkar) */}
             {mainItems.map(renderMenuItem)}
 
-            {/* REPORTS — sirf wahi sub-links jinka feature user ke paas hai */}
             {showReports && (
               <li className="app-sidebar-menu-item">
                 <button
@@ -932,10 +906,8 @@ const Navbar = () => {
               </li>
             )}
 
-            {/* POS (feature-gated nahi) */}
             {posItem && renderMenuItem(posItem)}
 
-            {/* LOGOUT — admin + manager dono ke liye */}
             {isBackOffice && (
               <li className="app-sidebar-menu-item">
                 <button
@@ -968,6 +940,7 @@ const Navbar = () => {
                     target="_blank"
                     className="app-sidebar-social-btn"
                     aria-label="Facebook"
+                    target="_blank"
                   >
                     <FaFacebookF />
                   </a>
@@ -977,6 +950,7 @@ const Navbar = () => {
                     target="_blank"
                     className="app-sidebar-social-btn"
                     aria-label="LinkedIn"
+                    target="_blank"
                   >
                     <FaLinkedinIn />
                   </a>
@@ -986,6 +960,7 @@ const Navbar = () => {
                     target="_blank"
                     className="app-sidebar-social-btn"
                     aria-label="Instagram"
+                    target="_blank"
                   >
                     <FaInstagram />
                   </a>

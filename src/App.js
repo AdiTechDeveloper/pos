@@ -58,6 +58,7 @@ import stockExpiryReport from "./components/reports/stockExpiryReport";
 import DiscardProducts from "./components/DiscartProducts";
 import AdvancePayment from "./components/AdvancePayment";
 import ChangePassword from "./components/ChangePassword";
+import customer from "./components/customer";
 
 const isAuthenticated = () => {
   const storedData = localStorage.getItem("user_detail");
@@ -124,7 +125,7 @@ function App() {
           <ProtectedRoute
             path="/expired-products"
             component={DiscardProducts}
-            requiredFeature="products"
+            requiredFeature="stock_alerts"
           />
 
           <ProtectedRoute exact path="/store" component={Store} />
@@ -207,17 +208,11 @@ function App() {
             requiredFeature="purchase_bills"
           />
 
-          <ProtectedRoute
-            exact
-            path="/sale-bill"
-            component={SaleBill}
-            requiredFeature="sales_bills"
-          />
+          <ProtectedRoute exact path="/sale-bill" component={SaleBill} />
           <ProtectedRoute
             exact
             path="/create-sale-bill"
             component={CreateEditSaleBill}
-            requiredFeature="sales_bills"
           />
 
           <ProtectedRoute
@@ -237,7 +232,7 @@ function App() {
             exact
             path="/advancepayment"
             component={AdvancePayment}
-            requiredFeature="customers"
+            requiredFeature="advance_payments"
           />
 
           <ProtectedRoute
@@ -287,6 +282,13 @@ function App() {
 
           <ProtectedRoute
             exact
+            path="/customers"
+            component={customer}
+            requiredFeature="customers"
+          />
+
+          <ProtectedRoute
+            exact
             path="/gst-rates"
             component={GstRate}
             requiredFeature="gst_rates"
@@ -311,7 +313,7 @@ function App() {
           <ProtectedRoute
             path="/reports/stock-summary"
             component={StockSummury}
-            requiredFeature="stock_alerts"
+            requiredFeature="reports_stock"
           />
           <ProtectedRoute
             path="/reports/stock-expiry-report"
@@ -332,7 +334,7 @@ function App() {
           <ProtectedRoute
             path="/reports/price-override"
             component={PriceOverride}
-            requiredFeature="reports_purchase"
+            requiredFeature="price_override"
           />
 
           <ProtectedRoute
@@ -368,13 +370,12 @@ function App() {
             requiredFeature="reports_financial"
           />
 
-          {/* backend me bhi ye ungated hai (cashier ka apna register/shift core flow hai), isliye yahan bhi feature nahi laga */}
           <ProtectedRoute
             path="/reports/shift-report"
             component={ShiftHistory}
+            requiredFeature="reports_shift"
           />
 
-          {/* pehle plain <Route> tha, koi login-check hi nahi ho raha tha — fix kiya */}
           <ProtectedRoute
             path="/customer-dues"
             component={CustomerDues}

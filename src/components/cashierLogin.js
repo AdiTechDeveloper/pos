@@ -75,7 +75,7 @@
 //   const handleAuthSubmit = async (e) => {
 //     e.preventDefault();
 //     if (!authData.username || !authData.password) {
-//       toast.error("Username aur password dono chahiye");
+//       toast.error("ur password dono chahiye");
 //       return;
 //     }
 //     setAuthLoading(true);
@@ -432,7 +432,7 @@ const CashierLogin = () => {
     e.preventDefault();
 
     if (!authData.username || !authData.password) {
-      toast.error("Username aur password dono chahiye");
+      toast.error("Please enter username or password");
       return;
     }
 
@@ -498,7 +498,7 @@ const CashierLogin = () => {
 
   const handleConfirmBranch = async () => {
     if (!selectedBranch) {
-      toast.error("Branch select karo");
+      toast.error("Please Select the branch");
       return;
     }
 
