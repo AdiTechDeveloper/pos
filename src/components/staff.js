@@ -178,46 +178,49 @@ const Staff = () => {
     },
     {
       name: "Branch",
-      selector: (row) => row.store?.name || "N/A",
+      selector: (row) =>
+        row.branches && row.branches.length > 0
+          ? row.branches.map((b) => b.name).join(", ")
+          : "N/A",
       sortable: true,
-      width: "180px",
+      width: "350px",
     },
     {
-  name: "Action",
-  cell: (row) => (
-    <div
-      className="list-icon-function"
-      style={{ display: "flex", gap: "12px", alignItems: "center" }}
-    >
-      {/* Reset Password Button */}
-      <div
-        className="item key"
-        style={{ cursor: "pointer", color: "#e0a800" }}
-        onClick={() => handleOpenPasswordModal(row)}
-        title="Reset Password"
-      >
-        <i className="icon-key" style={{ fontSize: "16px" }}></i>
-      </div>
+      name: "Action",
+      cell: (row) => (
+        <div
+          className="list-icon-function"
+          style={{ display: "flex", gap: "12px", alignItems: "center" }}
+        >
+          {/* Reset Password Button */}
+          <div
+            className="item key"
+            style={{ cursor: "pointer", color: "#e0a800" }}
+            onClick={() => handleOpenPasswordModal(row)}
+            title="Reset Password"
+          >
+            <i className="icon-key" style={{ fontSize: "16px" }}></i>
+          </div>
 
-      {/* Edit Button */}
-      <div className="item edit" title="Edit">
-        <Link to={`/staff/edit/${row.id}`} onClick={() => handleEdit(row)}>
-          <i className="icon-edit-3"></i>
-        </Link>
-      </div>
+          {/* Edit Button */}
+          <div className="item edit" title="Edit">
+            <Link to={`/staff/edit/${row.id}`} onClick={() => handleEdit(row)}>
+              <i className="icon-edit-3"></i>
+            </Link>
+          </div>
 
-      {/* Delete Button */}
-      <div
-        className="item trash"
-        style={{ cursor: "pointer" }}
-        onClick={() => handleDeleteConfirm(row.id)}
-        title="Delete"
-      >
-        <i className="icon-trash-2"></i>
-      </div>
-    </div>
-  ),
-},
+          {/* Delete Button */}
+          <div
+            className="item trash"
+            style={{ cursor: "pointer" }}
+            onClick={() => handleDeleteConfirm(row.id)}
+            title="Delete"
+          >
+            <i className="icon-trash-2"></i>
+          </div>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -226,7 +229,9 @@ const Staff = () => {
         <div className="main-content-wrap">
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
             <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+              >
                 <span
                   style={{
                     width: "5px",
@@ -246,7 +251,7 @@ const Staff = () => {
                       lineHeight: 1.2,
                     }}
                   >
-                    Cashier
+                    Staff
                   </h3>
                   <p
                     style={{
@@ -255,11 +260,10 @@ const Staff = () => {
                       margin: "2px 0 0 0",
                     }}
                   >
-                  Manage cashier accounts and their shift access
+                    Manage staff accounts and their shift access
                   </p>
                 </div>
               </div>
-
             </div>
             <ul className="breadcrumbs flex items-center flex-wrap justify-start gap10">
               <li>
