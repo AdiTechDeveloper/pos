@@ -161,7 +161,7 @@ video {
   font: inherit;
   vertical-align: baseline;
   font-family: inherit;
-  font-size: 100%;
+  font-size: 104%;
   font-style: inherit;
   font-weight: inherit;
 }
@@ -1192,7 +1192,7 @@ a:hover, a:focus {
 }
 
 .wg-chart-default {
-  display: -webkit-box;
+  dis{play: -webkit-box;
   display: -moz-box;
   display: -ms-flexbox;
   display: -webkit-flex;
@@ -1232,7 +1232,7 @@ a:hover, a:focus {
   width: 216px;
 }
 
-.wg-box {
+.wg-box 
   display: -webkit-box;
   display: -moz-box;
   display: -ms-flexbox;

@@ -37,11 +37,22 @@ const CreateEditGstRates = () => {
 
   // Validation Schema
   const validationSchema = Yup.object({
-    rate: Yup.string().required("Rate is required")
-    // .matches(/^[0-9]$/, "Only Digit allowed"),
-    // description: Yup.string().required("Description is required"),
+    rate: Yup.string()
+      .required("Rate is required")
+      .matches(/^\d{1,2}(\.\d+)?$/, "Enter a valid rate"),
+    description: Yup.string()
+      .required("Description is required")
+      .test(
+        "max-words",
+        "Description can contain maximum 100 words",
+        (value) => {
+          if (!value) return true;
+
+          return value.trim().split(/\s+/).length <= 100;
+        }
+      ),
   });
-  
+
 
   // Submit (Create + Update)
   const handleSubmit = async (values) => {
@@ -98,10 +109,32 @@ const CreateEditGstRates = () => {
                       <div className="body-title">Rate *</div>
                       <div className="body-content">
                         <Field
-                          type="number"
+                          type="text"
                           name="rate"
                           placeholder="Enter GST rate"
                           className="mb-5"
+                          onInput={(e) => {
+                            let value = e.target.value.replace(/[^0-9.]/g, "");
+
+                            const parts = value.split(".");
+
+                            // Maximum 2 digits before decimal
+                            if (parts[0].length > 2) {
+                              value = parts[0].slice(0, 2);
+
+                              if (parts[1] !== undefined) {
+                                value += "." + parts[1];
+                              }
+                            }
+
+                            // Only one decimal point
+                            const decimalParts = value.split(".");
+                            if (decimalParts.length > 2) {
+                              value = decimalParts[0] + "." + decimalParts.slice(1).join("");
+                            }
+
+                            e.target.value = value;
+                          }}
                         />
                         <ErrorMessage
                           name="rate"
@@ -112,18 +145,34 @@ const CreateEditGstRates = () => {
                     </fieldset>
                     <fieldset className="col-md-4 mb-15">
                       <div className="body-title">Description *</div>
+
                       <div className="body-content">
-                        <Field
-                          as="textarea"
-                          name="description"
-                          className="mb-5 form-control small-textarea"
-                          placeholder="Enter description"
-                        />
-                        {/* <ErrorMessage
+                        <Field name="description">
+                          {({ field, form }) => (
+                            <textarea
+                              {...field}
+                              className="mb-5 form-control small-textarea"
+                              placeholder="Enter description"
+                              onChange={(e) => {
+                                const value = e.target.value;
+
+                                const words = value.trim()
+                                  ? value.trim().split(/\s+/)
+                                  : [];
+
+                                if (words.length <= 100) {
+                                  form.setFieldValue("description", value);
+                                }
+                              }}
+                            />
+                          )}
+                        </Field>
+
+                        <ErrorMessage
                           name="description"
                           className="error-text"
-                          component="div"CGST
-                        /> */}
+                          component="div"
+                        />
                       </div>
                     </fieldset>
                   </div>

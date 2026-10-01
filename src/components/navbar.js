@@ -965,6 +965,7 @@ const Navbar = () => {
                 <div className="app-sidebar-social">
                   <a
                     href="https://www.facebook.com/vakarosoftware"
+                    target="_blank"
                     className="app-sidebar-social-btn"
                     aria-label="Facebook"
                   >
@@ -973,6 +974,7 @@ const Navbar = () => {
 
                   <a
                     href="https://www.linkedin.com/company/vakaroofficial/"
+                    target="_blank"
                     className="app-sidebar-social-btn"
                     aria-label="LinkedIn"
                   >
@@ -981,6 +983,7 @@ const Navbar = () => {
 
                   <a
                     href="https://www.instagram.com/vakaro_official/"
+                    target="_blank"
                     className="app-sidebar-social-btn"
                     aria-label="Instagram"
                   >
