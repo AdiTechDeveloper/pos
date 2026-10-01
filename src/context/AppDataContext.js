@@ -16,8 +16,16 @@ const ENDPOINTS = {
   store: "STORE",
 };
 
+const toArray = (d) => {
+  if (Array.isArray(d)) return d;
+  if (d && Array.isArray(d.data)) return d.data;
+  return [];
+};
+
 const RESPONSE_PATH = {
-  managerBranches: (res) => res.data?.branches ?? [],
+  branches: (res) => toArray(res.data?.branches ?? res.data?.data ?? res.data),
+  managerBranches: (res) =>
+    toArray(res.data?.branches ?? res.data?.data ?? res.data),
   categories: (res) => res.data?.categories ?? [],
   brands: (res) => res.data?.brands ?? [],
   gstRates: (res) => res.data?.gstRates ?? [],
@@ -28,11 +36,51 @@ const lastFetched = {};
 const inFlight = {};
 const listeners = new Set();
 
+function getUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user_detail"))?.user || null;
+  } catch (err) {
+    return null;
+  }
+}
+
+function getRole() {
+  return getUser()?.role || null;
+}
+
 function notifyListeners(key, value) {
   listeners.forEach((fn) => fn(key, value));
 }
 
+let cacheOwner = null;
+
+function ensureCacheOwner() {
+  const uid = getUser()?.id ?? null;
+  if (cacheOwner === uid) return;
+
+  Object.keys(lastFetched).forEach((k) => delete lastFetched[k]);
+  Object.keys(inFlight).forEach((k) => delete inFlight[k]);
+
+  if (cacheOwner !== null) {
+    [
+      "branches",
+      "managerBranches",
+      "categories",
+      "brands",
+      "gstRates",
+      "suppliers",
+      "staff",
+    ].forEach((k) => notifyListeners(k, []));
+    notifyListeners("store", null);
+    notifyListeners("stockExpiryAlerts", { list: [], total: 0 });
+  }
+
+  cacheOwner = uid;
+}
+
 function fetchKey(key, { force = false, storeId } = {}) {
+  ensureCacheOwner();
+
   const now = Date.now();
   if (!force && lastFetched[key] && now - lastFetched[key] < CACHE_TTL) {
     return Promise.resolve();
@@ -64,6 +112,8 @@ function fetchKey(key, { force = false, storeId } = {}) {
 }
 
 function fetchStockExpiryAlerts({ force = false } = {}) {
+  ensureCacheOwner();
+
   const key = "stockExpiryAlerts";
   const now = Date.now();
   if (!force && lastFetched[key] && now - lastFetched[key] < CACHE_TTL) {
@@ -130,13 +180,19 @@ export function AppDataProvider({ children }) {
     lastFetched[key] = 0;
   }, []);
 
+  const isManager = getRole() === "manager";
+
   const value = {
     ...data,
+
+    branches: isManager ? data.managerBranches : data.branches,
+
     stockExpiryAlerts: alerts.list,
     stockExpiryTotal: alerts.total,
 
-    loadBranches: () => load("branches"),
-    loadManagerBranches: () => load("managerBranches"),
+    loadBranches: (opts) =>
+      load(getRole() === "manager" ? "managerBranches" : "branches", opts),
+    loadManagerBranches: (opts) => load("managerBranches", opts),
     loadCategories: () => load("categories"),
     loadBrands: () => load("brands"),
     loadGstRates: () => load("gstRates"),

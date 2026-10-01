@@ -490,7 +490,7 @@ const CreateEditPurchaseBill = () => {
   const { id } = useParams();
   const history = useHistory();
   const appData = useAppData();
-  const branches = appData?.managerBranches || [];
+  const branches = appData?.branches || [];
   const [suppliers, setSupplierBill] = useState([]);
   const [products, setProducts] = useState([]);
   const [gstRates, setGstRates] = useState([]);
@@ -633,7 +633,7 @@ const CreateEditPurchaseBill = () => {
   }, [incomingBill, isEdit, id]);
 
   const fetchBranch = () => {
-    appData?.loadManagerBranches();
+    appData?.loadBranches();
   };
 
   const fetchSupplierBill = async () => {

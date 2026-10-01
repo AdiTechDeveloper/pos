@@ -5,7 +5,6 @@ import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
-import FormikDatePicker from "./FormikDatePicker";
 import { useAppData } from "../context/AppDataContext";
 
 const CreateEditPurchaseReturn = () => {
@@ -13,7 +12,7 @@ const CreateEditPurchaseReturn = () => {
   const { id } = useParams();
   const history = useHistory();
   const appData = useAppData();
-  const branches = appData?.managerBranches || [];
+  const branches = appData?.branches || [];
   const [suppliers, setSupplierBill] = useState([]);
   const [purchaseBills, setPurchaseBills] = useState([]);
   const [purchaseLines, setPurchaseLines] = useState([]);
@@ -21,7 +20,7 @@ const CreateEditPurchaseReturn = () => {
   const [purchaseBillId, setPurchaseBillId] = useState("");
   const [newPurchaseBill, setNewPurchaseBill] = useState("");
   const [error, setError] = useState("");
-  const [fieldValue, setFieldValue] = useState(() => () => { });
+  const [fieldValue, setFieldValue] = useState(() => () => {});
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_purchase_return_bill = localStorage.getItem(
@@ -53,9 +52,9 @@ const CreateEditPurchaseReturn = () => {
         return_date: incomingReturnBill.return_date || "",
         lines: incomingReturnBill.lines?.length
           ? incomingReturnBill.lines.map((line) => ({
-            purchase_bill_line_id: line.purchase_line_id?.toString() || "",
-            qty: line.qty || "",
-          }))
+              purchase_bill_line_id: line.purchase_line_id?.toString() || "",
+              qty: line.qty || "",
+            }))
           : initialValues.lines,
       });
     }
@@ -90,7 +89,7 @@ const CreateEditPurchaseReturn = () => {
   };
 
   const fetchBranch = () => {
-    appData?.loadManagerBranches();
+    appData?.loadBranches();
   };
 
   const fetchSupplierBill = async () => {
@@ -157,8 +156,7 @@ const CreateEditPurchaseReturn = () => {
   const validationSchema = Yup.object().shape({
     purchase_bill_id: Yup.string().required("Purchase Bill Id is required"),
     branch_id: Yup.string().required("Branch is required"),
-    supplier_id: Yup.string()
-      .required("Supplier is required"),
+    supplier_id: Yup.string().required("Supplier is required"),
     return_date: Yup.string()
       .required("Return Date is required")
       .matches(/^[0-9]$/, "Only Digits allowed"),
@@ -369,7 +367,10 @@ const CreateEditPurchaseReturn = () => {
                               <button
                                 type="button"
                                 className="ml-5 tf-button style-1"
-                                style={{ color: "inherit", textDecoration: "none" }}
+                                style={{
+                                  color: "inherit",
+                                  textDecoration: "none",
+                                }}
                                 onClick={() =>
                                   push({ purchase_bill_line_id: "", qty: "" })
                                 }
@@ -394,9 +395,21 @@ const CreateEditPurchaseReturn = () => {
                     )}
                   </FieldArray>
                   <div className="flex">
-                    <button type="submit" className="ml-5 tf-button style-1" style={{ color: "inherit", textDecoration: "none" }} >Save Return Bill</button>
+                    <button
+                      type="submit"
+                      className="ml-5 tf-button style-1"
+                      style={{ color: "inherit", textDecoration: "none" }}
+                    >
+                      Save Return Bill
+                    </button>
                     <button type="button" className="ml-5 tf-button style-1">
-                      <a href="/purchase-return-bill" style={{ color: "inherit", textDecoration: "none" }} > Cancel</a>
+                      <a
+                        href="/purchase-return-bill"
+                        style={{ color: "inherit", textDecoration: "none" }}
+                      >
+                        {" "}
+                        Cancel
+                      </a>
                     </button>
                   </div>
                 </Form>
