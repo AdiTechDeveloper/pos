@@ -696,7 +696,7 @@ const InvoiceTable = ({ data }) => {
       selector: (row) => row.created_at,
       sortable: true,
       cell: (row) => (
-        <span className="text-base text-gray-700">
+        <span className="text-xl text-gray-700">
           {new Date(row.created_at).toLocaleDateString()}
         </span>
       ),
@@ -707,7 +707,7 @@ const InvoiceTable = ({ data }) => {
       sortable: true,
       wrap: true,
       cell: (row) => (
-        <span className="text-base font-semibold text-gray-800">
+        <span className="text-xl font-semibold text-gray-800">
           {row.bill_no}
         </span>
       ),

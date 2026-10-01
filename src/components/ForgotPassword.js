@@ -84,99 +84,174 @@ const ForgotPasswordModal = ({ onClose }) => {
   return (
     <div
       className="modal fade show"
-      style={{ display: "block", background: "rgba(0,0,0,0.6)", zIndex: 1060 }}
+      style={{
+        display: "block",
+        background: "rgba(15, 23, 42, 0.65)",
+        backdropFilter: "blur(5px)",
+        zIndex: 1060,
+      }}
+      onClick={onClose}
     >
       <div
-        className="modal-dialog modal-dialog-centered"
-        style={{ maxWidth: "450px" }}
+        className="modal-dialog modal-dialog-centered px-3"
+        style={{ maxWidth: "520px" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="modal-content p-3 border-0 rounded-4 shadow">
-          <div className="modal-header border-0">
-            <h4 className="fw-bold">Account Recovery</h4>
-            <button className="btn-close" onClick={onClose}></button>
+        <div className="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+
+          {/* ================= HEADER ================= */}
+          <div className="modal-header border-bottom px-4 px-md-5 pt-4 pb-3">
+            <div>
+              <h4 className="fw-bold text-dark mb-2">
+                Account Recovery
+              </h4>
+
+              <p className="text-muted text-xl mb-0 small">
+                Verify your identity to reset your account password.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="btn-close shadow-none ms-3"
+              onClick={onClose}
+              aria-label="Close"
+            />
           </div>
 
+          {/* ================= FORM ================= */}
           <form onSubmit={handleSubmit}>
-            <div className="modal-body">
-              {/* Username */}
-              <div className="mb-3">
+
+            <div className="modal-body px-4 px-md-5 py-4">
+
+              {/* USERNAME */}
+              <div className="mb-4">
+                <label className="form-label text-xl text-dark mb-4">
+                  Username
+                </label>
+
                 <input
                   type="text"
-                  placeholder="Username"
-                  className={`form-control ${errors.admin_username ? "is-invalid" : ""}`}
+                  placeholder="Enter your username"
+                  className={`form-control form-control-lg ${errors.admin_username ? "is-invalid" : ""
+                    }`}
                   value={formData.admin_username}
                   onChange={(e) =>
                     handleChange("admin_username", e.target.value)
                   }
                 />
+
                 {errors.admin_username && (
-                  <div className="invalid-feedback">
+                  <div className="invalid-feedback mt-1">
                     {errors.admin_username}
                   </div>
                 )}
               </div>
 
-              {/* PIN */}
-              <div className="mb-3 mt-6">
+              {/* RECOVERY PIN */}
+              <div className="mb-4">
+                <label className="form-label text-xl text-dark mb-4">
+                  Recovery PIN
+                </label>
+
                 <input
                   type="password"
-                  placeholder="6-digit Recovery PIN"
+                  placeholder="Enter 6-digit PIN"
                   maxLength={6}
                   inputMode="numeric"
-                  className={`form-control ${errors.master_key ? "is-invalid" : ""}`}
+                  className={`form-control form-control-lg ${errors.master_key ? "is-invalid" : ""
+                    }`}
                   value={formData.master_key}
                   onChange={(e) =>
                     handleChange(
                       "master_key",
-                      e.target.value.replace(/\D/g, ""),
+                      e.target.value.replace(/\D/g, "")
                     )
                   }
                 />
+
                 {errors.master_key && (
-                  <div className="invalid-feedback">{errors.master_key}</div>
+                  <div className="invalid-feedback mt-1">
+                    {errors.master_key}
+                  </div>
                 )}
+
+                <div className="form-text text-xl mt-2 text-muted">
+                  Enter your 6-digit master recovery PIN code.
+                </div>
               </div>
 
-              {/* New Password */}
-              <div className="mb-3 mt-6">
+              {/* ================= DIVIDER ================= */}
+              <div className="d-flex align-items-center gap-3 my-4">
+                <hr className="flex-grow-1 m-0 opacity-25" />
+
+                <span className="text-muted text-xl fw-semibold text-nowrap">
+                  New Credentials
+                </span>
+
+                <hr className="flex-grow-1 m-0 opacity-25" />
+              </div>
+
+              {/* NEW PASSWORD */}
+              <div className="mb-4 ">
+                <label className="form-label text-xl text-dark mb-4">
+                  New Password
+                </label>
+
                 <input
                   type="password"
-                  placeholder="New Password"
-                  className={`form-control ${errors.new_password ? "is-invalid" : ""}`}
+                  placeholder="Enter new password"
+                  className={`form-control form-control-lg ${errors.new_password ? "is-invalid" : ""
+                    }`}
                   value={formData.new_password}
-                  onChange={(e) => handleChange("new_password", e.target.value)}
-                />
-                {errors.new_password && (
-                  <div className="invalid-feedback">{errors.new_password}</div>
-                )}
-              </div>
-
-              {/* Confirm Password */}
-              <div className="mb-3 mt-6">
-                <input
-                  type="password"
-                  placeholder="Confirm Password"
-                  className={`form-control ${
-                    errors.new_password_confirmation ? "is-invalid" : ""
-                  }`}
-                  value={formData.new_password_confirmation}
                   onChange={(e) =>
-                    handleChange("new_password_confirmation", e.target.value)
+                    handleChange("new_password", e.target.value)
                   }
                 />
+
+                {errors.new_password && (
+                  <div className="invalid-feedback mt-1">
+                    {errors.new_password}
+                  </div>
+                )}
+              </div>
+
+              {/* CONFIRM PASSWORD */}
+              <div className="mb-2">
+                <label className="form-label text-xl text-dark mb-4">
+                  Confirm Password
+                </label>
+
+                <input
+                  type="password"
+                  placeholder="Re-enter new password"
+                  className={`form-control form-control-lg ${errors.new_password_confirmation
+                      ? "is-invalid"
+                      : ""
+                    }`}
+                  value={formData.new_password_confirmation}
+                  onChange={(e) =>
+                    handleChange(
+                      "new_password_confirmation",
+                      e.target.value
+                    )
+                  }
+                />
+
                 {errors.new_password_confirmation && (
-                  <div className="invalid-feedback">
+                  <div className="invalid-feedback mt-1">
                     {errors.new_password_confirmation}
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="modal-footer border-0">
+            {/* ================= FOOTER ================= */}
+            <div className="modal-footer border-top px-4 px-md-5 py-3 bg-light">
+
               <button
                 type="button"
-                className="btn btn-light btn-lg text-2xl"
+                className="btn btn-light border text-xl px-4 py-2 fw-semibold"
                 onClick={onClose}
                 disabled={loading}
               >
@@ -185,11 +260,20 @@ const ForgotPasswordModal = ({ onClose }) => {
 
               <button
                 type="submit"
-                className="btn btn-primary btn-lg text-2xl"
+                className="btn btn-primary text-xl px-4 py-2 fw-semibold d-flex align-items-center gap-2"
                 disabled={loading}
               >
+                {loading && (
+                  <span
+                    className="spinner-border spinner-border-sm"
+                    role="status"
+                    aria-hidden="true"
+                  />
+                )}
+
                 {loading ? "Processing..." : "Reset Password"}
               </button>
+
             </div>
           </form>
         </div>

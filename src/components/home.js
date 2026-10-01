@@ -18,7 +18,7 @@ const iconProps = {
   fill: "none",
   stroke: "currentColor",
   strokeWidth: 2,
-  strokeLinecap: "round", 
+  strokeLinecap: "round",
   strokeLinejoin: "round",
 };
 const IconStore = () => (
@@ -67,6 +67,16 @@ const Home = () => {
   const canBills = hasFeature("sales_bills");
   const canCustomers = hasFeature("customers");
 
+   // Manager's own branch - admin sees all branches, manager is scoped to one
+  const managerBranchId =
+    role === "manager"
+      ? user_data?.branch_id ??
+        user_data?.user?.branch_id ??
+        user_data?.user?.branch_ids?.[0] ??
+        user_data?.branch_ids?.[0] ??
+        null
+      : null;
+
   const isBackOffice = role === "admin" || role === "manager";
   const nothingEnabled =
     isBackOffice &&
@@ -78,6 +88,7 @@ const Home = () => {
       canBills ||
       canCustomers
     );
+
 
   // superadmin
   const [stores, setStores] = useState([]);
@@ -102,6 +113,9 @@ const Home = () => {
 
     const load = async () => {
       setLoading(true);
+
+      
+
       try {
         // ---------- SUPERADMIN ----------
         if (role === "superadmin") {
@@ -119,6 +133,7 @@ const Home = () => {
             get("/api/reports/sales-report", {
               date_range: "today",
               bill_status: "all",
+               branch_id: managerBranchId,
             }),
           ]);
           jobs.push([
@@ -126,6 +141,7 @@ const Home = () => {
             get("/api/reports/sales-report", {
               date_range: "this_month",
               bill_status: "all",
+               branch_id: managerBranchId,
             }),
           ]);
         }
@@ -139,6 +155,8 @@ const Home = () => {
           jobs.push(["dues", get("/api/customer/due")]);
         }
         if (canBills) {
+          console.log("BILLS TOKEN EXISTS:", !!user_data?.token);
+          console.log("BILLS TOKEN LENGTH:", user_data?.token?.length);
           jobs.push(["bills", get("/api/sales-bills")]);
         }
 
@@ -156,13 +174,18 @@ const Home = () => {
           const data = r.value.data;
 
           if (key === "salesToday") setTodaySales(data);
-          if (key === "salesMonth"){
+          if (key === "salesMonth") {
             setMonthProducts(data?.products?.rows || []);
-           setRecentInvoices(data?.invoices?.rows || []); // has customer names
-}
+            setRecentInvoices(data?.invoices?.rows || []); // has customer names
+          }
           if (key === "purchaseToday") setTodayPurchase(data);
           if (key === "dues") setCustomerDues(data?.data || []);
-          if (key === "bills") setSaleBills(data?.data || []);
+          if (key === "bills") {
+            console.log("SALES BILLS FULL RESPONSE:", data);
+            console.log("SALES BILLS DATA:", data?.data);
+            setSaleBills(data?.data || []);
+          }
+
         });
       } catch (err) {
         console.error("Dashboard load error:", err);
@@ -269,7 +292,7 @@ const Home = () => {
                 report={todaySales}
                 loading={loading || !todaySales}
               />
-              <MonthlySalesChart user={user_data} />
+              <MonthlySalesChart user={user_data} branchId={managerBranchId}  />
             </div>
           )}
 
@@ -286,9 +309,8 @@ const Home = () => {
           {/* Bottom widgets */}
           {isBackOffice && (showLeftCol || showRightCol) && (
             <div
-              className={`grid grid-cols-1 gap-6 ${
-                showLeftCol && showRightCol ? "lg:grid-cols-2" : ""
-              }`}
+              className={`grid grid-cols-1 gap-6 ${showLeftCol && showRightCol ? "lg:grid-cols-2" : ""
+                }`}
             >
               {showLeftCol && (
                 <div className="flex flex-col gap-6">
@@ -328,7 +350,7 @@ const Home = () => {
   );
 
 
-  
+
 };
 
 export default Home;

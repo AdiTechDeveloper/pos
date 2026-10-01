@@ -31,11 +31,6 @@ const CustomTooltip = ({ active, payload, label }) => {
 const cacheKey = (year, monthIdx, branchId) =>
   `monthlySales:${year}-${monthIdx}:${branchId || "all"}`;
 
-// TODO (backend): replace this whole file with a single call like
-// GET /api/reports/sales-report?date_range=this_year&group_by=month
-// which would return all 12 monthly totals in ONE request. Until then,
-// this only fetches elapsed months and caches completed ones so repeat
-// dashboard loads only ever make 1 network call (for the current month).
 const MonthlySalesChart = ({ user, branchId }) => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const [data, setData] = useState(

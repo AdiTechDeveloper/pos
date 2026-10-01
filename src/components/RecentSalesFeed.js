@@ -13,7 +13,7 @@ const STATUS_STYLES = {
   unpaid: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
-const RecentSalesFeed = ({ bills, loading }) => {
+const RecentSalesFeed = ({ bills, loading  }) => {
   if (loading) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
