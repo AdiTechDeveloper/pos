@@ -3133,7 +3133,7 @@ form input[type="color"] {
   color: var(--Heading);
   overflow: hidden;
   margin-bottom: 0;
-  border: 1px solid grey;
+  /* border: 1px solid grey; */
 }
 form textarea::placeholder,
 form input[type="text"]::placeholder,
