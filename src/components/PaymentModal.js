@@ -19,6 +19,8 @@ const POINT_VALUE = 1; // 1 loyalty point = ₹1 (keep in sync with backend)
 
 export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
   const [cashGiven, setCashGiven] = useState(null);
+  const [onlineGiven, setOnlineGiven] = useState(""); // NEW: split mein online amount
+  const [activeField, setActiveField] = useState("cash"); // NEW: keypad kis field ko edit kare ("cash" | "online")
   const [paymentType, setPaymentType] = useState("cash");
   const [customerName, setCustomerName] = useState("");
   const [customerMobile, setCustomerMobile] = useState("");
@@ -37,7 +39,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
 
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [allCustomers, setAllCustomers] = useState([]); // NEW: name search ke liye saare customers
+  const [allCustomers, setAllCustomers] = useState([]); // name search ke liye saare customers
 
   const parse = (v) => (parseFloat(v) ? parseFloat(v) : 0);
 
@@ -49,9 +51,27 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
 
   const netTotal = Math.max(total - pointsDiscount, 0);
 
+  const isSplit = paymentType === "split";
+
+  // ---------- NEW: SPLIT PAYMENT CALCULATION ----------
+  // Example: bill 129, online 29, cash 500
+  //   splitOnline      = 29   (online se aaya, bill se zyada nahi ho sakta)
+  //   splitCashDue     = 100  (bill ka bacha hua hissa jo cash mein chahiye)
+  //   splitCashApplied = 100  (cash drawer mein actually rakha jaane wala)
+  //   splitChange      = 400  (customer ko wapas)
+  const splitOnline = Math.min(parse(onlineGiven), netTotal);
+  const splitCashDue = Math.max(netTotal - splitOnline, 0);
+  const splitCashApplied = Math.min(parse(cashGiven), splitCashDue);
+  const splitChange = Math.max(parse(cashGiven) - splitCashDue, 0);
+  const splitRemaining = Math.max(splitCashDue - splitCashApplied, 0);
+  // -----------------------------------------------------
+
   const cashApplied = Math.min(parse(cashGiven), netTotal);
-  const remaining = netTotal - cashApplied;
-  const balanceReturn = Math.max(parse(cashGiven) - netTotal, 0);
+  const remaining = isSplit ? splitRemaining : netTotal - cashApplied;
+  const balanceReturn = isSplit
+    ? splitChange
+    : Math.max(parse(cashGiven) - netTotal, 0);
+
   const amountStyle = {
     fontSize: "1.35rem",
     fontWeight: 700,
@@ -60,16 +80,20 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
 
   const quickAmounts = [50, 100, 200, 500];
 
-  const paidAmount =
-    paymentType === "online" ||
-    paymentType === "split" ||
-    paymentType === "cash"
+  const paidAmount = isSplit
+    ? splitOnline + splitCashApplied
+    : paymentType === "online" || paymentType === "cash"
       ? netTotal
       : cashApplied;
 
   const percentPaid =
     netTotal > 0
-      ? Math.min(Math.round((parse(cashGiven) / netTotal) * 100), 100)
+      ? isSplit
+        ? Math.min(
+            Math.round(((splitOnline + splitCashApplied) / netTotal) * 100),
+            100,
+          )
+        : Math.min(Math.round((parse(cashGiven) / netTotal) * 100), 100)
       : 0;
 
   const getAuthHeader = () => {
@@ -80,7 +104,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  // NEW: modal khulte hi customers ki list ek baar load karo (name suggestion ke liye)
+  // modal khulte hi customers ki list ek baar load karo (name suggestion ke liye)
   useEffect(() => {
     axios
       .get(`${BASE_URL}/api/customers`, { headers: getAuthHeader() })
@@ -170,7 +194,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     }
   }, [paymentType, netTotal]);
 
-  // NEW: name type karne par matching customers dhundo
+  // name type karne par matching customers dhundo
   const searchCustomersByName = (value) => {
     const q = value.trim().toLowerCase();
 
@@ -195,7 +219,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     setShowSuggestions(matches.length > 0);
   };
 
-  // NEW: suggestion pe click karne par saari details fill karo
+  // suggestion pe click karne par saari details fill karo
   const selectCustomer = (c) => {
     // mobile ke wahi rules jo mobile input mein hain
     const mobile = String(c.mobile || "")
@@ -219,19 +243,45 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     setFilteredSuggestions([]);
   };
 
-  const keypad = (k) => {
-    setCashGiven((prev) => {
-      prev = prev || "";
-      if (k === "C") return "";
-      if (k === "⌫") return prev.slice(0, -1);
-      if (k === ".") return prev.includes(".") ? prev : prev + ".";
-      return prev + k;
-    });
+  // ---------- NEW: keypad / quick amount ab active field ko edit karte hain ----------
+  const activeValue = isSplit && activeField === "online" ? onlineGiven : cashGiven;
+
+  const setActiveValue = (next) => {
+    if (isSplit && activeField === "online") {
+      // online amount bill se zyada nahi ho sakta
+      if (parse(next) > netTotal) {
+        setOnlineGiven(String(netTotal));
+      } else {
+        setOnlineGiven(next);
+      }
+    } else {
+      setCashGiven(next);
+    }
   };
+
+  const keypad = (k) => {
+    // FIX: cashGiven kabhi number (input se) bhi hota hai, isliye String() zaroori hai
+    const prev = String(activeValue ?? "");
+
+    if (k === "C") return setActiveValue("");
+    if (k === "⌫") return setActiveValue(prev.slice(0, -1));
+    if (k === ".") return setActiveValue(prev.includes(".") ? prev : prev + ".");
+    return setActiveValue(prev + k);
+  };
+  // -----------------------------------------------------------------------------------
 
   const handleMethod = (type) => {
     if (paymentType === "online" && type !== "online") {
       setCashGiven(null);
+    }
+
+    // split ke fields hamesha fresh start hon
+    if (type === "split") {
+      setCashGiven(null);
+      setOnlineGiven("");
+      setActiveField("cash");
+    } else {
+      setOnlineGiven("");
     }
 
     setPaymentType(type);
@@ -327,30 +377,38 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
       });
     }
 
+    // ---------- NEW: SPLIT (cash + online alag inputs) ----------
     if (paymentType === "split") {
-      if (!cashGiven || parse(cashGiven) <= 0) {
-        alert("Enter valid cash amount for split payment");
+      if (parse(onlineGiven) > netTotal) {
+        alert("Online amount cannot be more than the bill amount");
         return;
       }
 
-      const cashAmt = Math.min(parse(cashGiven), netTotal);
-      const onlineAmt = netTotal - cashAmt;
+      if (splitOnline <= 0 && parse(cashGiven) <= 0) {
+        alert("Enter cash and/or online amount for split payment");
+        return;
+      }
 
-      payments.push({
-        method: "cash",
-        amount: cashAmt,
-        cash_received: parse(cashGiven),
-        balance_return: Math.max(parse(cashGiven) - cashAmt, 0),
-      });
+      // cash: sirf utna hi "amount" jitna bill ke liye chahiye, baaki change
+      if (splitCashApplied > 0) {
+        payments.push({
+          method: "cash",
+          amount: splitCashApplied,
+          cash_received: parse(cashGiven),
+          balance_return: splitChange,
+        });
+      }
 
-      if (onlineAmt > 0) {
+      if (splitOnline > 0) {
         payments.push({
           method: "online",
-          amount: onlineAmt,
+          amount: splitOnline,
           transaction_id: "",
         });
       }
+      // splitRemaining > 0 ho to wo due (pay later) maana jayega, mobile upar validate ho chuka hai
     }
+    // ------------------------------------------------------------
 
     if (paymentType === "wallet") {
       const walletApplied = Math.min(walletBalance, netTotal);
@@ -391,7 +449,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     !!mobileError ||
     ((paymentType === "cash" || paymentType === "online") &&
       (!cashGiven || parse(cashGiven) <= 0)) ||
-    (paymentType === "split" && cashApplied <= 0) ||
+    (paymentType === "split" && splitOnline + splitCashApplied <= 0) ||
     (paymentType === "wallet" &&
       walletBalance < netTotal &&
       (!cashGiven || parse(cashGiven) < netTotal - walletBalance)) ||
@@ -676,7 +734,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                   )}
                 </div>
 
-                {/* NEW: relative wrapper + suggestion dropdown */}
+                {/* relative wrapper + suggestion dropdown */}
                 <div className="relative">
                   <label className="text-xl font-bold text-slate-500">
                     CUSTOMER NAME
@@ -702,7 +760,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                         setNameError("");
                       }
 
-                      // NEW: matching customers dikhao
+                      // matching customers dikhao
                       searchCustomersByName(value);
                     }}
                     onFocus={() => searchCustomersByName(customerName)}
@@ -724,7 +782,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                     </div>
                   )}
 
-                  {/* NEW: suggestions list */}
+                  {/* suggestions list */}
                   {showSuggestions && filteredSuggestions.length > 0 && (
                     <ul className="absolute left-0 top-full mt-1 z-30 min-w-full w-[22rem] max-w-[90vw] max-h-72 overflow-y-auto bg-white border-2 border-slate-200 rounded-xl shadow-xl">
                       {filteredSuggestions.map((c) => (
@@ -874,177 +932,270 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
               paymentType === "split" ||
               paymentType === "online" ||
               (paymentType === "wallet" && walletBalance < netTotal)) && (
-              <div className="bg-white rounded-2xl border-2 border-slate-200 p-4 shadow-sm">
-                <div className="flex items-center justify-between text-lg text-slate-500 font-bold">
-                  <span>
-                    {paymentType === "wallet"
-                      ? "Remaining amount (cash)"
-                      : paymentType === "online"
-                        ? "Online amount received"
-                        : "Cash received"}
-                  </span>
-                  <span className="bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full">
-                    Balance remaining
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-xl sm:text-2xl text-slate-500 font-bold">
-                    ₹
-                  </span>
-                  <input
-                    type="number"
-                    className="text-3xl sm:text-5xl font-extrabold text-blue-700 outline-none w-full bg-transparent"
-                    placeholder="0.00"
-                    value={cashGiven ?? ""}
-                    onChange={(e) =>
-                      setCashGiven(
-                        e.target.value === "" ? null : Number(e.target.value),
-                      )
-                    }
-                    readOnly={paymentType === "online"}
-                  />
-                  <span className="text-sm text-slate-400 font-bold">INR</span>
-                </div>
-                <div className="h-2 bg-slate-200 rounded-full mt-3 overflow-hidden">
-                  <div
-                    className="h-full bg-blue-600 rounded-full"
-                    style={{ width: `${percentPaid}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            <div style={amountStyle} className="text-slate-900">
-              Paid: ₹{paidAmount.toFixed(2)}
-            </div>
-
-            {paymentType === "split" && (
-              <>
-                <div style={amountStyle} className="text-slate-900">
-                  Cash: ₹{cashApplied.toFixed(2)}
-                </div>
-                <div style={amountStyle} className="text-slate-900">
-                  Online: ₹{(netTotal - cashApplied).toFixed(2)}
-                </div>
-              </>
-            )}
-
-            {paymentType === "wallet" && (
-              <>
-                <div style={amountStyle} className="text-slate-900">
-                  From Wallet: ₹{Math.min(walletBalance, netTotal).toFixed(2)}
-                </div>
-                {netTotal > walletBalance && (
-                  <div style={{ ...amountStyle, color: "#dc2626" }}>
-                    Remaining (Cash needed): ₹
-                    {(netTotal - walletBalance).toFixed(2)}
-                  </div>
-                )}
-              </>
-            )}
-
-            {paymentType === "cash" && balanceReturn > 0 && (
-              <div style={amountStyle} className="text-slate-900">
-                Change: ₹{balanceReturn.toFixed(2)}
-              </div>
-            )}
-
-            {(paymentType === "cash" || paymentType === "online") &&
-              remaining > 0 && (
-                <div style={{ ...amountStyle, color: "#dc2626" }}>
-                  Due (Pay Later): ₹{remaining.toFixed(2)}
-                </div>
-              )}
-
-            {(["cash", "split"].includes(paymentType) ||
-              (paymentType === "wallet" && walletBalance < netTotal)) && (
-              <>
-                <div className="grid grid-cols-4 gap-2">
-                  {quickAmounts.map((amt) => (
-                    <button
-                      key={amt}
-                      type="button"
-                      onClick={() => setCashGiven(String(amt))}
-                      className={`p-3 rounded-xl text-xl font-extrabold border-2 ${
-                        Number(cashGiven) === amt
-                          ? "border-blue-600 text-blue-700 bg-blue-50"
-                          : "border-slate-200 text-slate-700 hover:bg-slate-100"
+              <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 sm:p-5">
+                {/* ---------- NEW: SPLIT = DO ALAG INPUTS ---------- */}
+                {isSplit ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* ONLINE */}
+                    <div
+                      onClick={() => setActiveField("online")}
+                      className={`rounded-xl border-2 p-3 cursor-pointer transition-all ${
+                        activeField === "online"
+                          ? "border-blue-600 bg-blue-50"
+                          : "border-slate-200 bg-white"
                       }`}
                     >
-                      ₹{amt}
-                    </button>
-                  ))}
-                </div>
+                      <div className="text-sm font-bold text-slate-500">
+                        ONLINE RECEIVED
+                      </div>
+                      <div className="flex items-baseline gap-1 mt-1">
+                        <span className="text-xl text-slate-500 font-bold">
+                          ₹
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          max={netTotal}
+                          className="text-3xl font-extrabold text-blue-700 outline-none w-full bg-transparent"
+                          placeholder="0.00"
+                          value={onlineGiven}
+                          onFocus={() => setActiveField("online")}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === "") return setOnlineGiven("");
+                            // bill se zyada online nahi
+                            setOnlineGiven(
+                              Number(raw) > netTotal ? String(netTotal) : raw,
+                            );
+                          }}
+                        />
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    "1",
-                    "2",
-                    "3",
-                    "4",
-                    "5",
-                    "6",
-                    "7",
-                    "8",
-                    "9",
-                    ".",
-                    "0",
-                    "⌫",
-                  ].map((k) => (
-                    <button
-                      key={k}
-                      type="button"
-                      onClick={() => keypad(k)}
-                      className="py-4 rounded-xl text-3xl font-extrabold text-slate-900 border-2 border-slate-200 bg-white hover:bg-slate-100 active:bg-slate-200"
+                    {/* CASH */}
+                    <div
+                      onClick={() => setActiveField("cash")}
+                      className={`rounded-xl border-2 p-3 cursor-pointer transition-all ${
+                        activeField === "cash"
+                          ? "border-blue-600 bg-blue-50"
+                          : "border-slate-200 bg-white"
+                      }`}
                     >
-                      {k}
-                    </button>
-                  ))}
+                      <div className="text-sm font-bold text-slate-500">
+                        CASH RECEIVED
+                      </div>
+                      <div className="flex items-baseline gap-1 mt-1">
+                        <span className="text-xl text-slate-500 font-bold">
+                          ₹
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          className="text-3xl font-extrabold text-blue-700 outline-none w-full bg-transparent"
+                          placeholder="0.00"
+                          value={cashGiven ?? ""}
+                          onFocus={() => setActiveField("cash")}
+                          onChange={(e) => {
+                            const val =
+                              e.target.value === ""
+                                ? null
+                                : Number(e.target.value);
+                            setCashGiven(val);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-center text-sm font-semibold text-slate-500">
+                      <span>
+                        {paymentType === "online"
+                          ? "Online amount received"
+                          : "Cash received"}
+                      </span>
+                      <span className="bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full">
+                        Balance remaining
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-1 mt-2">
+                      <span className="text-xl sm:text-2xl text-slate-500 font-bold">
+                        ₹
+                      </span>
+                      <input
+                        type="number"
+                        className="text-3xl sm:text-5xl font-extrabold text-blue-700 outline-none w-full bg-transparent"
+                        placeholder="0.00"
+                        value={cashGiven ?? ""}
+                        onChange={(e) => {
+                          const val =
+                            e.target.value === ""
+                              ? null
+                              : Number(e.target.value);
+                          setCashGiven(val);
+                        }}
+                        readOnly={paymentType === "online"}
+                      />
+                      <span className="text-sm text-slate-400 font-bold">
+                        INR
+                      </span>
+                    </div>
+                  </>
+                )}
+
+                <div style={amountStyle} className="text-slate-900 mt-3">
+                  Paid: ₹{paidAmount.toFixed(2)}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => keypad("C")}
-                  className="p-3 rounded-xl text-xl sm:text-2xl font-extrabold text-slate-700 bg-slate-200 hover:bg-slate-300"
-                >
-                  CLEAR AMOUNT
-                </button>
-              </>
-            )}
+                {isSplit && (
+                  <>
+                    <div style={amountStyle} className="text-slate-900">
+                      Online Applied: ₹{splitOnline.toFixed(2)}
+                    </div>
+                    <div style={amountStyle} className="text-slate-900">
+                      Cash Needed: ₹{splitCashDue.toFixed(2)}
+                    </div>
+                    <div style={amountStyle} className="text-slate-900">
+                      Cash Applied: ₹{splitCashApplied.toFixed(2)}
+                    </div>
+                    {splitChange > 0 && (
+                      <div style={{ ...amountStyle, color: "#16a34a" }}>
+                        Change to Return: ₹{splitChange.toFixed(2)}
+                      </div>
+                    )}
+                  </>
+                )}
 
-            {(paymentType === "cash" || paymentType === "online") && (
-              <div className="flex items-center justify-between bg-red-100 text-red-800 rounded-xl px-4 py-3 text-xl font-extrabold">
-                <span>Still due</span>
-                <span>₹{remaining.toFixed(2)}</span>
+                {paymentType === "wallet" && (
+                  <>
+                    <div style={amountStyle} className="text-slate-900">
+                      From Wallet: ₹{Math.min(walletBalance, netTotal).toFixed(2)}
+                    </div>
+                    {netTotal > walletBalance && (
+                      <div style={{ ...amountStyle, color: "#dc2626" }}>
+                        Remaining (Cash needed): ₹
+                        {(netTotal - walletBalance).toFixed(2)}
+                      </div>
+                    )}
+                  </>
+                )}
+                {paymentType === "cash" && balanceReturn > 0 && (
+                  <div style={amountStyle} className="text-slate-900">
+                    Change: ₹{balanceReturn.toFixed(2)}
+                  </div>
+                )}
+
+                {(paymentType === "cash" ||
+                  paymentType === "online" ||
+                  isSplit) &&
+                  remaining > 0 && (
+                    <div style={{ ...amountStyle, color: "#dc2626" }}>
+                      Due (Pay Later): ₹{remaining.toFixed(2)}
+                    </div>
+                  )}
+
+                {(["cash", "split"].includes(paymentType) ||
+                  (paymentType === "wallet" && walletBalance < netTotal)) && (
+                  <>
+                    {isSplit && (
+                      <div className="text-sm font-bold text-slate-500 mb-2">
+                        Keypad editing:{" "}
+                        <span className="text-blue-700">
+                          {activeField === "online" ? "ONLINE" : "CASH"}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-4 gap-2">
+                      {quickAmounts.map((amt) => (
+                        <button
+                          key={amt}
+                          type="button"
+                          onClick={() => setActiveValue(String(amt))}
+                          className={`p-3 rounded-xl text-xl font-extrabold border-2 ${
+                            Number(activeValue) === amt
+                              ? "border-blue-600 text-blue-700 bg-blue-50"
+                              : "border-slate-200 text-slate-700 hover:bg-slate-100"
+                          }`}
+                        >
+                          ₹{amt}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      {[
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5",
+                        "6",
+                        "7",
+                        "8",
+                        "9",
+                        ".", // FIX: pehle "," tha, jo keypad handler mein kabhi match nahi hota tha
+                        "0",
+                        "⌫",
+                      ].map((k) => (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => keypad(k)}
+                          className="py-4 rounded-xl text-3xl font-extrabold text-slate-900 border-2 border-slate-200 bg-white hover:bg-slate-100 active:bg-slate-200"
+                        >
+                          {k}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => keypad("C")}
+                      className="mt-2 p-3 rounded-xl text-xl sm:text-2xl font-extrabold text-slate-700 bg-slate-200 hover:bg-slate-300"
+                    >
+                      CLEAR AMOUNT
+                    </button>
+                  </>
+                )}
+
+                {(paymentType === "cash" ||
+                  paymentType === "online" ||
+                  isSplit) && (
+                  <div className="flex items-center justify-between bg-red-100 text-red-800 rounded-xl px-4 py-3 text-xl font-extrabold mt-3">
+                    <span>Still due</span>
+                    <span>₹{remaining.toFixed(2)}</span>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        </div>
 
-        {/* SUMMARY + ACTION BUTTONS */}
-        <div className="flex justify-between items-center px-7 py-5 border-t border-slate-200">
-          <div></div>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-7 py-3.5 rounded-xl text-xl font-bold bg-slate-200 text-slate-700 hover:bg-slate-300"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={isConfirmDisabled}
-              onClick={handleConfirm}
-              className={`px-7 py-3.5 rounded-xl text-xl font-bold text-white flex items-center gap-2 transition-colors ${
-                isConfirmDisabled
-                  ? "bg-slate-300 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
-              }`}
-            >
-              <QrCode size={18} />
-              Confirm payment
-            </button>
+            {/* SUMMARY + ACTION BUTTONS */}
+            <div className="flex justify-between items-center px-7 py-5 border-t border-slate-200">
+              <div></div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-7 py-3.5 rounded-xl text-xl font-bold bg-slate-200 text-slate-700 hover:bg-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isConfirmDisabled}
+                  onClick={handleConfirm}
+                  className={`px-7 py-3.5 rounded-xl text-xl font-bold text-white flex items-center gap-2 transition-colors ${
+                    isConfirmDisabled
+                      ? "bg-slate-300 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                  }`}
+                >
+                  <QrCode size={18} />
+                  Confirm payment
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -155,8 +155,8 @@ const Home = () => {
           jobs.push(["dues", get("/api/customer/due")]);
         }
         if (canBills) {
-          console.log("BILLS TOKEN EXISTS:", !!user_data?.token);
-          console.log("BILLS TOKEN LENGTH:", user_data?.token?.length);
+          // console.log("BILLS TOKEN EXISTS:", !!user_data?.token);
+          // console.log("BILLS TOKEN LENGTH:", user_data?.token?.length);
           jobs.push(["bills", get("/api/sales-bills")]);
         }
 
@@ -181,14 +181,14 @@ const Home = () => {
           if (key === "purchaseToday") setTodayPurchase(data);
           if (key === "dues") setCustomerDues(data?.data || []);
           if (key === "bills") {
-            console.log("SALES BILLS FULL RESPONSE:", data);
-            console.log("SALES BILLS DATA:", data?.data);
+            // console.log("SALES BILLS FULL RESPONSE:", data);
+            // console.log("SALES BILLS DATA:", data?.data);
             setSaleBills(data?.data || []);
           }
 
         });
       } catch (err) {
-        console.error("Dashboard load error:", err);
+        // console.error("Dashboard load error:", err);
       } finally {
         setLoading(false);
       }

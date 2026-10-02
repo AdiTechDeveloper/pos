@@ -134,9 +134,9 @@ export default function POSApp() {
         is_pirce_override: Number(product?.is_price_override) === 1 ? 1 : 0,
       };
 
-      console.log("========== FINAL CART ITEM ==========");
-      console.log(cartItem);
-      console.log("FINAL is_price_override:", cartItem.is_price_override);
+      // console.log("========== FINAL CART ITEM ==========");
+      // console.log(cartItem);
+      // console.log("FINAL is_price_override:", cartItem.is_price_override);
 
       return [...prev, cartItem];
     });

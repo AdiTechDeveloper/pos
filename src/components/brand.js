@@ -55,19 +55,21 @@ const Brand = () => {
     fetchBrand();
   }, []);
 
-  useEffect(() => {
-    const searchText = search.toLowerCase();
+ useEffect(() => {
+  const searchText = search.toLowerCase();
 
-    const result = brands.filter((item) => {
-      return (
-        item.name.toLowerCase().includes(searchText) ||
-        item.description.toLowerCase().includes(searchText)
-      );
-    });
+  const result = brands.filter((item) => {
+    const name = String(item.name || "").toLowerCase();
+    const description = String(item.description || "").toLowerCase();
 
-    setFilteredData(result);
-  }, [search, brands]);
+    return (
+      name.includes(searchText) ||
+      description.includes(searchText)
+    );
+  });
 
+  setFilteredData(result);
+}, [search, brands]);
   const columns = [
     {
       name: "Id",

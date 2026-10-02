@@ -1,4 +1,5 @@
 import React from "react";
+import { ArrowUpNarrowWide , ArrowDownNarrowWide } from "lucide-react";
 
 const rupee = (v) => `₹${Number(v || 0).toLocaleString("en-IN")}`;
 
@@ -44,7 +45,8 @@ const TopLowSellingProducts = ({ products, loading }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-2xl font-bold text-gray-800 mb-1">
+        <h3 className="text-2xl font-bold text-gray-800 mb-1 flex items-center gap-2">
+          <ArrowUpNarrowWide size={20} className="text-green-600" />
           Top Selling Products
         </h3>
         <p className="text-xl text-gray-400 mb-3">This month, by quantity sold</p>
@@ -60,7 +62,8 @@ const TopLowSellingProducts = ({ products, loading }) => {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-2xl font-bold text-gray-800 mb-1">
+        <h3 className="text-2xl font-bold text-gray-800 mb-1 flex items-center gap-2">
+           <ArrowDownNarrowWide size={20} className="text-red-600" />
           Low Selling Products
         </h3>
         <p className="text-xl text-gray-400 mb-3">
