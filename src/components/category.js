@@ -4,46 +4,78 @@ import { Link, useHistory } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useAppData } from "../context/AppDataContext";
 
 const Category = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
   const [search, setSearch] = useState("");
-  const [categories, setCategories] = useState([]);
+  // const [categories, setCategories] = useState([]);
+  const appData = useAppData();
+  const categories = appData?.categories || [];
   const [filteredData, setFilteredData] = useState(categories);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const history = useHistory();
 
-  const fetchCategory = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/categories`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setCategories(response.data.categories);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+  // const fetchCategory = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/categories`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setCategories(response.data.categories);
+  //   } catch (error) {
+  //     console.error("Error fetching categories:", error);
+  //   }
+  // };
+  // useEffect(() => {
+  //   fetchCategory();
+  // }, []);
+
   useEffect(() => {
-    fetchCategory();
-  }, []);
+    appData?.loadCategories();
+}, []);
+
+  // const handleDelete = async (id) => {
+  //   const response = await axios.delete(`${BASE_URL}/api/categories/${id}`, {
+  //     headers: {
+  //       accept: "application/json",
+  //       Authorization: `Bearer ${user_data.token}`,
+  //     },
+  //   });
+  //   if (response) {
+  //     history.push("/category");
+  //     toast.success("Category Deleted");
+  //     fetchCategory();
+  //   }
+  // };
 
   const handleDelete = async (id) => {
+  try {
     const response = await axios.delete(`${BASE_URL}/api/categories/${id}`, {
       headers: {
-        accept: "application/json",
+        Accept: "application/json",
         Authorization: `Bearer ${user_data.token}`,
       },
     });
-    if (response) {
-      history.push("/category");
+
+    if (response.status === 200) {
+      appData?.invalidate("categories");
+      await appData?.loadCategories();
+
       toast.success("Category Deleted");
-      fetchCategory();
+      history.push("/category");
     }
-  };
+  } catch (error) {
+    console.error("Error deleting category:", error);
+
+    toast.error(
+      error.response?.data?.message || "Failed to delete category"
+    );
+  }
+};
 
   const columns = [
     {

@@ -5,12 +5,14 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
+import { useAppData } from "../context/AppDataContext";
 
 const CreateEditBrand = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { id } = useParams();
   const history = useHistory();
 
+  const appData = useAppData();
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_brand = localStorage.getItem("brand_detail");
 
@@ -41,7 +43,7 @@ const CreateEditBrand = () => {
       .required("Name is required")
       .min(3, "Name must be at least 3 characters long")
       .max(50, "Name cannot exceed 50 characters"),
-    
+
     description: Yup.string()
       .required("Description is required")
       .min(10, "Description must be at least 10 characters long")
@@ -49,22 +51,51 @@ const CreateEditBrand = () => {
   });
 
   // Submit (Create + Update)
+  // const handleSubmit = async (values) => {
+  //   try {
+  //     let url = "";
+  //     let method = "";
+
+  //     if (isEdit) {
+  //       // UPDATE PRODUCT
+  //       url = `${BASE_URL}/api/brands/${id}`;
+  //       method = "put";
+  //     } else {
+  //       // CREATE PRODUCT
+  //       url = `${BASE_URL}/api/brands`;
+  //       method = "post";
+  //     }
+
+  //     const response = await axios({
+  //       method,
+  //       url,
+  //       data: values,
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+
+  //     toast.success(isEdit ? "Brand Updated!" : "Brand Created!");
+  //     history.push("/brand");
+  //   } catch (error) {
+  //     console.error("Error saving product:", error);
+  //   }
+  // };
   const handleSubmit = async (values) => {
     try {
       let url = "";
       let method = "";
 
       if (isEdit) {
-        // UPDATE PRODUCT
         url = `${BASE_URL}/api/brands/${id}`;
         method = "put";
       } else {
-        // CREATE PRODUCT
         url = `${BASE_URL}/api/brands`;
         method = "post";
       }
 
-      const response = await axios({
+      await axios({
         method,
         url,
         data: values,
@@ -73,10 +104,21 @@ const CreateEditBrand = () => {
           Authorization: `Bearer ${user_data.token}`,
         },
       });
-      toast.success(isEdit ? "Brand Updated!" : "Brand Created!");
+
+      appData?.invalidate("brands");
+      await appData?.loadBrands();
+
+      toast.success(
+        isEdit ? "Brand Updated!" : "Brand Created!"
+      );
+
       history.push("/brand");
     } catch (error) {
-      console.error("Error saving product:", error);
+      console.error("Error saving brand:", error);
+
+      toast.error(
+        error.response?.data?.message || "Failed to save brand"
+      );
     }
   };
 
@@ -138,7 +180,7 @@ const CreateEditBrand = () => {
                     </button>
 
                     <button type="button" className="ml-5 tf-button style-1">
-                      <a href="/brand"  style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
+                      <a href="/brand" style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
                     </button>
                   </div>
                 </Form>

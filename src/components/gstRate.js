@@ -4,33 +4,39 @@ import { Link, useHistory } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useAppData } from "../context/AppDataContext";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const GstRate = () => {
   const history = useHistory();
   const [search, setSearch] = useState("");
-  const [gstRates, setGstRates] = useState([]);
+  // const [gstRates, setGstRates] = useState([]);
+  const appData = useAppData();
+  const gstRates = appData?.gstRates || [];
   const [filteredData, setFilteredData] = useState(gstRates);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
-  const fetchGstRate = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/gst-rates`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setGstRates(response.data.gstRates);
-    } catch (error) {
-      console.error("Error fetching gst Rates:", error);
-    }
-  };
+  // const fetchGstRate = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/gst-rates`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setGstRates(response.data.gstRates);
+  //   } catch (error) {
+  //     console.error("Error fetching gst Rates:", error);
+  //   }
+  // };
 
+  // useEffect(() => {
+  //   fetchGstRate();
+  // }, []);
   useEffect(() => {
-    fetchGstRate();
-  }, []);
+  appData?.loadGstRates();
+}, []);
 
   useEffect(() => {
     const searchText = search.toLowerCase();
@@ -57,19 +63,45 @@ const GstRate = () => {
       handleDelete(id);
     }
   };
+  // const handleDelete = async (id) => {
+  //   const response = await axios.delete(`${BASE_URL}/api/gst-rates/${id}`, {
+  //     headers: {
+  //       accept: "application/json",
+  //       Authorization: `Bearer ${user_data.token}`,
+  //     },
+  //   });
+  //   if (response) {
+  //     history.push("/gst-rates");
+  //     toast.success("Gst Rates Deleted");
+  //     fetchGstRate();
+  //   }
+  // };
+
   const handleDelete = async (id) => {
+  try {
     const response = await axios.delete(`${BASE_URL}/api/gst-rates/${id}`, {
       headers: {
-        accept: "application/json",
+        Accept: "application/json",
         Authorization: `Bearer ${user_data.token}`,
       },
     });
-    if (response) {
+
+    if (response.status === 200) {
+      appData?.invalidate("gstRates");
+      await appData?.loadGstRates();
+
+      toast.success("Gst Rate Deleted");
       history.push("/gst-rates");
-      toast.success("Gst Rates Deleted");
-      fetchGstRate();
     }
-  };
+  } catch (error) {
+    console.error("Error deleting GST rate:", error);
+
+    toast.error(
+      error.response?.data?.message || "Failed to delete GST rate"
+    );
+  }
+};
+
   const columns = [
     {
       name: "Id",
@@ -113,7 +145,7 @@ const GstRate = () => {
         );
       },
     },
-      {
+    {
       name: "Action",
       cell: (row) => (
         <div className="list-icon-function">

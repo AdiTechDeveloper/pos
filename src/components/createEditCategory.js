@@ -5,6 +5,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
+import { useAppData } from "../context/AppDataContext";
 
 const CreateEditCategory = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -23,7 +24,9 @@ const CreateEditCategory = () => {
     parent_id: "",
   });
 
-  const [categories, setCategories] = useState([]);
+  // const [categories, setCategories] = useState([]);
+  const appData = useAppData();
+  const categories = appData?.categories || [];
 
   const loadCategoryData = () => {
     if (incomingCategory) {
@@ -36,37 +39,41 @@ const CreateEditCategory = () => {
   };
 
   // Validation Schema
-const validationSchema = Yup.object({
-  name: Yup.string()
-    .required("Name is required")
-    .min(3, "Name must be at least 3 characters long")
-    .max(50, "Name cannot exceed 50 characters"),
-  
-  description: Yup.string()
-    .required("Description is required")
-    .min(10, "Description must be at least 10 characters long")
-    .max(255, "Description cannot exceed 255 characters"),
-});
+  const validationSchema = Yup.object({
+    name: Yup.string()
+      .required("Name is required")
+      .min(3, "Name must be at least 3 characters long")
+      .max(50, "Name cannot exceed 50 characters"),
 
-  const fetchCategory = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/categories`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setCategories(response.data.categories);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+    description: Yup.string()
+      .required("Description is required")
+      .min(10, "Description must be at least 10 characters long")
+      .max(255, "Description cannot exceed 255 characters"),
+  });
+
+  // const fetchCategory = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/categories`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setCategories(response.data.categories);
+  //   } catch (error) {
+  //     console.error("Error fetching categories:", error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   loadCategoryData();
+  //   fetchCategory();
+  // }, []);
 
   useEffect(() => {
     loadCategoryData();
-    fetchCategory();
+    appData?.loadCategories();
   }, []);
-
 
   // Submit (Create + Update)
   const handleSubmit = async (values) => {
@@ -93,6 +100,8 @@ const validationSchema = Yup.object({
           Authorization: `Bearer ${user_data.token}`,
         },
       });
+      appData?.invalidate("categories");
+      await appData?.loadCategories();
       toast.success(isEdit ? "Category Updated!" : "Category Created!");
       history.push("/category");
     } catch (error) {
@@ -154,7 +163,7 @@ const validationSchema = Yup.object({
                       /> */}
                       </div>
                     </fieldset>
-                      <fieldset className="col-md-4 mb-15">
+                    <fieldset className="col-md-4 mb-15">
                       <div className="body-title">Description *</div>
                       <div className="body-content">
                         <Field
@@ -164,7 +173,7 @@ const validationSchema = Yup.object({
                           maxLength={255} // Prevents typing past 255 characters
                           className="mb-5 form-control small-textarea"
                           placeholder="Enter description"
-                          
+
                         />
                         <ErrorMessage
                           name="description"
@@ -182,7 +191,7 @@ const validationSchema = Yup.object({
                       {isEdit ? "Update Category" : "Create Category"}
                     </button>
                     <button type="button" className="ml-5  tf-button style-1">
-                      <a href="/category" style={{ color: "inherit", textDecoration: "none" }} 
+                      <a href="/category" style={{ color: "inherit", textDecoration: "none" }}
                       > Cancel</a>
                     </button>
                   </div>
@@ -194,6 +203,6 @@ const validationSchema = Yup.object({
       </div>
     </Layout>
   );
-};  
+};
 
 export default CreateEditCategory;

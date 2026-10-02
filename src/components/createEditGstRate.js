@@ -5,11 +5,12 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
-
+import { useAppData } from "../context/AppDataContext";
 const CreateEditGstRates = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+  const appData = useAppData();
   const { id } = useParams();
-  const history = useHistory();
+  const history = useHistory(); 
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_gst_rate_detail = localStorage.getItem("gst_rate_detail");
@@ -55,36 +56,76 @@ const CreateEditGstRates = () => {
 
 
   // Submit (Create + Update)
+  // const handleSubmit = async (values) => {
+  //   try {
+  //     let url = "";
+  //     let method = "";
+
+  //     if (isEdit) {
+  //       // UPDATE PRODUCT
+  //       url = `${BASE_URL}/api/gst-rates/${id}`;
+  //       method = "put";
+  //     } else {
+  //       // CREATE PRODUCT
+  //       url = `${BASE_URL}/api/gst-rates`;
+  //       method = "post";
+  //     }
+
+  //     const response = await axios({
+  //       method,
+  //       url,
+  //       data: values,
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     toast.success(isEdit ? "Gst Rate Updated!" : "Gst Rate Created!");
+  //     history.push("/gst-rates");
+  //   } catch (error) {
+  //     console.error("Error saving product:", error);
+  //   }
+  // };
+  
   const handleSubmit = async (values) => {
-    try {
-      let url = "";
-      let method = "";
+  try {
+    let url = "";
+    let method = "";
 
-      if (isEdit) {
-        // UPDATE PRODUCT
-        url = `${BASE_URL}/api/gst-rates/${id}`;
-        method = "put";
-      } else {
-        // CREATE PRODUCT
-        url = `${BASE_URL}/api/gst-rates`;
-        method = "post";
-      }
-
-      const response = await axios({
-        method,
-        url,
-        data: values,
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      toast.success(isEdit ? "Gst Rate Updated!" : "Gst Rate Created!");
-      history.push("/gst-rates");
-    } catch (error) {
-      console.error("Error saving product:", error);
+    if (isEdit) {
+      url = `${BASE_URL}/api/gst-rates/${id}`;
+      method = "put";
+    } else {
+      url = `${BASE_URL}/api/gst-rates`;
+      method = "post";
     }
-  };
+
+    await axios({
+      method,
+      url,
+      data: values,
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${user_data.token}`,
+      },
+    });
+
+    appData?.invalidate("gstRates");
+    await appData?.loadGstRates();
+
+    toast.success(
+      isEdit ? "Gst Rate Updated!" : "Gst Rate Created!"
+    );
+
+    history.push("/gst-rates");
+  } catch (error) {
+    console.error("Error saving GST rate:", error);
+
+    toast.error(
+      error.response?.data?.message || "Failed to save GST rate"
+    );
+  }
+};
 
   return (
     <Layout>

@@ -5,12 +5,15 @@ import DataTable from "react-data-table-component";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
-
+import { useAppData } from "../context/AppDataContext";
 const Staff = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const history = useHistory();
   const [search, setSearch] = useState("");
-  const [staffs, setStaffs] = useState([]);
+  //my changes
+  const appData = useAppData();
+  const staffs = appData?.staff || [];
+  // const [staffs, setStaffs] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const [openPasswordModal, setOpenPasswordModal] = useState(false);
@@ -30,19 +33,19 @@ const Staff = () => {
     timerProgressBar: true,
   });
 
-  const fetchStaff = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/staff`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setStaffs(response.data.data || response.data);
-    } catch (error) {
-      console.error("Error fetching staffs:", error);
-    }
-  };
+  // const fetchStaff = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/staff`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setStaffs(response.data.data || response.data);
+  //   } catch (error) {
+  //     console.error("Error fetching staffs:", error);
+  //   }
+  // };
 
   const handleCreateStaff = () => {
     localStorage.setItem("staff_detail", null);
@@ -119,21 +122,32 @@ const Staff = () => {
   };
 
   const handleDelete = async (id) => {
+  try {
     const response = await axios.delete(`${BASE_URL}/api/staff/${id}`, {
       headers: {
-        accept: "application/json",
+        Accept: "application/json",
         Authorization: `Bearer ${user_data.token}`,
       },
     });
-    if (response) {
+
+    if (response.status === 200) {
+      appData?.invalidate("staff");
+      await appData?.loadStaff();
+
+      toast.success("Staff Deleted");
       history.push("/staff");
-      toast.success("staff Deleted");
-      fetchStaff();
     }
-  };
+  } catch (error) {
+    console.error("Error deleting staff:", error);
+
+    toast.error(
+      error.response?.data?.message || "Failed to delete staff"
+    );
+  }
+};
 
   useEffect(() => {
-    fetchStaff();
+    appData?.loadStaff();
   }, []);
 
   useEffect(() => {

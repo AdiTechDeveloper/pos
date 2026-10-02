@@ -4,6 +4,70 @@ import axios from "axios";
 const AppDataContext = createContext(null);
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minute
+const expiredProductsCache = {};
+const expiredProductsInFlight = {};
+
+function getExpiredProductsCacheKey(filters) {
+  return JSON.stringify({
+    date_range: filters?.date_range || "this_month",
+    branch_id: filters?.branch_id || "",
+    date_from: filters?.date_from || "",
+    date_to: filters?.date_to || "",
+  });
+}
+
+function fetchExpiredProducts(filters, { force = false } = {}) {
+  ensureCacheOwner();
+
+  const cacheKey = getExpiredProductsCacheKey(filters);
+  const now = Date.now();
+
+  const cached = expiredProductsCache[cacheKey];
+
+  if (
+    !force &&
+    cached &&
+    now - cached.timestamp < CACHE_TTL
+  ) {
+    return Promise.resolve(cached.data);
+  }
+
+  if (expiredProductsInFlight[cacheKey]) {
+    return expiredProductsInFlight[cacheKey];
+  }
+
+  const params = {
+    date_range: filters?.date_range || "this_month",
+    branch_id: filters?.branch_id || null,
+  };
+
+  if (filters?.date_range === "custom") {
+    params.date_from = filters?.date_from || "";
+    params.date_to = filters?.date_to || "";
+  }
+
+  expiredProductsInFlight[cacheKey] = axios
+    .get("/api/expired-products", { params })
+    .then((res) => {
+      const data = res.data;
+
+      expiredProductsCache[cacheKey] = {
+        data,
+        timestamp: Date.now(),
+      };
+
+      return data;
+    })
+    .catch((err) => {
+      console.error("Failed to load expired products", err);
+      throw err;
+    })
+    .finally(() => {
+      expiredProductsInFlight[cacheKey] = null;
+    });
+
+  return expiredProductsInFlight[cacheKey];
+}
 
 const ENDPOINTS = {
   branches: "/api/branches",
@@ -13,6 +77,7 @@ const ENDPOINTS = {
   gstRates: "/api/gst-rates",
   suppliers: "/api/suppliers",
   staff: "/api/staff",
+  products: "/api/all-products",
   store: "STORE",
 };
 
@@ -30,6 +95,106 @@ const RESPONSE_PATH = {
   brands: (res) => res.data?.brands ?? [],
   gstRates: (res) => res.data?.gstRates ?? [],
   suppliers: (res) => res.data?.suppliers ?? [],
+  // products: (res) => res.data?.products ?? [],
+  products: (res) => {
+    const products = res.data?.products ?? [];
+    const rows = [];
+
+    products.forEach((product) => {
+      if (product.batches && product.batches.length > 0) {
+        const grouped = {};
+
+        product.batches.forEach((inv) => {
+          const key = `${inv.batch_no}-${inv.batch_barcode}-${inv.mrp}-${inv.selling_price}`;
+
+          if (!grouped[key]) {
+            grouped[key] = {
+              row_id: `inv-${product.id}-${key}`,
+              inventory_ids: [inv.id],
+
+              product_id: product.id,
+              sku: product.sku,
+              name: product.name,
+              brand: product.brand,
+              category: product.category,
+              hsn_code: product.hsn_code,
+              gst_rate: product.gst_rate,
+              gst_inclusive: product.gst_inclusive,
+              is_price_override: product.is_price_override,
+
+              batch_no: inv.batch_no,
+
+              mrp: Number(inv.mrp),
+              selling_price: Number(inv.selling_price),
+
+              qty: Number(inv.qty_available) || 0,
+              free: Number(inv.free) || 0,
+
+              cost_total:
+                Number(inv.cost_price) *
+                Number(inv.qty_available || 0),
+
+              barcodes: new Set([inv.batch_barcode]),
+            };
+          } else {
+            grouped[key].inventory_ids.push(inv.id);
+            grouped[key].qty += Number(inv.qty_available) || 0;
+            grouped[key].free += Number(inv.free) || 0;
+            grouped[key].cost_total +=
+              Number(inv.cost_price) *
+              Number(inv.qty_available || 0);
+
+            grouped[key].barcodes.add(inv.batch_barcode);
+          }
+        });
+
+        Object.values(grouped).forEach((row) => {
+          row.total_qty = row.qty + row.free;
+
+          row.cost_price = row.qty
+            ? (row.cost_total / row.qty).toFixed(2)
+            : 0;
+
+          row.show_barcode = row.barcodes.size === 1;
+          row.barcode = row.show_barcode
+            ? [...row.barcodes][0]
+            : null;
+
+          delete row.barcodes;
+
+          rows.push(row);
+        });
+      } else {
+        rows.push({
+          row_id: `prod-${product.id}`,
+
+          product_id: product.id,
+          sku: product.sku,
+          name: product.name,
+          brand: product.brand,
+          category: product.category,
+          hsn_code: product.hsn_code,
+          gst_rate: product.gst_rate,
+          gst_inclusive: product.gst_inclusive,
+          is_price_override: product.is_price_override,
+
+          batch_no: "-",
+          barcode: product.barcode ?? null,
+
+          mrp: Number(product.min_price) || 0,
+          selling_price: Number(product.min_price) || 0,
+          cost_price: product.cost_price ?? 0,
+
+          qty: 0,
+          free: 0,
+          total_qty: 0,
+          show_barcode: !!product.barcode,
+        });
+      }
+    });
+
+    return rows;
+  },
 };
 
 const lastFetched = {};
@@ -70,6 +235,7 @@ function ensureCacheOwner() {
       "gstRates",
       "suppliers",
       "staff",
+      "products",
     ].forEach((k) => notifyListeners(k, []));
     notifyListeners("store", null);
     notifyListeners("stockExpiryAlerts", { list: [], total: 0 });
@@ -149,6 +315,7 @@ export function AppDataProvider({ children }) {
     gstRates: [],
     suppliers: [],
     staff: [],
+    products: [],
     store: null,
   });
   const [alerts, setAlerts] = useState({ list: [], total: 0 });
@@ -176,9 +343,24 @@ export function AppDataProvider({ children }) {
     [],
   );
 
+  // const invalidate = useCallback((key) => {
+  //   lastFetched[key] = 0;
+  // }, []);
   const invalidate = useCallback((key) => {
-    lastFetched[key] = 0;
-  }, []);
+  if (key === "expiredProducts") {
+    Object.keys(expiredProductsCache).forEach(
+      (cacheKey) => delete expiredProductsCache[cacheKey]
+    );
+
+    Object.keys(expiredProductsInFlight).forEach(
+      (cacheKey) => delete expiredProductsInFlight[cacheKey]
+    );
+
+    return;
+  }
+
+  lastFetched[key] = 0;
+}, []);
 
   const isManager = getRole() === "manager";
 
@@ -198,6 +380,9 @@ export function AppDataProvider({ children }) {
     loadGstRates: () => load("gstRates"),
     loadSuppliers: () => load("suppliers"),
     loadStaff: () => load("staff"),
+    loadProducts: () => load("products"),
+    loadExpiredProducts: (filters, opts) =>
+      fetchExpiredProducts(filters, opts),
     loadStore,
     loadStockExpiryAlerts,
 

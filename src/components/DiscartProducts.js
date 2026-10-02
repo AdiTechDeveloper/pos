@@ -38,49 +38,74 @@ const DiscardProducts = () => {
     appData?.loadBranches();
   }, [appData]);
 
-  const fetchDiscardItems = useCallback(
-    async (currentFilters = appliedFilters) => {
-      const token = user_data?.token;
+  // const fetchDiscardItems = useCallback(
+  //   async (currentFilters = appliedFilters) => {
+  //     const token = user_data?.token;
 
-      try {
-        setLoading(true);
+  //     try {
+  //       setLoading(true);
 
-        const params = {
-          date_range: currentFilters.date_range,
-          branch_id: currentFilters.branch_id || null,
-        };
+  //       const params = {
+  //         date_range: currentFilters.date_range,
+  //         branch_id: currentFilters.branch_id || null,
+  //       };
 
-        if (currentFilters.date_range === "custom") {
-          params.date_from = currentFilters.date_from;
-          params.date_to = currentFilters.date_to || todayString();
-        }
+  //       if (currentFilters.date_range === "custom") {
+  //         params.date_from = currentFilters.date_from;
+  //         params.date_to = currentFilters.date_to || todayString();
+  //       }
 
-        const response = await axios.get(`${BASE_URL}/api/expired-products`, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          params,
-        });
+  //       const response = await axios.get(`${BASE_URL}/api/expired-products`, {
+  //         headers: {
+  //           Accept: "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         params,
+  //       });
 
-        setReport(response.data);
-      } catch (error) {
-        console.error("Error fetching discard items:", error.response || error);
-        setReport({
-          status: false,
-          data: [],
-          total_loss: 0,
-          branch_id: currentFilters.branch_id || "all",
-          from_date: currentFilters.date_from || null,
-          to_date: currentFilters.date_to || null,
-        });
-      } finally {
-        setLoading(false);
-      }
-    },
-    [BASE_URL, appliedFilters, user_data?.token]
-  );
+  //       setReport(response.data);
+  //     } catch (error) {
+  //       console.error("Error fetching discard items:", error.response || error);
+  //       setReport({
+  //         status: false,
+  //         data: [],
+  //         total_loss: 0,
+  //         branch_id: currentFilters.branch_id || "all",
+  //         from_date: currentFilters.date_from || null,
+  //         to_date: currentFilters.date_to || null,
+  //       });
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   },
+  //   [BASE_URL, appliedFilters, user_data?.token]
+  // );
 
+ const fetchDiscardItems = useCallback(
+  async (currentFilters = appliedFilters) => {
+    try {
+      setLoading(true);
+
+      const data = await appData?.loadExpiredProducts(currentFilters);
+
+      setReport(data);
+    } catch (error) {
+      console.error("Error fetching discard items:", error);
+
+      setReport({
+        status: false,
+        data: [],
+        total_loss: 0,
+        branch_id: currentFilters.branch_id || "all",
+        from_date: currentFilters.date_from || null,
+        to_date: currentFilters.date_to || null,
+      });
+    } finally {
+      setLoading(false);
+    }
+  },
+  [appData, appliedFilters]
+);
   useEffect(() => {
     fetchBranches();
   }, [fetchBranches]);

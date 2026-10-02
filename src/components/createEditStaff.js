@@ -76,22 +76,22 @@ const CreateEditStaff = () => {
 
   // Validation Schema
   const validationSchema = Yup.object({
-   name: Yup.string()
-        .required("Name is required")
-        .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
-        .max(30, "Name cannot exceed 30 characters"),
-     username: Yup.string()
-        .required("Username is required")
-        .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
-        .max(30, "Name cannot exceed 30 characters"),
-    
+    name: Yup.string()
+      .required("Name is required")
+      .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
+      .max(30, "Name cannot exceed 30 characters"),
+    username: Yup.string()
+      .required("Username is required")
+      .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
+      .max(30, "Name cannot exceed 30 characters"),
+
     role: Yup.string().required("Role is required"),
     branch_ids: Yup.array()
       .min(1, "At least one branch is required")
       .required("Branch is required"),
   });
 
-  
+
 
   // Submit (Create + Update)
   const handleSubmit = async (values, actions) => {
@@ -117,7 +117,9 @@ const CreateEditStaff = () => {
           Authorization: `Bearer ${user_data.token}`,
         },
       });
-
+      // Staff data changed
+      appData?.invalidate("staff");
+      await appData?.loadStaff();
       toast.success(
         isEdit ? "Staff updated successfully!" : "Staff created successfully!",
       );
@@ -162,7 +164,7 @@ const CreateEditStaff = () => {
                     >
                       <div className="body-title">Name *</div>
                       <div className="body-content mb-15">
-                        <Field type="text" name="name" className="mb-5" placeholder="Enter staff name"  maxLength={30}  />
+                        <Field type="text" name="name" className="mb-5" placeholder="Enter staff name" maxLength={30} />
                         <ErrorMessage name="name" component="div" className="error-text" />
                       </div>
                     </fieldset>
@@ -173,7 +175,7 @@ const CreateEditStaff = () => {
                     >
                       <div className="body-title">Username *</div>
                       <div className="body-content">
-                        <Field type="text" name="username" className="mb-5" placeholder="Enter username"  maxLength={30}   />
+                        <Field type="text" name="username" className="mb-5" placeholder="Enter username" maxLength={30} />
                         <ErrorMessage name="username" component="div" className="error-text" />
                       </div>
                     </fieldset>
@@ -312,9 +314,9 @@ const CreateEditStaff = () => {
                               borderRadius: "6px",
                               backgroundColor:
                                 featureKeys.length > 0 &&
-                                featureKeys.every((key) =>
-                                  values.features.includes(key),
-                                )
+                                  featureKeys.every((key) =>
+                                    values.features.includes(key),
+                                  )
                                   ? "#dbeafe"
                                   : "#f8fafc",
                               color: "#1d4ed8",
@@ -397,8 +399,8 @@ const CreateEditStaff = () => {
                                     const next = e.target.checked
                                       ? [...values.features, key]
                                       : values.features.filter(
-                                          (f) => f !== key,
-                                        );
+                                        (f) => f !== key,
+                                      );
                                     setFieldValue("features", next);
                                   }}
                                   style={{

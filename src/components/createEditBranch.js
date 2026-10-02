@@ -5,8 +5,10 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
+import { useAppData } from "../context/AppDataContext";
 
 const CreateEditBranch = () => {
+  const appData = useAppData();
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { id } = useParams(); 
   const history = useHistory();
@@ -82,6 +84,8 @@ const CreateEditBranch = () => {
           Authorization: `Bearer ${user_data.token}`,
         },
       });
+       appData?.invalidate("branches");
+    await appData?.loadBranches();
       toast.success(isEdit ? "Branch Updated!" : "Branch Created!");
       history.push("/branch");
     } catch (error) {

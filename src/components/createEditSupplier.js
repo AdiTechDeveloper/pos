@@ -5,6 +5,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
+import { useAppData } from "../context/AppDataContext";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -15,6 +16,7 @@ const CreateEditSupplier = () => {
   const store_supplier = localStorage.getItem("supplier_detail");
   const incomingSupplier = store_supplier && JSON.parse(store_supplier);
   const isEdit = Boolean(id);
+  const appData = useAppData();
 
   const [initialValues, setInitialValues] = useState({
     store_id: "",
@@ -71,35 +73,75 @@ const CreateEditSupplier = () => {
   });
 
   // Submit (Create + Update)
-  const handleSubmit = async (values) => {
-    try {
-      let url = "";
-      let method = "";
+  // const handleSubmit = async (values) => {
+  //   try {
+  //     let url = "";
+  //     let method = "";
 
-      if (isEdit) {
-        // UPDATE PRODUCT
-        url = `${BASE_URL}/api/suppliers/${id}`;
-        method = "put";
-      } else {
-        // CREATE PRODUCT
-        url = `${BASE_URL}/api/suppliers`;
-        method = "post";
-      }
-      const response = await axios({
-        method,
-        url,
-        data: values,
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      toast.success(isEdit ? "Suppliers Updated!" : "Suppliers Created!");
-      history.push("/suppliers");
-    } catch (error) {
-      console.error("Error saving product:", error);
+  //     if (isEdit) {
+  //       // UPDATE PRODUCT
+  //       url = `${BASE_URL}/api/suppliers/${id}`;
+  //       method = "put";
+  //     } else {
+  //       // CREATE PRODUCT
+  //       url = `${BASE_URL}/api/suppliers`;
+  //       method = "post";
+  //     }
+  //     const response = await axios({
+  //       method,
+  //       url,
+  //       data: values,
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     toast.success(isEdit ? "Suppliers Updated!" : "Suppliers Created!");
+  //     history.push("/suppliers");
+  //   } catch (error) {
+  //     console.error("Error saving product:", error);
+  //   }
+  // };
+
+  const handleSubmit = async (values) => {
+  try {
+    let url = "";
+    let method = "";
+
+    if (isEdit) {
+      url = `${BASE_URL}/api/suppliers/${id}`;
+      method = "put";
+    } else {
+      url = `${BASE_URL}/api/suppliers`;
+      method = "post";
     }
-  };
+
+    await axios({
+      method,
+      url,
+      data: values,
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${user_data.token}`,
+      },
+    });
+
+    appData?.invalidate("suppliers");
+    await appData?.loadSuppliers();
+
+    toast.success(
+      isEdit ? "Suppliers Updated!" : "Suppliers Created!"
+    );
+
+    history.push("/suppliers");
+  } catch (error) {
+    console.error("Error saving supplier:", error);
+
+    toast.error(
+      error.response?.data?.message || "Failed to save supplier"
+    );
+  }
+};
 
   return (
     <Layout>

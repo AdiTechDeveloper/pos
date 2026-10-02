@@ -17,7 +17,7 @@ const Branch = () => {
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
   useEffect(() => {
-    appData?.invalidate("branches");
+    // appData?.invalidate("branches");
     appData?.loadBranches();
   }, []);
 
@@ -33,17 +33,30 @@ const Branch = () => {
     }
   };
   const handleDelete = async (id) => {
-    const response = await axios.delete(`${BASE_URL}/branches/${id}`, {
-      headers: {
-        accept: "application/json",
-        Authorization: `Bearer ${user_data.token}`,
-      },
-    });
-    if (response) {
-      history.push("/branch");
-      toast.success("Branch Deleted");
-      appData?.invalidate("branches");
-      appData?.loadBranches();
+    try {
+      const response = await axios.delete(`${BASE_URL}/api/branches/${id}`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${user_data.token}`,
+        },
+      });
+
+      if (response.status === 200) {
+        toast.success("Branch Deleted");
+
+        appData?.invalidate("branches");
+        await appData?.loadBranches();
+
+        history.push("/branch");
+      }
+    } catch (error) {
+      console.error("Delete branch error:", error);
+
+      console.error("Response:", error.response?.data);
+
+      toast.error(
+        error.response?.data?.message || "Failed to delete branch"
+      );
     }
   };
 
@@ -118,7 +131,7 @@ const Branch = () => {
       <div className="main-content-inner">
         <div className="main-content-wrap">
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-             <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+            <div className="flex items-center flex-wrap justify-between gap20 mb-27">
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <span
                   style={{

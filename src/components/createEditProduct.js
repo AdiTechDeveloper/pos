@@ -5,11 +5,13 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
+import { useAppData } from "../context/AppDataContext";
 
 const CreateEditProduct = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { id } = useParams(); // if id exists -> Edit Mode
   const history = useHistory();
+  const appData = useAppData();
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_product = localStorage.getItem("product_detail");
@@ -17,10 +19,16 @@ const CreateEditProduct = () => {
   const incomingProduct = store_product && JSON.parse(store_product);
   const isEdit = Boolean(id);
 
-  const [brands, setBrands] = useState([]);
+  // const [brands, setBrands] = useState([]);
+  // const [categories, setCategories] = useState([]);
+  // const [gstRates, setGstRates] = useState([]);
+
+  const brands = appData?.brands || [];
+  const categories = appData?.categories || [];
+  const gstRates = appData?.gstRates || [];
+
+
   const [barcode, setBarcode] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [gstRates, setGstRates] = useState([]);
   const [categoryId, setCategoryId] = useState("");
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [newCategory, setNewCategory] = useState("");
@@ -48,41 +56,41 @@ const CreateEditProduct = () => {
   });
 
   // Fetch brands
-  const fetchBrands = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/brands`, {
-        headers: { Authorization: `Bearer ${user_data.token}` },
-      });
-      setBrands(response.data.brands);
-    } catch (error) {
-      console.error("Error fetching brands:", error);
-    }
-  };
-  const fetchGstRates = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/gst-rates`, {
-        headers: { Authorization: `Bearer ${user_data.token}` },
-      });
-      setGstRates(response.data.gstRates);
-    } catch (error) {
-      console.error("Error fetching GST rates:", error);
-    }
-  };
+  // const fetchBrands = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/brands`, {
+  //       headers: { Authorization: `Bearer ${user_data.token}` },
+  //     });
+  //     setBrands(response.data.brands);
+  //   } catch (error) {
+  //     console.error("Error fetching brands:", error);
+  //   }
+  // };
+  // const fetchGstRates = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/gst-rates`, {
+  //       headers: { Authorization: `Bearer ${user_data.token}` },
+  //     });
+  //     setGstRates(response.data.gstRates);
+  //   } catch (error) {
+  //     console.error("Error fetching GST rates:", error);
+  //   }
+  // };
 
-  // Fetch categories
-  const fetchCategories = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/categories`, {
-        headers: {
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
+  // // Fetch categories
+  // const fetchCategories = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/categories`, {
+  //       headers: {
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
 
-      setCategories(response.data.categories);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+  //     setCategories(response.data.categories);
+  //   } catch (error) {
+  //     console.error("Error fetching categories:", error);
+  //   }
+  // };
 
   const fetchProduct = async () => {
     if (!id) return;
@@ -126,10 +134,20 @@ const CreateEditProduct = () => {
     }
   };
 
+  // useEffect(() => {
+  //   fetchBrands();
+  //   fetchCategories();
+  //   fetchGstRates();
+
+  //   if (isEdit) {
+  //     fetchProduct();
+  //   }
+  // }, [id]);
+
   useEffect(() => {
-    fetchBrands();
-    fetchCategories();
-    fetchGstRates();
+    appData?.loadBrands();
+    appData?.loadCategories();
+    appData?.loadGstRates();
 
     if (isEdit) {
       fetchProduct();
@@ -138,37 +156,66 @@ const CreateEditProduct = () => {
 
   // Validation Schema
   const validationSchema = Yup.object({
-     name: Yup.string()
-          .required("Name is required")
-          .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
-          .max(30, "Name cannot exceed 30 characters"),
+    name: Yup.string()
+      .required("Name is required")
+      .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
+      .max(30, "Name cannot exceed 30 characters"),
 
-    sku : Yup.string()
-          .min(8,"SKU must be at least 8 letter long.")
-          .max(12, "SKU cannot exceed 12 characters"),
+    sku: Yup.string()
+      .min(8, "SKU must be at least 8 letter long.")
+      .max(12, "SKU cannot exceed 12 characters"),
     brand_id: Yup.string().required("Brand is required"),
     category_id: Yup.string().required("Category  is required"),
-    
+
   });
 
- 
+
   // Submit (Create + Update)
+  // const handleSubmit = async (values) => {
+  //   try {
+  //     let url = "";
+  //     let method = "";
+
+  //     if (isEdit) {
+  //       // UPDATE PRODUCT
+  //       url = `${BASE_URL}/api/products/${id}`;
+  //       method = "put";
+  //     } else {
+  //       // CREATE PRODUCT
+  //       url = `${BASE_URL}/api/products`;
+  //       method = "post";
+  //     }
+
+  //     const response = await axios({
+  //       method,
+  //       url,
+  //       data: values,
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     toast.success(isEdit ? "Product Updated!" : "Product Created!");
+  //     history.push("/product");
+  //   } catch (error) {
+  //     console.error("Error saving product:", error);
+  //   }
+  // };
+
   const handleSubmit = async (values) => {
     try {
       let url = "";
       let method = "";
 
       if (isEdit) {
-        // UPDATE PRODUCT
         url = `${BASE_URL}/api/products/${id}`;
         method = "put";
       } else {
-        // CREATE PRODUCT
         url = `${BASE_URL}/api/products`;
         method = "post";
       }
 
-      const response = await axios({
+      await axios({
         method,
         url,
         data: values,
@@ -177,10 +224,21 @@ const CreateEditProduct = () => {
           Authorization: `Bearer ${user_data.token}`,
         },
       });
-      toast.success(isEdit ? "Product Updated!" : "Product Created!");
+
+      appData?.invalidate("products");
+      await appData?.loadProducts();
+
+      toast.success(
+        isEdit ? "Product Updated!" : "Product Created!"
+      );
+
       history.push("/product");
     } catch (error) {
       console.error("Error saving product:", error);
+
+      toast.error(
+        error.response?.data?.message || "Failed to save product"
+      );
     }
   };
 
@@ -208,9 +266,10 @@ const CreateEditProduct = () => {
     });
     toast.success("Category Created!");
     setNewCategory("");
-    setCategoryId(category.id);
     setShowCategoryModal(false);
-    fetchCategories();
+
+    appData?.invalidate("categories");
+    await appData?.loadCategories();
   };
 
   const saveBrand = async (e) => {
@@ -237,9 +296,10 @@ const CreateEditProduct = () => {
     });
     toast.success("Brand Created!");
     setNewBrand("");
-    setBrandId(brand.id);
     setShowBrandModel(false);
-    fetchBrands();
+
+    appData?.invalidate("brands");
+    await appData?.loadBrands();
   };
 
   return (
@@ -553,7 +613,7 @@ const CreateEditProduct = () => {
                         </Field>
                       </fieldset>
 
-                        <fieldset className="col-md-2">
+                      <fieldset className="col-md-2">
                         <div className="body-title mb-5">Allow Change Price</div>
 
                         <Field name="is_price_override">

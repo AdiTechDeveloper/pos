@@ -4,28 +4,31 @@ import { Link, useHistory } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useAppData } from "../context/AppDataContext";
 
 const Brand = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const history = useHistory();
   const [search, setSearch] = useState("");
-  const [brands, setBrands] = useState([]);
+  // const [brands, setBrands] = useState([]);
+  const appData = useAppData();
+const brands = appData?.brands || [];
   const [filteredData, setFilteredData] = useState(brands);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
-  const fetchBrand = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/brands`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setBrands(response.data.brands);
-    } catch (error) {
-      console.error("Error fetching brands:", error);
-    }
-  };
+  // const fetchBrand = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/brands`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setBrands(response.data.brands);
+  //   } catch (error) {
+  //     console.error("Error fetching brands:", error);
+  //   }
+  // };
 
   const handleCreateBrand = () => {
     localStorage.setItem("brand_detail", null);
@@ -39,21 +42,35 @@ const Brand = () => {
     }
   };
   const handleDelete = async (id) => {
+  try {
     const response = await axios.delete(`${BASE_URL}/api/brands/${id}`, {
       headers: {
-        accept: "application/json",
+        Accept: "application/json",
         Authorization: `Bearer ${user_data.token}`,
       },
     });
-    if (response) {
-      history.push("/brand");
+
+    if (response.status === 200) {
+      appData?.invalidate("brands");
+      await appData?.loadBrands();
+
       toast.success("Brand Deleted");
-      fetchBrand();
+      history.push("/brand");
     }
-  };
+  } catch (error) {
+    console.error("Error deleting brand:", error);
+
+    toast.error(
+      error.response?.data?.message || "Failed to delete brand"
+    );
+  }
+};
+  // useEffect(() => {
+  //   fetchBrand();
+  // }, []);
   useEffect(() => {
-    fetchBrand();
-  }, []);
+  appData?.loadBrands();
+}, []);
 
   useEffect(() => {
     const searchText = search.toLowerCase();

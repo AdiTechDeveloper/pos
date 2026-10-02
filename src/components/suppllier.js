@@ -4,11 +4,15 @@ import { Link, useHistory } from "react-router-dom";
 import axios from "axios";
 import Layout from "./layout";
 import { toast } from "react-toastify";
+import { useAppData } from "../context/AppDataContext";
 const SupplierBill = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const history = useHistory();
   const [search, setSearch] = useState("");
-  const [supplierBill, setSupplierBill] = useState([]);
+  // const [supplierBill, setSupplierBill] = useState([]);
+  const appData = useAppData();
+const supplierBill = appData?.suppliers || [];
+
   const [filteredData, setFilteredData] = useState(supplierBill);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
@@ -24,19 +28,44 @@ const SupplierBill = () => {
       handleDelete(id);
     }
   };
+  // const handleDelete = async (id) => {
+  //   const response = await axios.delete(`${BASE_URL}/api/suppliers/${id}`, {
+  //     headers: {
+  //       accept: "application/json",
+  //       Authorization: `Bearer ${user_data.token}`,
+  //     },
+  //   });
+  //   if (response) {
+  //     toast.success("Supplier deleted successfully!");
+  //     history.push("/suppliers");
+  //     fetchSupplierBill();
+  //   }
+  // };
+
   const handleDelete = async (id) => {
+  try {
     const response = await axios.delete(`${BASE_URL}/api/suppliers/${id}`, {
       headers: {
-        accept: "application/json",
+        Accept: "application/json",
         Authorization: `Bearer ${user_data.token}`,
       },
     });
-    if (response) {
+
+    if (response.status === 200) {
+      appData?.invalidate("suppliers");
+      await appData?.loadSuppliers();
+
       toast.success("Supplier deleted successfully!");
       history.push("/suppliers");
-      fetchSupplierBill();
     }
-  };
+  } catch (error) {
+    console.error("Error deleting supplier:", error);
+
+    toast.error(
+      error.response?.data?.message || "Failed to delete supplier"
+    );
+  }
+};
 
   const columns = [
     {
@@ -100,22 +129,26 @@ const SupplierBill = () => {
     },
   ];
 
-  const fetchSupplierBill = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/suppliers`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setSupplierBill(response.data.suppliers);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+  // const fetchSupplierBill = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/suppliers`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setSupplierBill(response.data.suppliers);
+  //   } catch (error) {
+  //     console.error("Error fetching categories:", error);
+  //   }
+  // };
+  // useEffect(() => {
+  //   fetchSupplierBill();
+  // }, []);
+
   useEffect(() => {
-    fetchSupplierBill();
-  }, []);
+  appData?.loadSuppliers();
+}, []);
 
   useEffect(() => {
     const searchText = search.toLowerCase();
