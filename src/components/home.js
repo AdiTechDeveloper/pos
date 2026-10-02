@@ -67,14 +67,14 @@ const Home = () => {
   const canBills = hasFeature("sales_bills");
   const canCustomers = hasFeature("customers");
 
-   // Manager's own branch - admin sees all branches, manager is scoped to one
+  // Manager's own branch - admin sees all branches, manager is scoped to one
   const managerBranchId =
     role === "manager"
       ? user_data?.branch_id ??
-        user_data?.user?.branch_id ??
-        user_data?.user?.branch_ids?.[0] ??
-        user_data?.branch_ids?.[0] ??
-        null
+      user_data?.user?.branch_id ??
+      user_data?.user?.branch_ids?.[0] ??
+      user_data?.branch_ids?.[0] ??
+      null
       : null;
 
   const isBackOffice = role === "admin" || role === "manager";
@@ -114,7 +114,7 @@ const Home = () => {
     const load = async () => {
       setLoading(true);
 
-      
+
 
       try {
         // ---------- SUPERADMIN ----------
@@ -133,7 +133,7 @@ const Home = () => {
             get("/api/reports/sales-report", {
               date_range: "today",
               bill_status: "all",
-               branch_id: managerBranchId,
+              branch_id: managerBranchId,
             }),
           ]);
           jobs.push([
@@ -141,7 +141,7 @@ const Home = () => {
             get("/api/reports/sales-report", {
               date_range: "this_month",
               bill_status: "all",
-               branch_id: managerBranchId,
+              branch_id: managerBranchId,
             }),
           ]);
         }
@@ -155,8 +155,8 @@ const Home = () => {
           jobs.push(["dues", get("/api/customer/due")]);
         }
         if (canBills) {
-          console.log("BILLS TOKEN EXISTS:", !!user_data?.token);
-          console.log("BILLS TOKEN LENGTH:", user_data?.token?.length);
+          // console.log("BILLS TOKEN EXISTS:", !!user_data?.token);
+          // console.log("BILLS TOKEN LENGTH:", user_data?.token?.length);
           jobs.push(["bills", get("/api/sales-bills")]);
         }
 
@@ -181,14 +181,14 @@ const Home = () => {
           if (key === "purchaseToday") setTodayPurchase(data);
           if (key === "dues") setCustomerDues(data?.data || []);
           if (key === "bills") {
-            console.log("SALES BILLS FULL RESPONSE:", data);
-            console.log("SALES BILLS DATA:", data?.data);
+            // console.log("SALES BILLS FULL RESPONSE:", data);
+            // console.log("SALES BILLS DATA:", data?.data);
             setSaleBills(data?.data || []);
           }
 
         });
       } catch (err) {
-        console.error("Dashboard load error:", err);
+        // console.error("Dashboard load error:", err);
       } finally {
         setLoading(false);
       }
@@ -292,7 +292,7 @@ const Home = () => {
                 report={todaySales}
                 loading={loading || !todaySales}
               />
-              <MonthlySalesChart user={user_data} branchId={managerBranchId}  />
+              <MonthlySalesChart user={user_data} branchId={managerBranchId} />
             </div>
           )}
 
@@ -332,7 +332,11 @@ const Home = () => {
                     <RecentSalesFeed bills={recentInvoices} loading={loading} />
                   )}
                   {canCustomers && (
-                    <CustomerDuesWidget dues={customerDues} loading={loading} />
+                    <CustomerDuesWidget
+                      role={role}
+                      user={user_data}
+                      filters={{ branch_id: managerBranchId || "ALL" }}
+                    />
                   )}
                   {/* {canSales && (
                     <TaxAndActionsWidget

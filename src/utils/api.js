@@ -18,10 +18,17 @@ export const getProducts = (params = {}) =>
     params: params,
   });
 
-export const getCategories = () =>
-  axios.get(`${BASE_URL}/api/categories`, { headers: getAuthHeader() });
-export const getBrands = () =>
-  axios.get(`${BASE_URL}/api/brands`, { headers: getAuthHeader() });
+export const getCategories = (config = {}) =>
+  axios.get(`${BASE_URL}/api/categories`, {
+    headers: getAuthHeader(),
+    ...config,
+  });
+
+export const getBrands = (config = {}) =>
+  axios.get(`${BASE_URL}/api/brands`, {
+    headers: getAuthHeader(),
+    ...config,
+  });
 
 export const scanBarcode = (barcode, branchId) =>
   axios.post(

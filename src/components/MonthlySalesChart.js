@@ -11,6 +11,8 @@ import {
   Cell,
 } from "recharts";
 
+import { CalendarDays } from "lucide-react";
+
 const MONTH_LABELS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
@@ -107,7 +109,8 @@ const MonthlySalesChart = ({ user, branchId }) => {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-      <h3 className="text-lg font-bold text-gray-800 mb-4">
+      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <CalendarDays  size={20} className="text-blue-600"/>
         Monthly Sales ({new Date().getFullYear()})
       </h3>
       <ResponsiveContainer width="100%" height={280}>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect , useRef} from "react";
 import { Link, useHistory, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAppData } from "../context/AppDataContext";
@@ -35,6 +35,9 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
+
+
+const activeMenuRef = useRef(null);
 
   const user_detail = JSON.parse(localStorage.getItem("user_detail") || "null");
 
@@ -136,6 +139,19 @@ const Navbar = () => {
       setReportsOpen(true);
     }
   }, [isReportPath]);
+
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    if (activeMenuRef.current) {
+      activeMenuRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, 100);
+
+  return () => clearTimeout(timer);
+}, [location.pathname, reportsOpen]);
 
   /* =========================================================
       LOGO
@@ -334,13 +350,16 @@ const Navbar = () => {
   ========================================================= */
 
   const renderMenuItem = (item) => (
-    <li key={`${item.path}-${item.name}`} className="app-sidebar-menu-item">
-      <Link
-        to={item.path}
-        className={`app-sidebar-link ${isActive(item.path) ? "active" : ""}`}
-        onClick={closeSidebar}
-        title={isCollapsed ? item.name : undefined}
-      >
+  <li key={`${item.path}-${item.name}`} className="app-sidebar-menu-item">
+    <Link
+      ref={isActive(item.path) ? activeMenuRef : null}
+      to={item.path}
+      className={`app-sidebar-link ${
+        isActive(item.path) ? "active" : ""
+      }`}
+      onClick={closeSidebar}
+      title={isCollapsed ? item.name : undefined}
+    >
         <span className="app-sidebar-link-icon">{item.icon}</span>
         <span className="app-sidebar-link-text">{item.name}</span>
       </Link>
@@ -891,6 +910,7 @@ const Navbar = () => {
                     {visibleReportLinks.map((item) => (
                       <li key={item.path} className="app-sidebar-submenu-item">
                         <Link
+                        ref={isActive(item.path) ? activeMenuRef : null}
                           to={item.path}
                           className={`app-sidebar-submenu-link ${
                             isActive(item.path) ? "active" : ""

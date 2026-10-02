@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown , ChartNoAxesCombined } from "lucide-react";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -136,7 +136,8 @@ const ProfitLossReport = ({ role, user }) => {
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       {/* Header & Filters */}
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-        <h2 className="text-2xl font-bold text-gray-800">
+        <h2 className="text-2xl font-bold text-gray-800 flex item-center gap-2">
+          <ChartNoAxesCombined  size={20} className="text-blue-600"/>
           Profit &amp; Loss
         </h2>
         {data && !loading && (

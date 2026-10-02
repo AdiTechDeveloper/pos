@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Receipt } from "lucide-react";
+import { ReceiptIndianRupee } from "lucide-react";
 
 const rupee = (v) => `₹${Number(v || 0).toLocaleString("en-IN")}`;
 
@@ -35,7 +35,7 @@ const RecentSalesFeed = ({ bills, loading  }) => {
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-          <Receipt size={20} className="text-blue-600" />
+          <ReceiptIndianRupee size={20} className="text-blue-600" />
           Recent Sales
         </h3>
         <Link

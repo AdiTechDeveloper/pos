@@ -43,8 +43,32 @@ export default function LeftSidebar({
   }, [selectedBrand]);
 
   useEffect(() => {
-    getCategories().then((res) => setCategories(res.data.categories || []));
-    getBrands().then((res) => setBrands(res.data.brands || []));
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    // Agar api.js ke functions { signal } accept karte hain to StrictMode ki
+    // pehli request cancel ho jayegi. Agar nahi karte to ye argument ignore
+    // ho jata hai (koi nuksan nahi).
+    getCategories({ signal })
+      .then((res) => {
+        if (!signal.aborted) setCategories(res.data.categories || []);
+      })
+      .catch((err) => {
+        if (err?.name === "CanceledError" || err?.code === "ERR_CANCELED") return;
+        console.error("Categories fetch error", err);
+      });
+
+    getBrands({ signal })
+      .then((res) => {
+        if (!signal.aborted) setBrands(res.data.brands || []);
+      })
+      .catch((err) => {
+        if (err?.name === "CanceledError" || err?.code === "ERR_CANCELED") return;
+        console.error("Brands fetch error", err);
+      });
+
+    // cleanup: StrictMode ke pehle run ko cancel / ignore karo
+    return () => controller.abort();
   }, []);
 
   return (
@@ -52,30 +76,30 @@ export default function LeftSidebar({
       {/* HEADER */}
       {role !== "cashier" && (
         <div className="pos-sidebar-header">
-    <a
-      href="/dashboard"
-      className="pos-back-button"
-      aria-label="Back to dashboard"
-      title="Back to dashboard"
-    >
-      <span className="pos-back-icon">
-        <svg
-          width="17"
-          height="17"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M19 12H5" />
-          <path d="M12 19l-7-7 7-7" />
-        </svg>
-      </span>
-      <span className="pos-back-text">Back to dashboard</span>
-    </a>
-  </div>
+          <a
+            href="/dashboard"
+            className="pos-back-button"
+            aria-label="Back to dashboard"
+            title="Back to dashboard"
+          >
+            <span className="pos-back-icon">
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19 12H5" />
+                <path d="M12 19l-7-7 7-7" />
+              </svg>
+            </span>
+            <span className="pos-back-text">Back to dashboard</span>
+          </a>
+        </div>
       )}
 
       <div className="p-8 border-b">
@@ -134,8 +158,3 @@ export default function LeftSidebar({
     </div>
   );
 }
-
-
-
-
- 

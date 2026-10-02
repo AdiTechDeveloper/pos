@@ -1,5 +1,7 @@
 import React from "react";
 import DonutChart from "./DonutChart";
+ import { Wallet } from "lucide-react";
+
 
 const rupee = (v) => `₹${Number(v || 0).toFixed(2)}`;
 
@@ -31,7 +33,7 @@ const PaymentBreakdown = ({ report, loading }) => {
   if (rows.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
-        <h3 className="text-3xl font-bold text-gray-800 mb-2">
+        <h3 className="text-3xl font-bold text-gray-800 mb-2 " >
           Today's Collection
         </h3>
         <p className="text-xl text-gray-400">No bills created today.</p>
@@ -42,7 +44,10 @@ const PaymentBreakdown = ({ report, loading }) => {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-gray-800">Today's Collection</h3>
+        <h3 className="text-xl font-bold text-gray-800  flex items-center gap-2 ">
+           <Wallet size={20} className="text-blue-600" />
+          Today's Collection
+          </h3>
         <span className="text-2xl text-gray-400">
           Collected:{" "}
           <span className="text-2xl text-gray-700">

@@ -1990,7 +1990,7 @@ a:focus {
   color: #ff5200;
 }
 .brand-box {
-  width: 80% !important;
+  width: 100% !important;
 }
 .wg-order-detail {
   display: -webkit-box;
@@ -3133,7 +3133,7 @@ form input[type="color"] {
   color: var(--Heading);
   overflow: hidden;
   margin-bottom: 0;
-  border: 1px solid grey;
+  /* border: 1px solid grey; */
 }
 form textarea::placeholder,
 form input[type="text"]::placeholder,

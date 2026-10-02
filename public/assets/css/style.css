@@ -45,11 +45,11 @@
 
 */
 /* Reset Browsers
-
-
-
-
 -------------------------------------------------------------- */
+.name{
+  border: 1px solid gray;
+  border-radius: 8px;
+}
 .gst-checkbox-wrapper {
   display: flex;
   gap: 25px;
@@ -3144,6 +3144,7 @@ form .cols {
 fieldset {
   margin-bottom: 0px;
   width: 100%;
+ 
 }
 
 .select {
