@@ -158,7 +158,7 @@ const SaleBill = () => {
   }, [filteredData]);
 
   const columns = [
-    { name: "Id", selector: (row) => row.id, sortable: true, width: "70px" },
+    // { name: "Id", selector: (row) => row.id, sortable: true, width: "70px" },
        {
       name: "Action",
       button: true,

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { fetchLowStockProducts } from "../utils/reportService";
 import DataTable from "react-data-table-component";
 import { useAppData } from "../context/AppDataContext";
-import { AlertTriangle, XCircle } from "lucide-react";
+import { AlertTriangle, XCircle , LayersArrowDown } from "lucide-react";
 
 const LowStockAlert = ({ role, user = {}, filters = {} }) => {
   const [lowStockProducts, setLowStockProducts] = useState([]);
@@ -117,7 +117,8 @@ const LowStockAlert = ({ role, user = {}, filters = {} }) => {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+      <div className="flex items-center mb-4 gap-3 " >
+        <LayersArrowDown className="text-red-600" size={20} />
         <h3 className="text-2xl font-bold text-gray-800">Low Stock Alerts</h3>
 
         {role === "admin" && (

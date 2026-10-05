@@ -68,12 +68,12 @@ const supplierBill = appData?.suppliers || [];
 };
 
   const columns = [
-    {
-      name: "Id",
-      selector: (row) => row.id,
-      sortable: true,
-      width: "100px",
-    },
+    // {
+    //   name: "Id",
+    //   selector: (row) => row.id,
+    //   sortable: true,
+    //   width: "100px",
+    // },
     {
       name: "Name",
       selector: (row) => row.name,

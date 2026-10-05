@@ -211,12 +211,12 @@ const handleDelete = async (id) => {
   }, [search, products]);
 
   const columns = [
-    {
-      name: "ID",
-      cell: (row, index) => (currentPage - 1) * perPage + index + 1,
-      width: "80px",
-      center: true,
-    },
+    // {
+    //   name: "ID",
+    //   cell: (row, index) => (currentPage - 1) * perPage + index + 1,
+    //   width: "80px",
+    //   center: true,
+    // },
 
     {
       name: "SKU",

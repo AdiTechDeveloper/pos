@@ -70,12 +70,12 @@ const Customer = () => {
     value ? new Date(value).toLocaleDateString("en-IN") : "-";
 
   const columns = [
-    {
-      name: "Id",
-      selector: (row) => row.id,
-      sortable: true,
-      width: "90px",
-    },
+    // {
+    //   name: "Id",
+    //   selector: (row) => row.id,
+    //   sortable: true,
+    //   width: "90px",
+    // },
     {
       name: "Name",
       selector: (row) => row.name || "-",

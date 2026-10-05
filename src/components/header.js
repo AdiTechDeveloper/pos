@@ -137,8 +137,8 @@ const Header = () => {
               className=""
               id="logo_header_mobile"
               alt=""
-              src="images/logo/logo.jpg"
-              data-light="images/logo/logo.jpg"
+              // src="images/logo/logo.jpg"
+              // data-light="images/logo/logo.jpg"
               data-dark="images/logo/logo-dark.png"
               data-width="154px"
               data-height="52px"
@@ -175,9 +175,9 @@ const Header = () => {
                 onClick={toggleMenu}
               >
                 <span className="header-user wg-user flex items-center justify-end gap-3 mr-10">
-                  <span className="image">
+                  {/* <span className="image">
                     <img src="images/avatar/user-1.png" alt="" />
-                  </span>
+                  </span> */}
 
                   <span className="flex flex-col items-end text-left">
                     <span className="body-title mb-1">

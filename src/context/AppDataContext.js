@@ -382,7 +382,7 @@ export function AppDataProvider({ children }) {
     loadStaff: () => load("staff"),
     loadProducts: () => load("products"),
     loadExpiredProducts: (filters, opts) =>
-      fetchExpiredProducts(filters, opts),
+    fetchExpiredProducts(filters, opts),
     loadStore,
     loadStockExpiryAlerts,
 

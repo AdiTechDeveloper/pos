@@ -103,12 +103,12 @@ const GstRate = () => {
 };
 
   const columns = [
-    {
-      name: "Id",
-      selector: (row) => row.id,
-      sortable: true,
-      width: "100px",
-    },
+    // {
+    //   name: "Id",
+    //   selector: (row) => row.id,
+    //   sortable: true,
+    //   width: "100px",
+    // },
     {
       name: "Rate",
       selector: (row) => row.rate,

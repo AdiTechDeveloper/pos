@@ -20,12 +20,12 @@ const PurchaseReturn = () => {
   };
 
   const columns = [
-    {
-      name: "Id",
-      selector: (row) => row.id,
-      sortable: true,
-      width: "100px",
-    },
+    // {
+    //   name: "Id",
+    //   selector: (row) => row.id,
+    //   sortable: true,
+    //   width: "100px",
+    // },
     {
       name: "Purchase Bill No",
       selector: (row) => row?.purchase_bill?.bill_no,

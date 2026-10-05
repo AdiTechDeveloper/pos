@@ -50,12 +50,12 @@ const SalesReturnList = () => {
   };
 
   const columns = [
-    {
-      name: "Id",
-      selector: (row) => row.id,
-      sortable: true,
-      width: "70px",
-    },
+    // {
+    //   name: "Id",
+    //   selector: (row) => row.id,
+    //   sortable: true,
+    //   width: "70px",
+    // },
     {
       name: "Return No",
       selector: (row) => row.return_no,

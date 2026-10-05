@@ -88,12 +88,12 @@ const brands = appData?.brands || [];
   setFilteredData(result);
 }, [search, brands]);
   const columns = [
-    {
-      name: "Id",
-      selector: (row) => row.id,
-      sortable: true,
-      width: "100px",
-    },
+    // {
+    //   name: "Id",
+    //   selector: (row) => row.id,
+    //   sortable: true,
+    //   width: "100px",
+    // },
     {
       name: "Name",
       selector: (row) => row.name,
