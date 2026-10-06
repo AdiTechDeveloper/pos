@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useLocation, useHistory } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
@@ -10,57 +10,63 @@ import { useAppData } from "../context/AppDataContext";
 const CreateEditSaleBill = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { id } = useParams(); // if id exists -> Edit Mode
-  const history = useHistory();
+  const navigate = useNavigate();
   const appData = useAppData();
+  // const branches = appData?.managerBranches || [];
+  // const [suppliers, setSupplierBill] = useState([]);
+  // const [products, setProducts] = useState([]);
+  const products = appData?.saleProducts || [];
   const branches = appData?.managerBranches || [];
-  const [suppliers, setSupplierBill] = useState([]);
-  const [products, setProducts] = useState([]);
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
   const isEdit = Boolean(id);
 
-  const fetchBranch = () => {
-    appData?.loadManagerBranches(); 
-  };
+  // const fetchBranch = () => {
+  //   appData?.loadManagerBranches(); 
+  // };
 
+  // useEffect(() => {
+  //   fetchBranch();
+  // }, []);
   useEffect(() => {
-    fetchBranch();
+    appData?.loadManagerBranches();
+    appData?.loadSaleProducts();
   }, []);
 
-  const fetchSupplierBill = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/suppliers`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setSupplierBill(response.data.suppliers);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
-  useEffect(() => {
-    fetchSupplierBill();
-  }, []);
+  // const fetchSupplierBill = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/suppliers`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setSupplierBill(response.data.suppliers);
+  //   } catch (error) {
+  //     console.error("Error fetching categories:", error);
+  //   }
+  // };
+  // useEffect(() => {
+  //   fetchSupplierBill();
+  // }, []);
 
-  const fetchProduct = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/products`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setProducts(response.data.products);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
-  useEffect(() => {
-    fetchProduct();
-  }, []);
+  // const fetchProduct = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/products`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setProducts(response.data.products);
+  //   } catch (error) {
+  //     console.error("Error fetching categories:", error);
+  //   }
+  // };
+  // useEffect(() => {
+  //   fetchProduct();
+  // }, []);
 
   const initialValues = {
     lines: [
@@ -84,20 +90,31 @@ const CreateEditSaleBill = () => {
       .min(1, "Add at least one product"),
   });
 
-  const handleSubmit = async (values) => {
+  const handleSubmit = async (values, actions) => {
     try {
       const user = JSON.parse(localStorage.getItem("user_data"));
 
-      const response = await axios.post("/sales-bill", values, {
+      await axios.post(`${BASE_URL}/api/sales-bill`,  values, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${user?.token}`,
         },
       });
+
       toast.success("Sales Bill Created Successfully!");
+
+      appData?.invalidate("saleBills");
+      await appData?.loadSaleBills();
+
+      navigate("/sale-bill");
     } catch (error) {
       console.error("API Error:", error.response?.data);
-      alert(error.response?.data?.message || "Error creating sales bill");
+
+      toast.error(
+        error.response?.data?.message || "Error creating sales bill"
+      );
+    } finally {
+      actions.setSubmitting(false);
     }
   };
 
@@ -194,7 +211,7 @@ const CreateEditSaleBill = () => {
                   <button type="submit" className="sales-submit-btn">
                     Submit Sales Bill
                   </button>
-                   <button type="button" className="ml-5"><a href="/sale-bill"> Cancel</a></button>
+                  <button type="button" className="ml-5"><a href="/sale-bill"> Cancel</a></button>
                 </Form>
               )}
             </Formik>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Layout from "./layout";
-import { Link, useLocation, useHistory, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Formik, Form, Field, ErrorMessage } from "formik";
@@ -8,7 +8,7 @@ import * as Yup from "yup";
 
 const CreateStore = () => {
   const location = useLocation();
-  const history = useHistory();
+  const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = Boolean(id);
 
@@ -37,7 +37,7 @@ const CreateStore = () => {
       toast.error(
         error.response?.data?.message || "Failed to load store details.",
       );
-      history.push("/store");
+      navigate("/store");
     } finally {
       setLoading(false);
     }
@@ -211,7 +211,7 @@ const CreateStore = () => {
       }
 
       toast.success(response.data?.message || "Store saved successfully!");
-      history.push("/store");
+      navigate("/store");
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong!");
     } finally {

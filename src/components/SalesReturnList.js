@@ -3,6 +3,7 @@ import Layout from "./layout";
 import DataTable from "react-data-table-component";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { useAppData } from "../context/AppDataContext";
 
 const ExpandedComponent = ({ data }) => {
   const lineColumns = [
@@ -40,7 +41,9 @@ const ExpandedComponent = ({ data }) => {
 const SalesReturnList = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const [search, setSearch] = useState("");
-  const [salesReturn, setSalesReturn] = useState([]);
+  // const [salesReturn, setSalesReturn] = useState([]);
+  const appData = useAppData();
+  const salesReturn = appData?.saleReturns || [];
   const [filteredData, setFilteredData] = useState([]);
   const user_detail = localStorage.getItem("user_detail");
   const user_data = user_detail ? JSON.parse(user_detail) : null;
@@ -90,24 +93,28 @@ const SalesReturnList = () => {
     },
   ];
 
-  const fetchSaleReturn = async () => {
-    if (!user_data?.token) return;
-    try {
-      const response = await axios.get(`${BASE_URL}/api/sales-return`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      const dataResult = response.data.data.data || response.data.data;
-      setSalesReturn(dataResult);
-    } catch (error) {
-      console.error("Error fetching sales returns:", error);
-    }
-  };
+  // const fetchSaleReturn = async () => {
+  //   if (!user_data?.token) return;
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/sales-return`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     const dataResult = response.data.data.data || response.data.data;
+  //     setSalesReturn(dataResult);
+  //   } catch (error) {
+  //     console.error("Error fetching sales returns:", error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchSaleReturn();
+  // }, []);
 
   useEffect(() => {
-    fetchSaleReturn();
+    appData?.loadSaleReturns();
   }, []);
 
   useEffect(() => {
@@ -144,7 +151,7 @@ const SalesReturnList = () => {
       <div className="main-content-inner">
         <div className="main-content-wrap">
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-          <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+            <div className="flex items-center flex-wrap justify-between gap20 mb-27">
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <span
                   style={{
@@ -174,7 +181,7 @@ const SalesReturnList = () => {
                       margin: "2px 0 0 0",
                     }}
                   >
-                  Track and manage products returned by customers
+                    Track and manage products returned by customers
                   </p>
                 </div>
               </div>

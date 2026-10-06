@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Layout from "./layout";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -9,7 +9,7 @@ import { useAppData } from "../context/AppDataContext";
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const GstRate = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   // const [gstRates, setGstRates] = useState([]);
   const appData = useAppData();
@@ -71,7 +71,7 @@ const GstRate = () => {
   //     },
   //   });
   //   if (response) {
-  //     history.push("/gst-rates");
+  //     navigate("/gst-rates");
   //     toast.success("Gst Rates Deleted");
   //     fetchGstRate();
   //   }
@@ -91,7 +91,7 @@ const GstRate = () => {
       await appData?.loadGstRates();
 
       toast.success("Gst Rate Deleted");
-      history.push("/gst-rates");
+      navigate("/gst-rates");
     }
   } catch (error) {
     console.error("Error deleting GST rate:", error);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useHistory } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
@@ -11,19 +11,23 @@ import { useAppData } from "../context/AppDataContext";
 const CreatePurchaseReplace = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { id } = useParams();
-  const history = useHistory();
+  const navigate = useNavigate();
   const appData = useAppData();
   const branches = appData?.managerBranches || [];
-  const [suppliers, setSupplierBill] = useState([]);
-  const [purchaseBills, setPurchaseBills] = useState([]);
-  const [purchaseLines, setPurchaseLines] = useState([]);
+  // const [suppliers, setSupplierBill] = useState([]);
+  // const [purchaseBills, setPurchaseBills] = useState([]);
+  // const [purchaseLines, setPurchaseLines] = useState([]);
+  const suppliers = appData?.suppliers || [];
+  const purchaseBills = appData?.purchaseBills || [];
+  const purchaseLines = appData?.purchaseLines || [];
   const [supplierId, setSupplierId] = useState("");
   const [purchaseBillId, setPurchaseBillId] = useState("");
   const [newPurchaseBill, setNewPurchaseBill] = useState("");
   const [error, setError] = useState("");
   const [fieldValue, setFieldValue] = useState(() => () => { });
   const [activeRowIndex, setActiveRowIndex] = useState(null);
-  const [products, setProducts] = useState([]);
+  // const [products, setProducts] = useState([]);
+  const products = appData?.saleProducts || [];
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_purchase_replace_bill = localStorage.getItem(
@@ -84,57 +88,65 @@ const CreatePurchaseReplace = () => {
     }
   }, []);
 
-  const fetchPurchaseBill = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/purchase-bill`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setPurchaseBills(response.data.data);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+  // const fetchPurchaseBill = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/purchase-bill`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setPurchaseBills(response.data.data);
+  //   } catch (error) {
+  //     console.error("Error fetching categories:", error);
+  //   }
+  // };
 
-  const fetchBranch = () => {
-    appData?.loadManagerBranches();
-  };
+  // const fetchBranch = () => {
+  //   appData?.loadManagerBranches();
+  // };
 
-  const fetchProduct = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/products`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setProducts(response.data.products);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+  // const fetchProduct = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/products`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setProducts(response.data.products);
+  //   } catch (error) {
+  //     console.error("Error fetching categories:", error);
+  //   }
+  // };
 
-  const fetchSupplierBill = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/suppliers`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setSupplierBill(response.data.suppliers);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+  // const fetchSupplierBill = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/suppliers`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setSupplierBill(response.data.suppliers);
+  //   } catch (error) {
+  //     console.error("Error fetching categories:", error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchBranch();
+  //   fetchSupplierBill();
+  //   fetchPurchaseBill();
+  //   fetchProduct();
+  // }, []);
 
   useEffect(() => {
-    fetchBranch();
-    fetchSupplierBill();
-    fetchPurchaseBill();
-    fetchProduct();
+    appData?.loadManagerBranches();
+    appData?.loadSuppliers();
+    appData?.loadPurchaseBills();
+    appData?.loadPurchaseLines();
+    appData?.loadSaleProducts();
   }, []);
 
   const handlePurchaseBillSelection = async (selectedBillId, setFieldValue) => {
@@ -147,19 +159,13 @@ const CreatePurchaseReplace = () => {
         setFieldValue("branch_id", billDetails.branch_id?.toString() || "");
         setFieldValue("supplier_id", billDetails.supplier_id?.toString() || "");
 
-        const response = await axios.get(`${BASE_URL}/api/purchase-line`, {
-          params: { purchase_bill_id: selectedBillId },
-          headers: { Authorization: `Bearer ${user_data.token}` },
-        });
 
-        const apiLines = response.data.data;
 
-        const filteredLines = apiLines.filter(
+        const filteredLines = purchaseLines.filter(
           (line) =>
             line.purchase_bill_id == selectedBillId ||
-            line.purchase_id == selectedBillId,
+            line.purchase_id == selectedBillId
         );
-
         const formattedLines = filteredLines.map((line) => ({
           purchase_bill_line_id: line.id.toString(),
           qty: line.qty,
@@ -172,7 +178,7 @@ const CreatePurchaseReplace = () => {
 
         setFieldValue("lines", formattedLines);
 
-        setPurchaseLines(filteredLines);
+        // setPurchaseLines(filteredLines);
       }
     } catch (error) {
       console.error("Error fetching bill lines:", error);
@@ -240,8 +246,12 @@ const CreatePurchaseReplace = () => {
       );
 
       toast.success("Purchase Replacement Saved Successfully!");
+
+      appData?.invalidate("purchaseReturns");
+      await appData?.loadPurchaseReturns();
+
       actions.resetForm();
-      history.push("/purchase-return-bill");
+      navigate("/purchase-return-bill");
     } catch (error) {
       const errorMessage =
         error.response?.data?.message || "Something went wrong";

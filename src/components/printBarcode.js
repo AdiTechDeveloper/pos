@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
-import { Link, useHistory } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Layout from "./layout";
 import { toast } from "react-toastify";
@@ -10,7 +10,7 @@ import { useAppData } from "../context/AppDataContext";
 
 const PrintBarcode = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-  const history = useHistory();
+  const navigate = useNavigate();
   // const [products, setProducts] = useState([]);
   const appData = useAppData();
 const products = appData?.products || [];

@@ -1,6 +1,6 @@
 // import React, { useState, useEffect } from "react";
 // import { Link } from "react-router-dom";
-// import { useHistory } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 // import { toast } from "react-toastify";
 // import axios from "axios";
 
@@ -20,7 +20,7 @@
 // };
 
 // const CashierLogin = () => {
-//   const history = useHistory();
+//   const navigate = useNavigate();
 
 //   const [resolving, setResolving] = useState(true);
 //   const [terminal, setTerminal] = useState(null);
@@ -172,7 +172,7 @@
 //       const user_detail = response.data;
 //       localStorage.setItem("user_detail", JSON.stringify(user_detail));
 //       toast.success(user_detail.message || "Login successful!");
-//       history.push("/pos");
+//       navigate("/pos");
 //     } catch (err) {
 //       toast.error(err?.response?.data?.message || "Invalid credentials");
 //     }
@@ -323,7 +323,7 @@
 // export default CashierLogin;
 
 import React, { useEffect, useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
 import "../assets/css/cashier.css";
@@ -357,7 +357,7 @@ const deleteCookie = (name) => {
 };
 
 const CashierLogin = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const [resolving, setResolving] = useState(true);
   const [terminal, setTerminal] = useState(null);
@@ -623,7 +623,7 @@ const CashierLogin = () => {
         user_detail.message || "Login successful!",
       );
 
-      history.push("/pos");
+      navigate("/pos");
     } catch (err) {
       toast.error(
         err?.response?.data?.message ||

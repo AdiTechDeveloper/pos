@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { useParams, useHistory } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
@@ -488,12 +488,16 @@ const ledgerStyles = `
 const CreateEditPurchaseBill = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { id } = useParams();
-  const history = useHistory();
+  const navigate = useNavigate();
   const appData = useAppData();
+  // const branches = appData?.branches || [];
+  // const [suppliers, setSupplierBill] = useState([]);
+  // const [products, setProducts] = useState([]);
+  // const [gstRates, setGstRates] = useState([]);
   const branches = appData?.branches || [];
-  const [suppliers, setSupplierBill] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [gstRates, setGstRates] = useState([]);
+  const suppliers = appData?.suppliers || [];
+  const products = appData?.purchaseProducts || [];
+  const gstRates = appData?.gstRates || [];
   const [supplierId, setSupplierId] = useState("");
   const [barcode, setBarcode] = useState("");
   const [isBillLost, setIsBillLost] = useState(false);
@@ -567,37 +571,37 @@ const CreateEditPurchaseBill = () => {
       is_lost: bill.is_lost ?? 0,
       lines: bill.lines?.length
         ? bill.lines.map((line) => ({
-            ...line,
-            inventory: line.inventory,
-            product_id: line.product_id?.toString() || "",
-            qty: line.qty || "",
-            free_qty: line.free_qty || "",
-            purchase_rate:
-              line.purchase_rate ??
-              line.inventory?.cost_price ??
-              line.inventory?.rate ??
-              "",
-            mrp: line.mrp ?? line.inventory?.mrp ?? "",
-            selling_price:
-              line.selling_price ?? line.inventory?.selling_price ?? "",
-            discount_type: line.discount_type || "",
-            discount: line.discount || "",
-            hsn_code: line.hsn_code || "",
-            gst_rate_id: line.gst_rate_id?.toString() || "",
-            batch_no: line.batch_no ?? line.inventory?.batch_no ?? "",
-            expiry_date: normalizeDate(
-              line.expiry_date ?? line.inventory?.expiry_date,
-            ),
-            is_opening: line.is_opening || false,
-          }))
+          ...line,
+          inventory: line.inventory,
+          product_id: line.product_id?.toString() || "",
+          qty: line.qty || "",
+          free_qty: line.free_qty || "",
+          purchase_rate:
+            line.purchase_rate ??
+            line.inventory?.cost_price ??
+            line.inventory?.rate ??
+            "",
+          mrp: line.mrp ?? line.inventory?.mrp ?? "",
+          selling_price:
+            line.selling_price ?? line.inventory?.selling_price ?? "",
+          discount_type: line.discount_type || "",
+          discount: line.discount || "",
+          hsn_code: line.hsn_code || "",
+          gst_rate_id: line.gst_rate_id?.toString() || "",
+          batch_no: line.batch_no ?? line.inventory?.batch_no ?? "",
+          expiry_date: normalizeDate(
+            line.expiry_date ?? line.inventory?.expiry_date,
+          ),
+          is_opening: line.is_opening || false,
+        }))
         : initialValues.lines,
       payments: bill.payments?.length
         ? bill.payments.map((p) => ({
-            amount: p.amount || "",
-            method: p.method ?? p.payment_method ?? "cash",
-            reference: p.reference || "",
-            payment_date: normalizeDate(p.payment_date),
-          }))
+          amount: p.amount || "",
+          method: p.method ?? p.payment_method ?? "cash",
+          reference: p.reference || "",
+          payment_date: normalizeDate(p.payment_date),
+        }))
         : [],
     });
   };
@@ -636,55 +640,61 @@ const CreateEditPurchaseBill = () => {
     appData?.loadBranches();
   };
 
-  const fetchSupplierBill = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/suppliers`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setSupplierBill(response.data.suppliers);
-    } catch (error) {
-      console.error("Error fetching suppliers:", error);
-    }
-  };
+  // const fetchSupplierBill = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/suppliers`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setSupplierBill(response.data.suppliers);
+  //   } catch (error) {
+  //     console.error("Error fetching suppliers:", error);
+  //   }
+  // };
 
-  const fetchProduct = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/all-products`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      const sortedProducts = (response.data.products || []).sort((a, b) =>
-        (a.name || "").localeCompare(b.name || "", undefined, {
-          sensitivity: "base",
-        }),
-      );
-      setProducts(sortedProducts);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    }
-  };
+  // const fetchProduct = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/all-products`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     const sortedProducts = (response.data.products || []).sort((a, b) =>
+  //       (a.name || "").localeCompare(b.name || "", undefined, {
+  //         sensitivity: "base",
+  //       }),
+  //     );
+  //     setProducts(sortedProducts);
+  //   } catch (error) {
+  //     console.error("Error fetching products:", error);
+  //   }
+  // };
 
-  const fetchGstRates = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/gst-rates`, {
-        headers: { Authorization: `Bearer ${user_data.token}` },
-      });
-      setGstRates(response.data.gstRates);
-    } catch (error) {
-      console.error("Error fetching GST rates:", error);
-    }
-  };
+  // const fetchGstRates = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/gst-rates`, {
+  //       headers: { Authorization: `Bearer ${user_data.token}` },
+  //     });
+  //     setGstRates(response.data.gstRates);
+  //   } catch (error) {
+  //     console.error("Error fetching GST rates:", error);
+  //   }
+  // };
 
+  // useEffect(() => {
+  //   fetchBranch();
+  //   fetchSupplierBill();
+  //   fetchProduct();
+  //   fetchGstRates();
+  // }, []);
   useEffect(() => {
-    fetchBranch();
-    fetchSupplierBill();
-    fetchProduct();
-    fetchGstRates();
+    appData?.loadBranches();
+    appData?.loadSuppliers();
+    appData?.loadPurchaseProducts();
+    appData?.loadGstRates();
   }, []);
 
   const getGstRate = (gstRateId) => {
@@ -813,6 +823,7 @@ const CreateEditPurchaseBill = () => {
             Authorization: `Bearer ${user_data.token}`,
           },
         });
+
         toast.success("Purchase bill updated successfully!");
       } else {
         await axios.post(`${BASE_URL}/api/purchase-bill`, payload, {
@@ -821,15 +832,21 @@ const CreateEditPurchaseBill = () => {
             Authorization: `Bearer ${user_data.token}`,
           },
         });
+
         actions.resetForm();
         toast.success("Purchase bill saved successfully!");
       }
-      history.push("/purchase-bill");
+
+      appData?.invalidate("purchaseBills");
+      await appData?.loadPurchaseBills();
+
+      navigate("/purchase-bill");
+
     } catch (error) {
       console.log(error.response?.data);
       toast.error(
         error.response?.data?.message ||
-          "Failed to save purchase bill. Please check the form.",
+        "Failed to save purchase bill. Please check the form.",
       );
     } finally {
       actions.setSubmitting(false);
@@ -862,7 +879,9 @@ const CreateEditPurchaseBill = () => {
     setNewSupplier("");
     setSupplierState("");
     setShowModal(false);
-    fetchSupplierBill();
+
+    appData?.invalidate("suppliers");
+    await appData?.loadSuppliers();
   };
 
   const handleBarcodeScan = async (barcode, values, push, setFieldValue) => {
@@ -979,8 +998,8 @@ const CreateEditPurchaseBill = () => {
 
               const effectiveTotal =
                 values.settlement_amount !== "" &&
-                values.settlement_amount != null &&
-                !isNaN(Number(values.settlement_amount))
+                  values.settlement_amount != null &&
+                  !isNaN(Number(values.settlement_amount))
                   ? Number(values.settlement_amount)
                   : incomingBill?.total_amount
                     ? Number(incomingBill.total_amount)
@@ -1127,7 +1146,7 @@ const CreateEditPurchaseBill = () => {
                             component="div"
                           />
                         </div>
-                      
+
                         <div className="mb-0 col-md-4">
                           <label className="pb-field-label">Bill No</label>
                           <div
@@ -1523,7 +1542,7 @@ const CreateEditPurchaseBill = () => {
                           <Field
                             as="textarea"
                             name="notes"
-                          
+
                             placeholder="Enter settlement remarks or adjustment details..."
                           />
                           <ErrorMessage
@@ -1765,7 +1784,7 @@ const CreateEditPurchaseBill = () => {
                   <h5>Create Product</h5>
                 </div>
                 <div className="pb-modal-body">
-                  <ProductForm
+                  {/* <ProductForm
                     onSuccess={(product) => {
                       setProducts((prev) => [...prev, product]);
                       if (formikRef.current && activeRowIndex !== null) {
@@ -1774,6 +1793,22 @@ const CreateEditPurchaseBill = () => {
                           product.id,
                         );
                       }
+                      setShowProductModal(false);
+                    }}
+                    onCancel={() => setShowProductModal(false)}
+                  /> */}
+                  <ProductForm
+                    onSuccess={async (product) => {
+                      appData?.invalidate("purchaseProducts");
+                      await appData?.loadPurchaseProducts();
+
+                      if (formikRef.current && activeRowIndex !== null) {
+                        formikRef.current.setFieldValue(
+                          `lines.${activeRowIndex}.product_id`,
+                          product.id,
+                        );
+                      }
+
                       setShowProductModal(false);
                     }}
                     onCancel={() => setShowProductModal(false)}

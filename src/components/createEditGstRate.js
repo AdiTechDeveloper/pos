@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useLocation, useHistory } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
@@ -10,7 +10,7 @@ const CreateEditGstRates = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const appData = useAppData();
   const { id } = useParams();
-  const history = useHistory(); 
+  const navigate = useNavigate(); 
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_gst_rate_detail = localStorage.getItem("gst_rate_detail");
@@ -81,7 +81,7 @@ const CreateEditGstRates = () => {
   //       },
   //     });
   //     toast.success(isEdit ? "Gst Rate Updated!" : "Gst Rate Created!");
-  //     history.push("/gst-rates");
+  //     navigate("/gst-rates");
   //   } catch (error) {
   //     console.error("Error saving product:", error);
   //   }
@@ -117,7 +117,7 @@ const CreateEditGstRates = () => {
       isEdit ? "Gst Rate Updated!" : "Gst Rate Created!"
     );
 
-    history.push("/gst-rates");
+    navigate("/gst-rates");
   } catch (error) {
     console.error("Error saving GST rate:", error);
 

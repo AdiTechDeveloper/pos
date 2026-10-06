@@ -4,44 +4,111 @@ import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useAppData } from "../context/AppDataContext";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import {  FileSpreadsheet, FileDown } from "lucide-react";
 
 const Customer = () => {
+  const appData = useAppData();
+  const customers = appData?.customers || [];
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
   const [search, setSearch] = useState("");
-  const [customers, setCustomers] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const exportPDF = () => {
+  const doc = new jsPDF("landscape");
 
-  const fetchCustomers = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`${BASE_URL}/api/customers`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data?.token}`,
-        },
-      });
+  doc.setFontSize(18);
+  doc.text("Customer Report", 14, 18);
 
-      const payload = response.data;
-      let list = payload?.data ?? payload?.customers ?? payload;
+  autoTable(doc, {
+    startY: 28,
+    head: [[
+      "Name",
+      "Mobile",
+      "Address",
+      "Area",
+      "City",
+      "Opening Balance",
+      "Loyalty Points",
+      "Created",
+    ]],
+    body: customers.map((customer) => [
+      customer.name || "-",
+      customer.mobile || "-",
+      [customer.add1, customer.add2].filter(Boolean).join(", ") || "-",
+      customer.area || "-",
+      customer.city || "-",
+      Number(customer.opening_balance ?? 0).toFixed(2),
+      Number(customer.loyalty_points ?? 0).toFixed(2),
+      formatDate(customer.created_at),
+    ]),
+    theme: "grid",
+    headStyles: {
+      fillColor: [37, 99, 235],
+    },
+  });
 
-      if (list && !Array.isArray(list) && Array.isArray(list.data)) {
-        list = list.data;
-      }
+  doc.save("customers.pdf");
+};
+const exportExcel = () => {
+  const data = customers.map((customer) => ({
+    Name: customer.name || "-",
+    Mobile: customer.mobile || "-",
+    Address: [customer.add1, customer.add2].filter(Boolean).join(", ") || "-",
+    Area: customer.area || "-",
+    City: customer.city || "-",
+    "Opening Balance": Number(customer.opening_balance ?? 0),
+    "Loyalty Points": Number(customer.loyalty_points ?? 0),
+    Created: formatDate(customer.created_at),
+  }));
 
-      setCustomers(Array.isArray(list) ? list : []);
-    } catch (error) {
-      console.error("Error fetching customers:", error);
-      toast.error(error.response?.data?.message || "Failed to load customers.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Customers");
+
+  XLSX.writeFile(workbook, "customers.xlsx");
+};
+  // const [customers, setCustomers] = useState([]);
+  // const [loading, setLoading] = useState(true);
+
+
+  // const fetchCustomers = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/customers`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data?.token}`,
+  //       },
+  //     });
+
+  //     const payload = response.data;
+  //     let list = payload?.data ?? payload?.customers ?? payload;
+
+  //     if (list && !Array.isArray(list) && Array.isArray(list.data)) {
+  //       list = list.data;
+  //     }
+
+  //     setCustomers(Array.isArray(list) ? list : []);
+  //   } catch (error) {
+  //     console.error("Error fetching customers:", error);
+  //     toast.error(error.response?.data?.message || "Failed to load customers.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchCustomers();
+  // }, []);
 
   useEffect(() => {
-    fetchCustomers();
+    appData?.loadCustomers();
   }, []);
 
   useEffect(() => {
@@ -198,6 +265,7 @@ const Customer = () => {
           <div className="wg-box">
             <div className="flex items-center justify-between gap10 flex-wrap mb-3">
               <div className="wg-filter flex-grow">
+
                 <form
                   className="form-search"
                   onSubmit={(e) => e.preventDefault()}
@@ -217,12 +285,29 @@ const Customer = () => {
                   </div>
                 </form>
               </div>
+              <div className="flex items-center gap10">
+ 
+              <button
+                onClick={exportExcel}
+                title="Export as CSV"
+                className="flex items-center justify-center bg-green-500 text-white w-[40px] h-[40px] rounded-xl hover:bg-green-700 shadow-md"
+              >
+                <FileSpreadsheet size={21} />
+              </button>
+
+              <button
+            onClick={exportPDF}
+                title="Export as PDF"
+                className="flex items-center justify-center bg-red-500 text-white w-[40px] h-[40px] rounded-xl hover:bg-red-700 shadow-md"
+              >
+                <FileDown size={21} />
+              </button>
+</div>
             </div>
 
             <DataTable
               columns={columns}
               data={filteredData}
-              progressPending={loading}
               pagination
               highlightOnHover
               responsive

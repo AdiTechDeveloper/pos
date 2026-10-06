@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useHistory } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
@@ -10,17 +10,20 @@ import { useAppData } from "../context/AppDataContext";
 const CreateEditPurchaseReturn = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { id } = useParams();
-  const history = useHistory();
+  const navigate = useNavigate();
   const appData = useAppData();
   const branches = appData?.branches || [];
-  const [suppliers, setSupplierBill] = useState([]);
-  const [purchaseBills, setPurchaseBills] = useState([]);
-  const [purchaseLines, setPurchaseLines] = useState([]);
+  // const [suppliers, setSupplierBill] = useState([]);
+  // const [purchaseBills, setPurchaseBills] = useState([]);
+  // const [purchaseLines, setPurchaseLines] = useState([]);
+  const suppliers = appData?.suppliers || [];
+  const purchaseBills = appData?.purchaseBills || [];
+  const purchaseLines = appData?.purchaseLines || [];
   const [supplierId, setSupplierId] = useState("");
   const [purchaseBillId, setPurchaseBillId] = useState("");
   const [newPurchaseBill, setNewPurchaseBill] = useState("");
   const [error, setError] = useState("");
-  const [fieldValue, setFieldValue] = useState(() => () => {});
+  const [fieldValue, setFieldValue] = useState(() => () => { });
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_purchase_return_bill = localStorage.getItem(
@@ -52,85 +55,143 @@ const CreateEditPurchaseReturn = () => {
         return_date: incomingReturnBill.return_date || "",
         lines: incomingReturnBill.lines?.length
           ? incomingReturnBill.lines.map((line) => ({
-              purchase_bill_line_id: line.purchase_line_id?.toString() || "",
-              qty: line.qty || "",
-            }))
+            purchase_bill_line_id: line.purchase_line_id?.toString() || "",
+            qty: line.qty || "",
+          }))
           : initialValues.lines,
       });
     }
   }, []);
 
-  const fetchPurchaseBill = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/purchase-bill`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setPurchaseBills(response.data.data);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+  // const fetchPurchaseBill = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/purchase-bill`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setPurchaseBills(response.data.data);
+  //   } catch (error) {
+  //     console.error("Error fetching categories:", error);
+  //   }
+  // };
 
-  const fetchPurchaseLine = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/purchase-line`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setPurchaseLines(response.data.data);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+  // const fetchPurchaseLine = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/purchase-line`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setPurchaseLines(response.data.data);
+  //   } catch (error) {
+  //     console.error("Error fetching categories:", error);
+  //   }
+  // };
 
-  const fetchBranch = () => {
-    appData?.loadBranches();
-  };
+  // const fetchBranch = () => {
+  //   appData?.loadBranches();
+  // };
 
-  const fetchSupplierBill = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/suppliers`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setSupplierBill(response.data.suppliers);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+  // const fetchSupplierBill = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/suppliers`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setSupplierBill(response.data.suppliers);
+  //   } catch (error) {
+  //     console.error("Error fetching categories:", error);
+  //   }
+  // };
 
+  // useEffect(() => {
+  //   fetchBranch();
+  //   fetchSupplierBill();
+  //   fetchPurchaseBill();
+  //   // fetchPurchaseLine();
+  // }, []);
   useEffect(() => {
-    fetchBranch();
-    fetchSupplierBill();
-    fetchPurchaseBill();
-    // fetchPurchaseLine();
+    appData?.loadBranches();
+    appData?.loadSuppliers();
+    appData?.loadPurchaseBills();
+    appData?.loadPurchaseLines();
   }, []);
 
-  const handlePurchaseBillSelection = async (selectedBillId, setFieldValue) => {
+  // const handlePurchaseBillSelection = async (selectedBillId, setFieldValue) => {
+
+  //   try {
+  //     const billDetails = purchaseBills.find(
+  //       (b) => b.id === parseInt(selectedBillId),
+  //     );
+
+  //     if (billDetails) {
+  //       setFieldValue("branch_id", billDetails.branch_id?.toString() || "");
+  //       setFieldValue("supplier_id", billDetails.supplier_id?.toString() || "");
+
+  //       // const response = await axios.get(`${BASE_URL}/api/purchase-line`, {
+  //       //   params: { purchase_bill_id: selectedBillId },
+  //       //   headers: { Authorization: `Bearer ${user_data.token}` },
+  //       // });
+
+  //       // const apiLines = response.data.data;
+
+  //       // const filteredLines = apiLines.filter(
+  //       //   (line) =>
+  //       //     line.purchase_bill_id == selectedBillId ||
+  //       //     line.purchase_id == selectedBillId,
+  //       // );
+
+
+  //       const filteredLines = purchaseLines.filter(
+  //         (line) =>
+  //           line.purchase_bill_id == selectedBillId ||
+  //           line.purchase_id == selectedBillId,
+  //       );
+
+
+
+  //       const formattedLines = filteredLines.map((line) => ({
+  //         purchase_bill_line_id: line.id.toString(),
+  //         qty: line.qty,
+  //         product_id: line.product_id,
+  //       }));
+
+  //       setFieldValue("lines", formattedLines);
+
+
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching bill lines:", error);
+  //     toast.error("Failed to load bill items");
+  //   }
+  // };
+
+  const handlePurchaseBillSelection = async (
+    selectedBillId,
+    setFieldValue
+  ) => {
     try {
       const billDetails = purchaseBills.find(
         (b) => b.id === parseInt(selectedBillId),
       );
 
       if (billDetails) {
-        setFieldValue("branch_id", billDetails.branch_id?.toString() || "");
-        setFieldValue("supplier_id", billDetails.supplier_id?.toString() || "");
+        setFieldValue(
+          "branch_id",
+          billDetails.branch_id?.toString() || ""
+        );
 
-        const response = await axios.get(`${BASE_URL}/api/purchase-line`, {
-          params: { purchase_bill_id: selectedBillId },
-          headers: { Authorization: `Bearer ${user_data.token}` },
-        });
+        setFieldValue(
+          "supplier_id",
+          billDetails.supplier_id?.toString() || ""
+        );
 
-        const apiLines = response.data.data;
-
-        const filteredLines = apiLines.filter(
+        const filteredLines = purchaseLines.filter(
           (line) =>
             line.purchase_bill_id == selectedBillId ||
             line.purchase_id == selectedBillId,
@@ -143,11 +204,9 @@ const CreateEditPurchaseReturn = () => {
         }));
 
         setFieldValue("lines", formattedLines);
-
-        setPurchaseLines(filteredLines);
       }
     } catch (error) {
-      console.error("Error fetching bill lines:", error);
+      console.error("Error loading bill lines:", error);
       toast.error("Failed to load bill items");
     }
   };
@@ -159,7 +218,10 @@ const CreateEditPurchaseReturn = () => {
     supplier_id: Yup.string().required("Supplier is required"),
     return_date: Yup.string()
       .required("Return Date is required")
-      .matches(/^[0-9]$/, "Only Digits allowed"),
+      .matches(
+        /^\d{4}-\d{2}-\d{2}$/,
+        "Return Date must be in YYYY-MM-DD format"
+      ),
 
     lines: Yup.array()
       .min(1, "At least one product is required")
@@ -192,9 +254,13 @@ const CreateEditPurchaseReturn = () => {
 
       toast.success("Purchase Return Saved Successfully!");
 
-      actions.resetForm();
+      appData?.invalidate("purchaseReturns");
+      await appData?.loadPurchaseReturns();
 
-      history.push("/purchase-return-bill");
+      actions.resetForm();
+      navigate("/purchase-return-bill");
+
+      navigate("/purchase-return-bill");
     } catch (error) {
       console.error("API Error:", error.response?.data);
       const errorMessage =

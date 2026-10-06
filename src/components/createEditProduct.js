@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useLocation, useHistory } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
@@ -10,7 +10,7 @@ import { useAppData } from "../context/AppDataContext";
 const CreateEditProduct = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { id } = useParams(); // if id exists -> Edit Mode
-  const history = useHistory();
+  const navigate = useNavigate();
   const appData = useAppData();
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
@@ -196,7 +196,7 @@ const CreateEditProduct = () => {
   //       },
   //     });
   //     toast.success(isEdit ? "Product Updated!" : "Product Created!");
-  //     history.push("/product");
+  //     navigate("/product");
   //   } catch (error) {
   //     console.error("Error saving product:", error);
   //   }
@@ -232,7 +232,7 @@ const CreateEditProduct = () => {
         isEdit ? "Product Updated!" : "Product Created!"
       );
 
-      history.push("/product");
+      navigate("/product");
     } catch (error) {
       console.error("Error saving product:", error);
 

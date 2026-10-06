@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Layout from "./layout";
-import { Link, useHistory } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -8,7 +8,7 @@ import Swal from "sweetalert2";
 import { useAppData } from "../context/AppDataContext";
 const Staff = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-  const history = useHistory();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   //my changes
   const appData = useAppData();
@@ -135,7 +135,7 @@ const Staff = () => {
       await appData?.loadStaff();
 
       toast.success("Staff Deleted");
-      history.push("/staff");
+      navigate("/staff");
     }
   } catch (error) {
     console.error("Error deleting staff:", error);

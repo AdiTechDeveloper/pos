@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useLocation, useHistory } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
@@ -10,7 +10,7 @@ import { useAppData } from "../context/AppDataContext";
 const CreateEditCategory = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { id } = useParams();
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_category = localStorage.getItem("category_detail");
@@ -103,7 +103,7 @@ const CreateEditCategory = () => {
       appData?.invalidate("categories");
       await appData?.loadCategories();
       toast.success(isEdit ? "Category Updated!" : "Category Created!");
-      history.push("/category");
+      navigate("/category");
     } catch (error) {
       console.error("Error saving product:", error);
     }

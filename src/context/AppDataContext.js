@@ -3,7 +3,8 @@ import axios from "axios";
 
 const AppDataContext = createContext(null);
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minute
+// const CACHE_TTL = 5 * 60 * 1000; // 5 minute
+const CACHE_TTL = 8 * 60 * 60 * 1000; // 8 hours
 const expiredProductsCache = {};
 const expiredProductsInFlight = {};
 
@@ -78,6 +79,15 @@ const ENDPOINTS = {
   suppliers: "/api/suppliers",
   staff: "/api/staff",
   products: "/api/all-products",
+  purchaseProducts: "/api/all-products",
+  purchaseBills: "/api/purchase-bill",
+  saleProducts: "/api/products",
+  saleBills: "/api/sales-bills",
+  purchaseLines: "/api/purchase-line",
+  purchaseReturns: "/api/purchase-return",
+  saleReturns: "/api/sales-return",
+  customers: "/api/customers",
+  advancePayments: "/api/reports/advance-payments",
   store: "STORE",
 };
 
@@ -195,6 +205,22 @@ const RESPONSE_PATH = {
 
     return rows;
   },
+
+  purchaseProducts: (res) =>
+    (res.data?.products || []).sort((a, b) =>
+      (a.name || "").localeCompare(b.name || "", undefined, {
+        sensitivity: "base",
+      }),
+    ),
+  purchaseBills: (res) => res.data?.data ?? [],
+  saleProducts: (res) => res.data?.products || [],
+  saleBills: (res) => res.data?.data ?? [],
+  purchaseLines: (res) => res.data?.data ?? [],
+  purchaseReturns: (res) => res.data?.data ?? [],
+  saleReturns: (res) => res.data?.data?.data ?? res.data?.data ?? [],
+  customers: (res) =>
+    res.data?.data ?? res.data?.customers ?? res.data ?? [],
+  advancePayments: (res) => res.data?.data ?? [],
 };
 
 const lastFetched = {};
@@ -236,6 +262,14 @@ function ensureCacheOwner() {
       "suppliers",
       "staff",
       "products",
+      "purchaseBills",
+      "saleProducts",
+      "saleBills",
+      "purchaseProducts",
+      "purchaseBills",
+      "saleReturns",
+      "customers",
+      "advancePayments",
     ].forEach((k) => notifyListeners(k, []));
     notifyListeners("store", null);
     notifyListeners("stockExpiryAlerts", { list: [], total: 0 });
@@ -316,6 +350,15 @@ export function AppDataProvider({ children }) {
     suppliers: [],
     staff: [],
     products: [],
+    purchaseProducts: [],
+    purchaseBills: [],
+    saleProducts: [],
+    saleBills: [],
+    purchaseLines: [],
+    purchaseReturns: [],
+    saleReturns: [],
+    customers: [],
+    advancePayments: [],
     store: null,
   });
   const [alerts, setAlerts] = useState({ list: [], total: 0 });
@@ -342,25 +385,29 @@ export function AppDataProvider({ children }) {
     (opts) => fetchStockExpiryAlerts(opts),
     [],
   );
+  const loadAdvancePayments = useCallback(
+    (opts) => load("advancePayments", opts),
+    [load],
+  );
 
   // const invalidate = useCallback((key) => {
   //   lastFetched[key] = 0;
   // }, []);
   const invalidate = useCallback((key) => {
-  if (key === "expiredProducts") {
-    Object.keys(expiredProductsCache).forEach(
-      (cacheKey) => delete expiredProductsCache[cacheKey]
-    );
+    if (key === "expiredProducts") {
+      Object.keys(expiredProductsCache).forEach(
+        (cacheKey) => delete expiredProductsCache[cacheKey]
+      );
 
-    Object.keys(expiredProductsInFlight).forEach(
-      (cacheKey) => delete expiredProductsInFlight[cacheKey]
-    );
+      Object.keys(expiredProductsInFlight).forEach(
+        (cacheKey) => delete expiredProductsInFlight[cacheKey]
+      );
 
-    return;
-  }
+      return;
+    }
 
-  lastFetched[key] = 0;
-}, []);
+    lastFetched[key] = 0;
+  }, []);
 
   const isManager = getRole() === "manager";
 
@@ -382,7 +429,17 @@ export function AppDataProvider({ children }) {
     loadStaff: () => load("staff"),
     loadProducts: () => load("products"),
     loadExpiredProducts: (filters, opts) =>
-    fetchExpiredProducts(filters, opts),
+      fetchExpiredProducts(filters, opts),
+
+    loadPurchaseBills: (opts) => load("purchaseBills", opts),
+    loadPurchaseProducts: () => load("purchaseProducts"),
+    loadSaleProducts: () => load("saleProducts"),
+    loadSaleBills: (opts) => load("saleBills", opts),
+    loadPurchaseLines: () => load("purchaseLines"),
+    loadPurchaseReturns: (opts) => load("purchaseReturns", opts),
+    loadSaleReturns: (opts) => load("saleReturns", opts),
+    loadCustomers: () => load("customers"),
+    loadAdvancePayments,
     loadStore,
     loadStockExpiryAlerts,
 
