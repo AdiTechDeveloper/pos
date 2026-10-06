@@ -1,16 +1,21 @@
 import React, { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
-import { Link, useHistory } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Layout from "./layout";
+import { useAppData } from "../context/AppDataContext";
 
 const PurchaseReturn = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-  const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
-  const [PurchaseReturn, setPurchaseReturn] = useState([]);
-  const [filteredData, setFilteredData] = useState(products);
+  // const [products, setProducts] = useState([]);
+  // const [PurchaseReturn, setPurchaseReturn] = useState([]);
+  // const [filteredData, setFilteredData] = useState(products);
+  const [filteredData, setFilteredData] = useState([]);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
+
+const appData = useAppData();
+const PurchaseReturn = appData?.purchaseReturns || [];
 
   const handleCreatePurchaseReturns = () => {
     localStorage.setItem("purchase_return_bills_create", null);
@@ -73,22 +78,26 @@ const PurchaseReturn = () => {
     },
   ];
 
-  const fetchPurchaseReturn = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/purchase-return`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setPurchaseReturn(response.data.data);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+  // const fetchPurchaseReturn = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/purchase-return`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setPurchaseReturn(response.data.data);
+  //   } catch (error) {
+  //     console.error("Error fetching categories:", error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchPurchaseReturn();
+  // }, []);
   useEffect(() => {
-    fetchPurchaseReturn();
-  }, []);
+  appData?.loadPurchaseReturns();
+}, []);
 
   useEffect(() => {
     const searchText = search.toLowerCase();

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const Register = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const [userType, setUserType] = useState("");
   const [user, setUser] = useState({});
   const [errors, setErrors] = useState({});
@@ -51,7 +51,7 @@ const Register = () => {
       });
       if (response) {
         toast.success("Store registered successfully!");
-        history.push("/login");
+        navigate("/login");
 
         setUser({ name: "", address: "", phone: "" });
       }

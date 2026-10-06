@@ -77,6 +77,9 @@ const Home = () => {
       null
       : null;
 
+   // Admin's own store - confirmed field from PurchaseReport.js (user_data.user.store_id)
+  const adminStoreId = role === "admin" ? user_data?.user?.store_id ?? null : null;
+
   const isBackOffice = role === "admin" || role === "manager";
   const nothingEnabled =
     isBackOffice &&
@@ -134,6 +137,7 @@ const Home = () => {
               date_range: "today",
               bill_status: "all",
               branch_id: managerBranchId,
+               store_id: adminStoreId,
             }),
           ]);
           jobs.push([
@@ -142,13 +146,15 @@ const Home = () => {
               date_range: "this_month",
               bill_status: "all",
               branch_id: managerBranchId,
+               store_id: adminStoreId,
             }),
           ]);
         }
         if (canPurchase) {
           jobs.push([
             "purchaseToday",
-            get("/api/reports/purchase-report", { date_range: "today" }),
+            get("/api/reports/purchase-report", { date_range: "today" ,  store_id: adminStoreId ,}),
+            
           ]);
         }
         if (canCustomers) {
@@ -289,19 +295,30 @@ const Home = () => {
           {isBackOffice && canSales && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               <PaymentBreakdown
-                report={todaySales}
-                loading={loading || !todaySales}
+                role={role}
+                user={user_data}
+                 storeId={adminStoreId}
+                
               />
-              <MonthlySalesChart user={user_data} branchId={managerBranchId} />
+                        <MonthlySalesChart
+                role={role}
+                user={user_data}
+                filters={{ branch_id: managerBranchId || "ALL" }}
+                storeId={adminStoreId}
+              />
+             
+            
             </div>
           )}
 
           {/* Top / Low selling products — this month ki sales report se */}
-          {isBackOffice && canSales && (
+                   {isBackOffice && canSales && (
             <div className="mb-8">
               <TopLowSellingProducts
-                products={monthProducts}
-                loading={loading}
+                role={role}
+                user={user_data}
+                filters={{ branch_id: managerBranchId || "ALL" }}
+                storeId={adminStoreId}
               />
             </div>
           )}
@@ -328,14 +345,20 @@ const Home = () => {
               )}
               {showRightCol && (
                 <div className="flex flex-col gap-6">
-                  {canBills && (
-                    <RecentSalesFeed bills={recentInvoices} loading={loading} />
+                 {canBills && (
+                    <RecentSalesFeed
+                      role={role}
+                      user={user_data}
+                      filters={{ branch_id: managerBranchId || "ALL" }}
+                      storeId={adminStoreId}
+                    />
                   )}
                   {canCustomers && (
                     <CustomerDuesWidget
                       role={role}
                       user={user_data}
                       filters={{ branch_id: managerBranchId || "ALL" }}
+                             storeId={adminStoreId}
                     />
                   )}
                   {/* {canSales && (

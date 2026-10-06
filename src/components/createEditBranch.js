@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useLocation, useHistory } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
@@ -11,7 +11,7 @@ const CreateEditBranch = () => {
   const appData = useAppData();
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { id } = useParams(); 
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_branch = localStorage.getItem("branch_detail");
@@ -87,7 +87,7 @@ const CreateEditBranch = () => {
        appData?.invalidate("branches");
     await appData?.loadBranches();
       toast.success(isEdit ? "Branch Updated!" : "Branch Created!");
-      history.push("/branch");
+      navigate("/branch");
     } catch (error) {
       console.error("Error saving product:", error);
     }

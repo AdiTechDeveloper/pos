@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import DonutChart from "./DonutChart";
- import { Wallet } from "lucide-react";
+import { Wallet } from "lucide-react";
+import { useAppData } from "../context/AppDataContext";
 
+const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const rupee = (v) => `₹${Number(v || 0).toFixed(2)}`;
 
@@ -14,7 +17,83 @@ const PALETTE = [
   "#06B6D4",
 ];
 
-const PaymentBreakdown = ({ report, loading }) => {
+const PaymentBreakdown = ({ role, user, filters = {}, storeId }) => {
+  const appData = useAppData();
+  const branches = appData?.branches || [];
+  const [selectedBranch, setSelectedBranch] = useState(filters.branch_id || "");
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch branches list (admin only — needed to populate the dropdown)
+  useEffect(() => {
+    if (role === "admin") {
+      appData?.loadBranches();
+    }
+  }, [role]);
+
+  // Fetch today's collection, scoped to whichever branch is selected
+  useEffect(() => {
+    const fetchPayment = async () => {
+      setLoading(true);
+
+      const params = {
+        date_range: "today",
+        bill_status: "all",
+      };
+
+      if (role === "admin" && selectedBranch && selectedBranch !== "ALL") {
+        params.branch_id = selectedBranch;
+      } else if (
+        role === "manager" &&
+        filters.branch_id &&
+        filters.branch_id !== "ALL"
+      ) {
+        params.branch_id = filters.branch_id;
+      }
+      if (storeId) {
+        params.store_id = storeId;
+      }
+
+      try {
+        const res = await axios.get(`${BASE_URL}/api/reports/sales-report`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${user?.token}`,
+          },
+          params,
+        });
+        setReport(res.data);
+      } catch (err) {
+        setReport(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPayment();
+  }, [role, selectedBranch, filters.branch_id, storeId, user?.token]);
+
+  const handleChange = (e) => {
+    setSelectedBranch(e.target.value);
+  };
+
+  const branchSelector = role === "admin" && (
+    <select
+      name="branch_id"
+      value={selectedBranch}
+      onChange={handleChange}
+      className="border border-gray-300 rounded-lg px-3 py-1.5 text-xl focus:ring-2 focus:ring-blue-400 outline-none"
+      style={{ width: 200 }}
+    >
+      <option value="">All Branches</option>
+      {branches.map((b) => (
+        <option key={b.id} value={b.id}>
+          {b.name}
+        </option>
+      ))}
+    </select>
+  );
+
   if (loading) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
@@ -33,9 +112,13 @@ const PaymentBreakdown = ({ report, loading }) => {
   if (rows.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
-        <h3 className="text-3xl font-bold text-gray-800 mb-2 " >
-          Today's Collection
-        </h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <Wallet size={20} className="text-blue-600" />
+            Today's Collection
+          </h3>
+          {branchSelector}
+        </div>
         <p className="text-xl text-gray-400">No bills created today.</p>
       </div>
     );
@@ -44,16 +127,17 @@ const PaymentBreakdown = ({ report, loading }) => {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-gray-800  flex items-center gap-2 ">
-           <Wallet size={20} className="text-blue-600" />
+        <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <Wallet size={20} className="text-blue-600" />
           Today's Collection
-          </h3>
-        <span className="text-2xl text-gray-400">
-          Collected:{" "}
-          <span className="text-2xl text-gray-700">
-            {rupee(grandTotal)}
+        </h3>
+        <div className="flex items-center gap-3">
+          <span className="text-2xl text-gray-400">
+            Collected:{" "}
+            <span className="text-2xl text-gray-700">{rupee(grandTotal)}</span>
           </span>
-        </span>
+          {branchSelector}
+        </div>
       </div>
 
       <DonutChart
@@ -74,9 +158,7 @@ const PaymentBreakdown = ({ report, loading }) => {
           <span className="text-xl font-medium text-amber-700">
             Pending (not yet collected)
           </span>
-          <span className="text-xl font-bold text-amber-700">
-            {rupee(due)}
-          </span>
+          <span className="text-xl font-bold text-amber-700">{rupee(due)}</span>
         </div>
       )}
     </div>

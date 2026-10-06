@@ -4,6 +4,10 @@ import Layout from "./layout";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { toast } from "react-toastify";
+import { useAppData } from "../context/AppDataContext";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const getMethodBadge = (method) => {
   if (method === "cash")
@@ -230,26 +234,41 @@ const CustomerEditModal = ({ customer, onClose, onSave }) => {
 };
 
 const AdvancePayment = () => {
+    const appData = useAppData();
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const [groupedData, setGroupedData] = useState([]);
+  const advancePayments = appData?.advancePayments || [];
   const [search, setSearch] = useState("");
   const [editingCustomer, setEditingCustomer] = useState(null);
-  const fetchData = async () => {
-    try {
-      const res = await axios.get(`${BASE_URL}/api/reports/advance-payments`, {
-        headers: {
-          Authorization: `Bearer ${user_data?.token}`,
-        },
-      });
+  // const fetchData = async () => {
 
-      if (res.data.status) {
-        groupCustomerData(res.data.data || []);
-      }
-    } catch (err) {
-      console.error("Failed to load advance payment report", err);
-    }
-  };
+  //   try {
+  //     const res = await axios.get(`${BASE_URL}/api/reports/advance-payments`, {
+  //       headers: {
+  //         Authorization: `Bearer ${user_data?.token}`,
+  //       },
+  //     });
+
+  //     if (res.data.status) {
+  //       groupCustomerData(res.data.data || []);
+  //     }
+  //   } catch (err) {
+  //     console.error("Failed to load advance payment report", err);
+  //   }
+  // };
+  const fetchData = async () => {
+  await appData?.loadAdvancePayments();
+};
+
+
+useEffect(() => {
+  fetchData();
+}, []);
+
+useEffect(() => {
+  groupCustomerData(advancePayments);
+}, [advancePayments]);;
 
   const groupCustomerData = (payments) => {
     const groupedMap = {};
@@ -271,9 +290,9 @@ const AdvancePayment = () => {
     setGroupedData(Object.values(groupedMap));
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // useEffect(() => {
+  //   fetchData();
+  // }, []);
 
   const handleCustomerUpdate = async (customerData) => {
     try {
@@ -299,8 +318,11 @@ const AdvancePayment = () => {
             : group,
         ),
       );
-      setEditingCustomer(null);
-      toast.success("Customer updated successfully");
+      appData?.invalidate("advancePayments");
+await appData?.loadAdvancePayments();
+
+setEditingCustomer(null);
+toast.success("Customer updated successfully");
     } catch (error) {
       console.error("Failed to update customer", error);
       toast.error(error.response?.data?.message || "Failed to update customer");
@@ -414,6 +436,7 @@ const AdvancePayment = () => {
     },
   ];
 
+
   return (
     <Layout>
       <div className="main-content-inner">
@@ -495,6 +518,7 @@ const AdvancePayment = () => {
             </div>
 
             <div className="table-responsive">
+            
               <DataTable
                 columns={columns}
                 data={filteredGroups}

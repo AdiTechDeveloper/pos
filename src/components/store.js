@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
-import { Link, useHistory } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Layout from "./layout";
 import Swal from "sweetalert2";
@@ -8,14 +8,14 @@ import { toast } from "react-toastify";
 
 const Store = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-  const history = useHistory();
+  const navigate = useNavigate();
   const [stores, setStores] = useState([]);
   const [search, setSearch] = useState("");
   const [filteredData, setFilteredData] = useState(stores);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
   const handleEdit = (row) => {
-    history.push(`/create-store/${row.id}`, {
+    navigate(`/create-store/${row.id}`, {
       storeData: row,
     });
   };
@@ -115,7 +115,7 @@ const Store = () => {
         <div className="list-icon-function">
           {/* <div
             className="item eye"
-            onClick={() => history.push(`/stores/view/${row.id}`)}
+            onClick={() => navigate(`/stores/view/${row.id}`)}
           >
             <i className="icon-eye"></i>
           </div> */}

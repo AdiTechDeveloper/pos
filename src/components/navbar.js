@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link, useHistory, useLocation } from "react-router-dom";
+import React, { useState, useEffect , useRef} from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAppData } from "../context/AppDataContext";
 import { hasFeature } from "../utils/hasFeature";
@@ -29,7 +29,7 @@ import { FaFacebookF, FaLinkedinIn, FaInstagram } from "react-icons/fa";
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const Navbar = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const location = useLocation();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -107,6 +107,12 @@ const Navbar = () => {
       path: "/reports/stock-expiry-report",
       feature: "stock_alerts",
     },
+    {
+      name: "Supplier Tracking",
+      path: "/supplier-tracking",
+      feature: "reports_suplier",
+    },
+
   ];
 
   const visibleReportLinks = reportLinks.filter(
@@ -200,7 +206,7 @@ const Navbar = () => {
 
     sessionStorage.clear();
 
-    history.push("/");
+    navigate("/");
   };
 
   const sharedMenuItems = [
@@ -364,7 +370,8 @@ const Navbar = () => {
       <Link
         ref={isActive(item.path) ? activeMenuRef : null}
         to={item.path}
-        className={`app-sidebar-link ${isActive(item.path) ? "active" : ""}`}
+        className={`app-sidebar-link ${isActive(item.path) ? "active" : ""
+          }`}
         onClick={closeSidebar}
         title={isCollapsed ? item.name : undefined}
       >
@@ -849,9 +856,8 @@ const Navbar = () => {
 
       {/* SIDEBAR */}
       <aside
-        className={`app-sidebar ${isOpen ? "open" : ""} ${
-          isCollapsed ? "collapsed" : ""
-        }`}
+        className={`app-sidebar ${isOpen ? "open" : ""} ${isCollapsed ? "collapsed" : ""
+          }`}
       >
         {/* HEADER */}
         <div className="app-sidebar-header">
@@ -869,9 +875,8 @@ const Navbar = () => {
             <li className="app-sidebar-menu-item">
               <Link
                 to="/dashboard"
-                className={`app-sidebar-link ${
-                  isActive("/dashboard") ? "active" : ""
-                }`}
+                className={`app-sidebar-link ${isActive("/dashboard") ? "active" : ""
+                  }`}
                 onClick={closeSidebar}
                 title={isCollapsed ? "Dashboard" : undefined}
               >
@@ -920,9 +925,8 @@ const Navbar = () => {
                         <Link
                           ref={isActive(item.path) ? activeMenuRef : null}
                           to={item.path}
-                          className={`app-sidebar-submenu-link ${
-                            isActive(item.path) ? "active" : ""
-                          }`}
+                          className={`app-sidebar-submenu-link ${isActive(item.path) ? "active" : ""
+                            }`}
                           onClick={closeSidebar}
                         >
                           {item.name}

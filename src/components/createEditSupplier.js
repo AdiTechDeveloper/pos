@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useHistory } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
@@ -11,7 +11,7 @@ const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const CreateEditSupplier = () => {
   const { id } = useParams(); // if id exists -> Edit Mode
-  const history = useHistory();
+  const navigate = useNavigate();
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_supplier = localStorage.getItem("supplier_detail");
   const incomingSupplier = store_supplier && JSON.parse(store_supplier);
@@ -97,7 +97,7 @@ const CreateEditSupplier = () => {
   //       },
   //     });
   //     toast.success(isEdit ? "Suppliers Updated!" : "Suppliers Created!");
-  //     history.push("/suppliers");
+  //     navigate("/suppliers");
   //   } catch (error) {
   //     console.error("Error saving product:", error);
   //   }
@@ -133,7 +133,7 @@ const CreateEditSupplier = () => {
       isEdit ? "Suppliers Updated!" : "Suppliers Created!"
     );
 
-    history.push("/suppliers");
+    navigate("/suppliers");
   } catch (error) {
     console.error("Error saving supplier:", error);
 

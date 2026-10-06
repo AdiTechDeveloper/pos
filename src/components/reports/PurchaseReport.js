@@ -694,7 +694,7 @@ const SupplierTable = ({ data }) => {
       sortable: true,
       wrap: true,
       cell: (row) => (
-        <span className="text-base text-gray-800 font-semibold">
+        <span className="text-xl text-gray-800 font-semibold">
           {row.supplier_name}
         </span>
       ),
@@ -705,7 +705,7 @@ const SupplierTable = ({ data }) => {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="text-base text-gray-700">
+        <span className="text-xl text-gray-700">
           {row.bill_count}
         </span>
       ),
@@ -716,7 +716,7 @@ const SupplierTable = ({ data }) => {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="text-base text-gray-700">
+        <span className="text-xl text-gray-700">
           ₹{row.total_amount}
         </span>
       ),
@@ -727,7 +727,7 @@ const SupplierTable = ({ data }) => {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="text-base text-gray-700">
+        <span className="text-xl text-gray-700">
           ₹{row.total_tax}
         </span>
       ),
@@ -738,7 +738,7 @@ const SupplierTable = ({ data }) => {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="text-base text-gray-700">
+        <span className="text-xl text-gray-700">
           {row.share_pct}%
         </span>
       ),

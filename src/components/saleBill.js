@@ -10,7 +10,8 @@ import ReceiptModal from "./ReceiptModal";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import PaymentEditModal from "../components/PaymentEditModal";
-import { Check, RotateCcw, FileSpreadsheet, FileDown , Printer ,  Wallet} from "lucide-react";
+import { Check, RotateCcw, FileSpreadsheet, FileDown, Printer, Wallet } from "lucide-react";
+import { useAppData } from "../context/AppDataContext";
 
 
 
@@ -28,7 +29,7 @@ const SaleBill = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
-  const [saleBills, setSaleBills] = useState([]);
+  // const [saleBills, setSaleBills] = useState([]);
   const [showReceipt, setShowReceipt] = useState(false);
   const [printData, setPrintData] = useState(null);
   const receiptRef = useRef();
@@ -37,34 +38,41 @@ const SaleBill = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
 
+  const appData = useAppData();
+  const saleBills = appData?.saleBills || [];
+
   const openPaymentModal = (bill) => {
     setSelectedBill(bill);
     setShowPaymentModal(true);
   };
 
   // Fetch Sale Bills from API
-  const fetchSaleBill = async (dateParam = selectedDate) => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/sales-bills`, {
-        params: {
-          selected_date: dateParam || undefined, // Sends YYYY-MM-DD to API
-        },
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data?.token}`,
-        },
-      });
-      setSaleBills(response.data.data || []);
-    } catch (error) {
-      console.error("Error fetching sales bills:", error);
-    }
-  };
+  // const fetchSaleBill = async (dateParam = selectedDate) => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/sales-bills`, {
+  //       params: {
+  //         selected_date: dateParam || undefined, // Sends YYYY-MM-DD to API
+  //       },
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data?.token}`,
+  //       },
+  //     });
+  //     setSaleBills(response.data.data || []);
+  //   } catch (error) {
+  //     console.error("Error fetching sales bills:", error);
+  //   }
+  // };
 
-  // Re-fetch API data whenever selectedDate changes
+  // // Re-fetch API data whenever selectedDate changes
+  // useEffect(() => {
+  //   fetchSaleBill(selectedDate);
+  // }, [selectedDate]);
   useEffect(() => {
-    fetchSaleBill(selectedDate);
+    appData?.loadSaleBills({
+      selected_date: selectedDate || undefined,
+    });
   }, [selectedDate]);
-
   // Handle Client-Side Search AND Date Filtering
   useEffect(() => {
     const searchText = search.toLowerCase().trim();
@@ -159,7 +167,7 @@ const SaleBill = () => {
 
   const columns = [
     // { name: "Id", selector: (row) => row.id, sortable: true, width: "70px" },
-       {
+    {
       name: "Action",
       button: true,
       cell: (row) => (
@@ -172,7 +180,7 @@ const SaleBill = () => {
         </button>
       ),
     },
-        {
+    {
       name: "Payment",
       button: true,
       cell: (row) => (
@@ -659,9 +667,14 @@ const SaleBill = () => {
         <PaymentEditModal
           bill={selectedBill}
           onClose={() => setShowPaymentModal(false)}
-          onSuccess={() => {
+          onSuccess={async () => {
             setShowPaymentModal(false);
-            fetchSaleBill();
+
+            appData?.invalidate("saleBills");
+
+            await appData?.loadSaleBills({
+              selected_date: selectedDate || undefined,
+            });
           }}
         />
       )}

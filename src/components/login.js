@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
 import ForgotPasswordModal from "./ForgotPassword";
@@ -11,7 +11,7 @@ const POS_LOGIN_IMAGE = "../../assets/images/avatar/pos.png";
 const VAKARO_LOGO = "../../assets/images/avatar/logo.png";
 
 const Login = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -78,9 +78,9 @@ const Login = () => {
         );
 
         if (user_detail.must_change_credentials) {
-          history.push("/change-password");
+          navigate("/change-password");
         } else {
-          history.push("/dashboard");
+          navigate("/dashboard");
         }
       }
     } catch (err) {

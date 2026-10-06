@@ -1,6 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { Link } from "react-router-dom";
 import { ReceiptIndianRupee } from "lucide-react";
+import { useAppData } from "../context/AppDataContext";
+
+const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const rupee = (v) => `₹${Number(v || 0).toLocaleString("en-IN")}`;
 
@@ -13,7 +17,66 @@ const STATUS_STYLES = {
   unpaid: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
-const RecentSalesFeed = ({ bills, loading  }) => {
+const RecentSalesFeed = ({ role, user, filters = {}, storeId }) => {
+  const appData = useAppData();
+  const branches = appData?.branches || [];
+  const [selectedBranch, setSelectedBranch] = useState(filters.branch_id || "");
+  const [bills, setBills] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch branches list (admin only — needed to populate the dropdown)
+  useEffect(() => {
+    if (role === "admin") {
+      appData?.loadBranches();
+    }
+  }, [role]);
+
+  // Fetch recent invoices, scoped to whichever branch is selected
+  useEffect(() => {
+    const fetchRecent = async () => {
+      setLoading(true);
+
+      const params = {
+        date_range: "this_month",
+        bill_status: "all",
+      };
+
+      if (role === "admin" && selectedBranch && selectedBranch !== "ALL") {
+        params.branch_id = selectedBranch;
+      } else if (
+        role === "manager" &&
+        filters.branch_id &&
+        filters.branch_id !== "ALL"
+      ) {
+        params.branch_id = filters.branch_id;
+      }
+      if (storeId) {
+        params.store_id = storeId;
+      }
+
+      try {
+        const res = await axios.get(`${BASE_URL}/api/reports/sales-report`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${user?.token}`,
+          },
+          params,
+        });
+        setBills(res.data?.invoices?.rows || []);
+      } catch (err) {
+        setBills([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecent();
+  }, [role, selectedBranch, filters.branch_id, storeId, user?.token]);
+
+  const handleChange = (e) => {
+    setSelectedBranch(e.target.value);
+  };
+
   if (loading) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
@@ -38,12 +101,29 @@ const RecentSalesFeed = ({ bills, loading  }) => {
           <ReceiptIndianRupee size={20} className="text-blue-600" />
           Recent Sales
         </h3>
-        <Link
-          to="/sale-bill"
-          className="text-2xl font-semibold text-blue-600 hover:text-blue-700"
-        >
-          View All
-        </Link>
+        <div className="flex items-center gap-3">
+          {role === "admin" && (
+            <select
+              name="branch_id"
+              value={selectedBranch}
+              onChange={handleChange}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-xl focus:ring-2 focus:ring-blue-400 outline-none"
+            >
+              <option value="">All Branches</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          )}
+          <Link
+            to="/sale-bills"
+            className="text-xl font-semibold text-blue-600 hover:text-blue-700"
+          >
+            View All
+          </Link>
+        </div>
       </div>
 
       {recent.length === 0 ? (
@@ -52,6 +132,7 @@ const RecentSalesFeed = ({ bills, loading  }) => {
         </p>
       ) : (
         <div className="divide-y divide-gray-50">
+     
           {recent.map((row) => (
             <div key={row.id} className="flex items-center justify-between py-2.5">
               <div className="min-w-0">
@@ -59,11 +140,11 @@ const RecentSalesFeed = ({ bills, loading  }) => {
                   {getCustomerName(row)}
                 </div>
                 <div className="text-xl text-gray-400">
+                  
                   #{row.bill_no} ·{" "}
-                  {new Date(row.created_at).toLocaleTimeString("en-IN", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                      {console.log(row.created_at)}
+                    {new Date(row.created_at).toLocaleString("en-IN")
+                    }
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-3">

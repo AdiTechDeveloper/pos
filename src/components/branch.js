@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Layout from "./layout";
-import { Link, useHistory } from "react-router-dom";
+// import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -9,7 +10,8 @@ import { useAppData } from "../context/AppDataContext";
 const Branch = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-  const history = useHistory();
+  // const navigate = useNavigate();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const appData = useAppData();
   const branches = appData?.branches || [];
@@ -47,7 +49,9 @@ const Branch = () => {
         appData?.invalidate("branches");
         await appData?.loadBranches();
 
-        history.push("/branch");
+        // navigate("/branch");
+        navigate("/branch");
+
       }
     } catch (error) {
       console.error("Delete branch error:", error);
