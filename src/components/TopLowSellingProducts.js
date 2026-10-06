@@ -1,5 +1,9 @@
-import React from "react";
-import { ArrowUpNarrowWide , ArrowDownNarrowWide } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { ArrowUpNarrowWide, ArrowDownNarrowWide } from "lucide-react";
+import { useAppData } from "../context/AppDataContext";
+
+const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const rupee = (v) => `₹${Number(v || 0).toLocaleString("en-IN")}`;
 
@@ -26,7 +30,83 @@ const ProductRow = ({ p, maxQty, barColor }) => (
   </div>
 );
 
-const TopLowSellingProducts = ({ products, loading }) => {
+const TopLowSellingProducts = ({ role, user, filters = {}, storeId }) => {
+  const appData = useAppData();
+  const branches = appData?.branches || [];
+  const [selectedBranch, setSelectedBranch] = useState(filters.branch_id || "");
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch branches list (admin only — needed to populate the dropdown)
+  useEffect(() => {
+    if (role === "admin") {
+      appData?.loadBranches();
+    }
+  }, [role]);
+
+  // Fetch this month's product sales, scoped to whichever branch is selected
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+
+      const params = {
+        date_range: "this_month",
+        bill_status: "all",
+      };
+
+      if (role === "admin" && selectedBranch && selectedBranch !== "ALL") {
+        params.branch_id = selectedBranch;
+      } else if (
+        role === "manager" &&
+        filters.branch_id &&
+        filters.branch_id !== "ALL"
+      ) {
+        params.branch_id = filters.branch_id;
+      }
+      if (storeId) {
+        params.store_id = storeId;
+      }
+
+      try {
+        const res = await axios.get(`${BASE_URL}/api/reports/sales-report`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${user?.token}`,
+          },
+          params,
+        });
+        setProducts(res.data?.products?.rows || []);
+      } catch (err) {
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [role, selectedBranch, filters.branch_id, storeId, user?.token]);
+
+  const handleChange = (e) => {
+    setSelectedBranch(e.target.value);
+  };
+
+  const branchSelector = role === "admin" && (
+    <select
+      name="branch_id"
+      value={selectedBranch}
+      onChange={handleChange}
+      className="border border-gray-300 rounded-lg px-3 py-1.5 text-xl focus:ring-2 focus:ring-blue-400 outline-none" style=
+      {{ width:200 }}
+    >
+      <option value="">All Branches</option>
+      {branches.map((b) => (
+        <option key={b.id} value={b.id}>
+          {b.name}
+        </option>
+      ))}
+    </select>
+  );
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -45,10 +125,14 @@ const TopLowSellingProducts = ({ products, loading }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-2xl font-bold text-gray-800 mb-1 flex items-center gap-2">
-          <ArrowUpNarrowWide size={20} className="text-green-600" />
-          Top Selling Products
-        </h3>
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <ArrowUpNarrowWide size={20} className="text-green-600" />
+            Top Selling Products
+          </h3>
+          {branchSelector}
+        </div>
+
         <p className="text-xl text-gray-400 mb-3">This month, by quantity sold</p>
         {top5.length === 0 ? (
           <p className="text-xl text-gray-400 py-6 text-center">No sales this month.</p>
@@ -62,10 +146,13 @@ const TopLowSellingProducts = ({ products, loading }) => {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+         <div className="flex items-center justify-between mb-1">
         <h3 className="text-2xl font-bold text-gray-800 mb-1 flex items-center gap-2">
-           <ArrowDownNarrowWide size={20} className="text-red-600" />
+          <ArrowDownNarrowWide size={20} className="text-red-600" />
           Low Selling Products
         </h3>
+        {branchSelector}
+        </div>
         <p className="text-xl text-gray-400 mb-3">
           This month, by quantity sold — consider a promotion
         </p>

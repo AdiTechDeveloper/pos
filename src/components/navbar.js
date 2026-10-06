@@ -1,4 +1,4 @@
-import React, { useState, useEffect , useRef} from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useHistory, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAppData } from "../context/AppDataContext";
@@ -37,7 +37,7 @@ const Navbar = () => {
   const [reportsOpen, setReportsOpen] = useState(false);
 
 
-const activeMenuRef = useRef(null);
+  const activeMenuRef = useRef(null);
 
   const user_detail = JSON.parse(localStorage.getItem("user_detail") || "null");
 
@@ -108,6 +108,12 @@ const activeMenuRef = useRef(null);
       path: "/reports/stock-expiry-report",
       feature: "stock_alerts",
     },
+    {
+      name: "Supplier Tracking",
+      path: "/supplier-tracking",
+      feature: "reports_suplier",
+    },
+
   ];
 
   const visibleReportLinks = reportLinks.filter(
@@ -141,17 +147,17 @@ const activeMenuRef = useRef(null);
   }, [isReportPath]);
 
   useEffect(() => {
-  const timer = setTimeout(() => {
-    if (activeMenuRef.current) {
-      activeMenuRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
-  }, 100);
+    const timer = setTimeout(() => {
+      if (activeMenuRef.current) {
+        activeMenuRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 100);
 
-  return () => clearTimeout(timer);
-}, [location.pathname, reportsOpen]);
+    return () => clearTimeout(timer);
+  }, [location.pathname, reportsOpen]);
 
   /* =========================================================
       LOGO
@@ -350,16 +356,15 @@ const activeMenuRef = useRef(null);
   ========================================================= */
 
   const renderMenuItem = (item) => (
-  <li key={`${item.path}-${item.name}`} className="app-sidebar-menu-item">
-    <Link
-      ref={isActive(item.path) ? activeMenuRef : null}
-      to={item.path}
-      className={`app-sidebar-link ${
-        isActive(item.path) ? "active" : ""
-      }`}
-      onClick={closeSidebar}
-      title={isCollapsed ? item.name : undefined}
-    >
+    <li key={`${item.path}-${item.name}`} className="app-sidebar-menu-item">
+      <Link
+        ref={isActive(item.path) ? activeMenuRef : null}
+        to={item.path}
+        className={`app-sidebar-link ${isActive(item.path) ? "active" : ""
+          }`}
+        onClick={closeSidebar}
+        title={isCollapsed ? item.name : undefined}
+      >
         <span className="app-sidebar-link-icon">{item.icon}</span>
         <span className="app-sidebar-link-text">{item.name}</span>
       </Link>
@@ -841,9 +846,8 @@ const activeMenuRef = useRef(null);
 
       {/* SIDEBAR */}
       <aside
-        className={`app-sidebar ${isOpen ? "open" : ""} ${
-          isCollapsed ? "collapsed" : ""
-        }`}
+        className={`app-sidebar ${isOpen ? "open" : ""} ${isCollapsed ? "collapsed" : ""
+          }`}
       >
         {/* HEADER */}
         <div className="app-sidebar-header">
@@ -861,9 +865,8 @@ const activeMenuRef = useRef(null);
             <li className="app-sidebar-menu-item">
               <Link
                 to="/dashboard"
-                className={`app-sidebar-link ${
-                  isActive("/dashboard") ? "active" : ""
-                }`}
+                className={`app-sidebar-link ${isActive("/dashboard") ? "active" : ""
+                  }`}
                 onClick={closeSidebar}
                 title={isCollapsed ? "Dashboard" : undefined}
               >
@@ -910,11 +913,10 @@ const activeMenuRef = useRef(null);
                     {visibleReportLinks.map((item) => (
                       <li key={item.path} className="app-sidebar-submenu-item">
                         <Link
-                        ref={isActive(item.path) ? activeMenuRef : null}
+                          ref={isActive(item.path) ? activeMenuRef : null}
                           to={item.path}
-                          className={`app-sidebar-submenu-link ${
-                            isActive(item.path) ? "active" : ""
-                          }`}
+                          className={`app-sidebar-submenu-link ${isActive(item.path) ? "active" : ""
+                            }`}
                           onClick={closeSidebar}
                         >
                           {item.name}

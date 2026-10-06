@@ -14,7 +14,7 @@ const getCustomerName = (row) =>
 const getCustomerMobile = (row) =>
   row?.customer?.mobile || row?.customer_mobile || "-";
 
-const CustomerDuesWidget = ({ role, user, filters = {} }) => {
+const CustomerDuesWidget = ({ role, user, filters = {} , storeId }) => {
   const appData = useAppData();
   const branches = appData?.branches || [];
   const [selectedBranch, setSelectedBranch] = useState(filters.branch_id || "");
@@ -36,6 +36,10 @@ const CustomerDuesWidget = ({ role, user, filters = {} }) => {
       const params = {};
       if (role === "admin" && selectedBranch && selectedBranch !== "ALL") {
         params.branch_id = selectedBranch;
+      }
+
+        if (storeId) {
+        params.store_id = storeId;
       }
 
       try {

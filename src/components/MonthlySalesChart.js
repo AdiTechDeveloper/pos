@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-
+import { useAppData } from "../context/AppDataContext";
 import { CalendarDays } from "lucide-react";
 
 const MONTH_LABELS = [
@@ -30,15 +30,39 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-const cacheKey = (year, monthIdx, branchId) =>
-  `monthlySales:${year}-${monthIdx}:${branchId || "all"}`;
+const cacheKey = (year, monthIdx, branchId, storeId) =>
+  `monthlySales:${year}-${monthIdx}:${branchId || "all"}:${storeId || "all"}`;
 
-const MonthlySalesChart = ({ user, branchId }) => {
+// TODO (backend): replace this whole file with a single call like
+// GET /api/reports/sales-report?date_range=this_year&group_by=month
+// which would return all 12 monthly totals in ONE request. Until then,
+// this only fetches elapsed months and caches completed ones so repeat
+// dashboard loads only ever make 1 network call (for the current month).
+const MonthlySalesChart = ({ role, user, filters = {}, storeId }) => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+  const appData = useAppData();
+  const branches = appData?.branches || [];
+  const [selectedBranch, setSelectedBranch] = useState(filters.branch_id || "");
   const [data, setData] = useState(
     MONTH_LABELS.map((m) => ({ month: m, sales: 0 })),
   );
   const [loading, setLoading] = useState(true);
+
+  // Which branch actually applies: admin picks one from the dropdown,
+  // manager is locked to their own branch from filters
+  const effectiveBranchId =
+    role === "admin" && selectedBranch && selectedBranch !== "ALL"
+      ? selectedBranch
+      : role === "manager" && filters.branch_id && filters.branch_id !== "ALL"
+        ? filters.branch_id
+        : null;
+
+  // Fetch branches list (admin only — needed to populate the dropdown)
+  useEffect(() => {
+    if (role === "admin") {
+      appData?.loadBranches();
+    }
+  }, [role]);
 
   useEffect(() => {
     const load = async () => {
@@ -53,7 +77,7 @@ const MonthlySalesChart = ({ user, branchId }) => {
           // Never fetch future months - they're just 0
           if (i > currentMonthIdx) return 0;
 
-          const key = cacheKey(year, i, branchId);
+          const key = cacheKey(year, i, effectiveBranchId, storeId);
           const isCompletedMonth = i < currentMonthIdx;
 
           if (isCompletedMonth) {
@@ -76,7 +100,8 @@ const MonthlySalesChart = ({ user, branchId }) => {
                 date_from: from,
                 date_to: to,
                 bill_status: "all",
-                branch_id: branchId || null,
+                branch_id: effectiveBranchId || null,
+                store_id: storeId || null,
               },
             });
             const value = Number(res.data?.kpis?.gross_sales) || 0;
@@ -97,7 +122,11 @@ const MonthlySalesChart = ({ user, branchId }) => {
     };
 
     if (user?.token) load();
-  }, [user, branchId, BASE_URL]);
+  }, [user, effectiveBranchId, storeId, BASE_URL]);
+
+  const handleChange = (e) => {
+    setSelectedBranch(e.target.value);
+  };
 
   const maxSales = Math.max(...data.map((d) => d.sales), 0);
 
@@ -109,10 +138,28 @@ const MonthlySalesChart = ({ user, branchId }) => {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <CalendarDays  size={20} className="text-blue-600"/>
-        Monthly Sales ({new Date().getFullYear()})
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <CalendarDays size={20} className="text-blue-600" />
+          Monthly Sales ({new Date().getFullYear()})
+        </h3>
+        {role === "admin" && (
+          <select
+            name="branch_id"
+            value={selectedBranch}
+            onChange={handleChange}
+            className="border border-gray-300 rounded-lg px-3 py-1.5 text-xl focus:ring-2 focus:ring-blue-400 outline-none"
+            style={{ width:200 }}
+          >
+            <option value="">All Branches</option>
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
       <ResponsiveContainer width="100%" height={280}>
         <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F3F6" />

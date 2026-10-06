@@ -59,6 +59,7 @@ import DiscardProducts from "./components/DiscartProducts";
 import AdvancePayment from "./components/AdvancePayment";
 import ChangePassword from "./components/ChangePassword";
 import customer from "./components/customer";
+import SupplierTracking from "./components/reports/SuplierTracking";
 
 const isAuthenticated = () => {
   const storedData = localStorage.getItem("user_detail");
@@ -235,6 +236,7 @@ function App() {
             requiredFeature="advance_payments"
           />
 
+          
           <ProtectedRoute
             exact
             path="/suppliers"
@@ -374,6 +376,19 @@ function App() {
             path="/reports/shift-report"
             component={ShiftHistory}
             requiredFeature="reports_shift"
+          />
+
+             <ProtectedRoute
+            path="/reports/shift-report"
+            component={ShiftHistory}
+            requiredFeature="reports_shift"
+          />
+
+           <ProtectedRoute
+            exact
+            path="/supplier-tracking"
+           component={SupplierTracking}
+            requiredFeature="reports_suplier"
           />
 
           <ProtectedRoute
