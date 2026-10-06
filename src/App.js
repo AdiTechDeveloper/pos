@@ -59,6 +59,7 @@ import DiscardProducts from "./components/DiscartProducts";
 import AdvancePayment from "./components/AdvancePayment";
 import ChangePassword from "./components/ChangePassword";
 import customer from "./components/customer";
+import AiInsights from "./components/AiInsights";
 
 const isAuthenticated = () => {
   const storedData = localStorage.getItem("user_detail");
@@ -98,6 +99,12 @@ function App() {
           />
           <ProtectedRoute exact path="/pos" component={POS} />
           <ProtectedRoute exact path="/dashboard" component={Home} />
+
+          <ProtectedRoute
+            path="/ai-insights"
+            component={AiInsights}
+            requiredFeature="ai_insights"
+          />
 
           <ProtectedRoute
             exact

@@ -1,4 +1,4 @@
-import React, { useState, useEffect , useRef} from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useHistory, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAppData } from "../context/AppDataContext";
@@ -6,7 +6,7 @@ import { hasFeature } from "../utils/hasFeature";
 
 import { PiKeyReturnBold, PiWallet } from "react-icons/pi";
 
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 
 import {
   IoHomeOutline,
@@ -36,8 +36,7 @@ const Navbar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
 
-
-const activeMenuRef = useRef(null);
+  const activeMenuRef = useRef(null);
 
   const user_detail = JSON.parse(localStorage.getItem("user_detail") || "null");
 
@@ -141,17 +140,17 @@ const activeMenuRef = useRef(null);
   }, [isReportPath]);
 
   useEffect(() => {
-  const timer = setTimeout(() => {
-    if (activeMenuRef.current) {
-      activeMenuRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
-  }, 100);
+    const timer = setTimeout(() => {
+      if (activeMenuRef.current) {
+        activeMenuRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 100);
 
-  return () => clearTimeout(timer);
-}, [location.pathname, reportsOpen]);
+    return () => clearTimeout(timer);
+  }, [location.pathname, reportsOpen]);
 
   /* =========================================================
       LOGO
@@ -302,6 +301,11 @@ const activeMenuRef = useRef(null);
 
   const adminMenus = [
     {
+      name: "Know You Bussiness",
+      path: "/ai-insights",
+      feature: "ai_insights",
+    },
+    {
       name: "Branches",
       path: "/branch",
       icon: <i className="icon-briefcase" />,
@@ -318,6 +322,12 @@ const activeMenuRef = useRef(null);
   ];
 
   const managerMenus = [
+    {
+      name: "Know You Bussiness",
+      path: "/ai-insights",
+      icon: <Sparkles className="w-10 h-10" />,
+      feature: "ai_insights",
+    },
     {
       name: "Cashiers",
       path: "/staff",
@@ -350,16 +360,14 @@ const activeMenuRef = useRef(null);
   ========================================================= */
 
   const renderMenuItem = (item) => (
-  <li key={`${item.path}-${item.name}`} className="app-sidebar-menu-item">
-    <Link
-      ref={isActive(item.path) ? activeMenuRef : null}
-      to={item.path}
-      className={`app-sidebar-link ${
-        isActive(item.path) ? "active" : ""
-      }`}
-      onClick={closeSidebar}
-      title={isCollapsed ? item.name : undefined}
-    >
+    <li key={`${item.path}-${item.name}`} className="app-sidebar-menu-item">
+      <Link
+        ref={isActive(item.path) ? activeMenuRef : null}
+        to={item.path}
+        className={`app-sidebar-link ${isActive(item.path) ? "active" : ""}`}
+        onClick={closeSidebar}
+        title={isCollapsed ? item.name : undefined}
+      >
         <span className="app-sidebar-link-icon">{item.icon}</span>
         <span className="app-sidebar-link-text">{item.name}</span>
       </Link>
@@ -910,7 +918,7 @@ const activeMenuRef = useRef(null);
                     {visibleReportLinks.map((item) => (
                       <li key={item.path} className="app-sidebar-submenu-item">
                         <Link
-                        ref={isActive(item.path) ? activeMenuRef : null}
+                          ref={isActive(item.path) ? activeMenuRef : null}
                           to={item.path}
                           className={`app-sidebar-submenu-link ${
                             isActive(item.path) ? "active" : ""
