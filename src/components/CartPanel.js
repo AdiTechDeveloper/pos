@@ -2,7 +2,8 @@ import React, { useState, useRef } from "react";
 import { createSalesBill, paySalesBill } from "../utils/api";
 import PaymentModal from "./PaymentModal";
 import { toast } from "react-toastify";
-import { Link, useHistory } from "react-router-dom";
+// import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import ReceiptModal from "./ReceiptModal";
 import EndShiftModal from "./EndShiftModal";
@@ -26,7 +27,8 @@ export default function CartPanel({
   onPriceUpdated,
   branchId,
 }) {
-  const history = useHistory();
+  // const navigate = useNavigate();
+  const navigate = useNavigate();
   const [showPayment, setShowPayment] = useState(false);
   const todayFormatted = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(todayFormatted);
@@ -290,7 +292,7 @@ export default function CartPanel({
     localStorage.removeItem("user_detail", "cart_detail", "cart_detail");
     sessionStorage.clear();
 
-    history.push("/cashier_login");
+    navigate("/cashier_login");
   };
 
   const handleBreak = async () => {
@@ -314,7 +316,8 @@ export default function CartPanel({
 
     localStorage.removeItem("user_detail", "cart_detail", "cart_detail");
     sessionStorage.clear();
-    history.push("/cashier_login");
+    // navigate("/cashier_login");
+    navigate("/cashier_login");
   };
 
   const handleEndShiftClick = (e) => {
@@ -726,7 +729,8 @@ export default function CartPanel({
             </button>
 
             <button
-              onClick={() => history.push("/customer-dues")}
+              // onClick={() => navigate("/customer-dues")}
+              onClick={() => navigate("/customer-dues")}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl mt-6"
             >
               Customer Dues

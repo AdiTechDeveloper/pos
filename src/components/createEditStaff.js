@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useLocation, useHistory } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
@@ -10,7 +10,7 @@ import { useAppData } from "../context/AppDataContext";
 const CreateEditStaff = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { id } = useParams(); // if id exists -> Edit Mode
-  const history = useHistory();
+  const navigate = useNavigate();
   const [featureCatalog, setFeatureCatalog] = useState({});
   const featureKeys = Object.keys(featureCatalog);
 
@@ -124,7 +124,7 @@ const CreateEditStaff = () => {
         isEdit ? "Staff updated successfully!" : "Staff created successfully!",
       );
       actions.resetForm();
-      history.push("/staff");
+      navigate("/staff");
     } catch (error) {
       if (error.response && error.response.data) {
         const apiMessage =

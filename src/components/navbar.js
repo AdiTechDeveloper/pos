@@ -1,5 +1,5 @@
 import React, { useState, useEffect , useRef} from "react";
-import { Link, useHistory, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAppData } from "../context/AppDataContext";
 import { hasFeature } from "../utils/hasFeature";
@@ -29,7 +29,7 @@ import { FaFacebookF, FaLinkedinIn, FaInstagram } from "react-icons/fa";
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const Navbar = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const location = useLocation();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -201,7 +201,7 @@ const activeMenuRef = useRef(null);
 
     sessionStorage.clear();
 
-    history.push("/");
+    navigate("/");
   };
 
   const sharedMenuItems = [

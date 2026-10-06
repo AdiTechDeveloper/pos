@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import useStockExpiryAlerts from "../hooks/useStockExpiryAlerts";
 import ExpiryAlertBadge from "./ExpiryAlertBadge";
 import ExpiryAlertModal from "./ExpiryAlertModal";
@@ -12,7 +12,7 @@ const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 const Header = () => {
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const [showMenu, setShowMenu] = useState(false);
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const { alerts, total: alertTotal, loading } = useStockExpiryAlerts();
   const [openExpiryModal, setOpenExpiryModal] = useState(false);
@@ -125,7 +125,7 @@ const Header = () => {
 
     localStorage.removeItem("user_detail", "cart_detail", "cart_detail");
     sessionStorage.clear();
-    history.push("/");
+    navigate("/");
   };
 
   return (

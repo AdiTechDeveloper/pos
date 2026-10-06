@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
-import { Link, useHistory } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Layout from "./layout";
 import { toast } from "react-toastify";
 import { useAppData } from "../context/AppDataContext";
 const SupplierBill = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-  const history = useHistory();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   // const [supplierBill, setSupplierBill] = useState([]);
   const appData = useAppData();
@@ -37,7 +37,7 @@ const supplierBill = appData?.suppliers || [];
   //   });
   //   if (response) {
   //     toast.success("Supplier deleted successfully!");
-  //     history.push("/suppliers");
+  //     navigate("/suppliers");
   //     fetchSupplierBill();
   //   }
   // };
@@ -56,7 +56,7 @@ const supplierBill = appData?.suppliers || [];
       await appData?.loadSuppliers();
 
       toast.success("Supplier deleted successfully!");
-      history.push("/suppliers");
+      navigate("/suppliers");
     }
   } catch (error) {
     console.error("Error deleting supplier:", error);

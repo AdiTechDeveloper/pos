@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Layout from "./layout";
 import { toast } from "react-toastify";
+import { useAppData } from "../context/AppDataContext";
 
 const PurchaseBill = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-  const history = useHistory();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [purchaseBill, setPurchaseBill] = useState([]);
+  // const [purchaseBill, setPurchaseBill] = useState([]);
+  const appData = useAppData();
+const purchaseBill = appData?.purchaseBills || [];
   const [filteredData, setFilteredData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 10;
@@ -42,7 +45,8 @@ const PurchaseBill = () => {
       );
       if (response) {
         toast.success("Purchase Bill Deleted!");
-        fetchPurchaseBill();
+       appData?.invalidate("purchaseBills");
+await appData?.loadPurchaseBills();
       }
     } catch (error) {
       toast.error(
@@ -219,23 +223,27 @@ const PurchaseBill = () => {
     },
   ];
 
-  const fetchPurchaseBill = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/purchase-bill`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        },
-      });
-      setPurchaseBill(response.data.data);
-    } catch (error) {
-      console.error("Error fetching purchase bills:", error);
-    }
-  };
+  // const fetchPurchaseBill = async () => {
+  //   try {
+  //     const response = await axios.get(`${BASE_URL}/api/purchase-bill`, {
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${user_data.token}`,
+  //       },
+  //     });
+  //     setPurchaseBill(response.data.data);
+  //   } catch (error) {
+  //     console.error("Error fetching purchase bills:", error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchPurchaseBill();
+  // }, []);
 
   useEffect(() => {
-    fetchPurchaseBill();
-  }, []);
+  appData?.loadPurchaseBills();
+}, []);
 
   useEffect(() => {
     const searchText = search.toLowerCase();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Layout from "./layout";
-import { Link, useHistory } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -15,7 +15,7 @@ const Category = () => {
   const categories = appData?.categories || [];
   const [filteredData, setFilteredData] = useState(categories);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
-  const history = useHistory();
+  const navigate = useNavigate();
 
   // const fetchCategory = async () => {
   //   try {
@@ -46,7 +46,7 @@ const Category = () => {
   //     },
   //   });
   //   if (response) {
-  //     history.push("/category");
+  //     navigate("/category");
   //     toast.success("Category Deleted");
   //     fetchCategory();
   //   }
@@ -66,7 +66,7 @@ const Category = () => {
       await appData?.loadCategories();
 
       toast.success("Category Deleted");
-      history.push("/category");
+      navigate("/category");
     }
   } catch (error) {
     console.error("Error deleting category:", error);

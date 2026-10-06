@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const ChangePassword = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     current_password: "",
     password: "",
@@ -54,7 +54,7 @@ const ChangePassword = () => {
 
       toast.success("Password changed successfully!");
       const role = userDetail?.user?.role;
-      history.push(role === "cashier" ? "/pos" : "/dashboard");
+      navigate(role === "cashier" ? "/pos" : "/dashboard");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to change password");
     } finally {

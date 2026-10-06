@@ -14,6 +14,7 @@ import {
   ScanBarcode,
 } from "lucide-react";
 import Layout from "./layout";
+import { useAppData } from "../context/AppDataContext";
 
 const REFUND_METHODS = [
   { value: "cash", label: "Cash" },
@@ -59,8 +60,8 @@ const getLineTotalAmount = (line) => {
   const gst =
     Number(line.total_gst ?? line.gst_amount ?? 0) ||
     Number(line.cgst_amount ?? 0) +
-      Number(line.sgst_amount ?? 0) +
-      Number(line.igst_amount ?? 0);
+    Number(line.sgst_amount ?? 0) +
+    Number(line.igst_amount ?? 0);
   if (taxable > 0) return taxable + gst;
 
   const qty = Number(line.qty) || 1;
@@ -134,6 +135,7 @@ export default function ProcessSalesReturn() {
   const [refundType, setRefundType] = useState("cash");
   const [notes, setNotes] = useState("");
   const [selectedLines, setSelectedLines] = useState({});
+  const appData = useAppData();
 
   const returnSummary = useMemo(() => {
     if (!billData) return { itemCount: 0, refundTotal: 0, selectedCount: 0 };
@@ -290,8 +292,19 @@ export default function ProcessSalesReturn() {
         },
       );
 
+      // if (response.data.status) {
+      //   toast.success("Sales return processed successfully.");
+      //   setBillData(null);
+      //   setBillNoInput("");
+      //   setNotes("");
+      //   setSelectedLines({});
+      // }
       if (response.data.status) {
         toast.success("Sales return processed successfully.");
+
+        appData?.invalidate("saleReturns");
+        await appData?.loadSaleReturns();
+
         setBillData(null);
         setBillNoInput("");
         setNotes("");
@@ -548,11 +561,10 @@ export default function ProcessSalesReturn() {
                 <div className="sr-bill-row">
                   <span>Payment</span>
                   <span
-                    className={`sr-status ${
-                      billData.payment_status?.toLowerCase() === "paid"
+                    className={`sr-status ${billData.payment_status?.toLowerCase() === "paid"
                         ? "is-paid"
                         : "is-pending"
-                    }`}
+                      }`}
                   >
                     {billData.payment_status}
                   </span>
@@ -572,9 +584,8 @@ export default function ProcessSalesReturn() {
                     <button
                       key={method.value}
                       type="button"
-                      className={`sr-method-btn ${
-                        refundType === method.value ? "is-active" : ""
-                      }`}
+                      className={`sr-method-btn ${refundType === method.value ? "is-active" : ""
+                        }`}
                       onClick={() => setRefundType(method.value)}
                     >
                       {refundType === method.value && (
@@ -641,560 +652,692 @@ export default function ProcessSalesReturn() {
           </div>
         )}
 
-        <style>{`
-          .sr-shell {
-            min-height: calc(100vh - 74px);
-            display: flex;
-            flex-direction: column;
-            background: #e8edf3;
-            padding: 18px 20px 20px;
-          }
-
-          .sr-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 14px;
-            flex-shrink: 0;
-          }
-
-          .sr-title {
-            margin: 0 0 2px;
-            font-size: 26px;
-            font-weight: 700;
-            color: #0f172a;
-          }
-
-          .sr-subtitle {
-            margin: 0;
-            font-size: 14px;
-            color: #64748b;
-          }
-
-          .sr-search-bar {
-            display: flex;
-            align-items: stretch;
-            gap: 10px;
-            background: #fff;
-            border-radius: 14px;
-            padding: 10px 12px;
-            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
-            margin-bottom: 14px;
-            flex-shrink: 0;
-          }
-
-          .sr-search-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 48px;
-            color: var(--Main, #2275fc);
-            flex-shrink: 0;
-          }
-
-          .sr-search-form {
-            flex: 1;
-            display: flex;
-            gap: 10px;
-            align-items: stretch;
-          }
-
-          .sr-search-form input {
-            flex: 1;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 0 16px;
-            font-size: 16px;
-            font-weight: 500;
-            background: #f8fafc;
-            transition: border-color 0.2s, box-shadow 0.2s;
-          }
-
-          .sr-search-form input:focus {
-            outline: none;
-            border-color: var(--Main, #2275fc);
-            background: #fff;
-            box-shadow: 0 0 0 3px rgba(34, 117, 252, 0.12);
-          }
-
-          .sr-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s;
-          }
-
-          .sr-btn-primary {
-            min-width: 140px;
-            padding: 0 20px;
-            background: var(--Main, #2275fc);
-            color: #fff;
-          }
-
-          .sr-btn-primary:hover:not(:disabled) {
-            filter: brightness(1.05);
-          }
-
-          .sr-btn-primary:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-          }
-
-          .sr-btn-ghost {
-            padding: 0 16px;
-            background: #f1f5f9;
-            color: #475569;
-            border: 1px solid #e2e8f0;
-          }
-
-          .sr-btn-ghost:hover {
-            background: #e2e8f0;
-          }
-
-          .sr-empty-state {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
-            text-align: center;
-            padding: 60px 24px;
-            color: #64748b;
-          }
-
-          .sr-empty-icon {
-            width: 96px;
-            height: 96px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #eff6ff, #f0fdf4);
-            color: var(--Main, #2275fc);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-          }
-
-          .sr-empty-state h4 {
-            margin: 0 0 8px;
-            font-size: 22px;
-            color: #0f172a;
-          }
-
-          .sr-empty-state p {
-            margin: 0;
-            font-size: 15px;
-            max-width: 400px;
-          }
-
-          .sr-workspace {
-            flex: 1;
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 360px;
-            gap: 14px;
-            min-height: 0;
-          }
-
-          .sr-items-panel,
-          .sr-checkout-panel {
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-            overflow: hidden;
-          }
-
-          .sr-panel-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px;
-            border-bottom: 1px solid #eef2f6;
-            flex-shrink: 0;
-          }
-
-          .sr-panel-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 20px;
-            font-weight: 700;
-            color: #0f172a;
-          }
-
-          .sr-panel-meta {
-            font-size: 13px;
-            color: #64748b;
-            font-weight: 600;
-          }
-
-          .sr-table-scroll {
-            flex: 1;
-            overflow: auto;
-          }
-
-          .sr-table {
-            width: 95%;
-            margin: 10px auto;
-            border-collapse: collapse;
-          }
-
-          .sr-table thead th {
-            position: sticky;
-            top: 0;
-            z-index: 1;
-            background: #f8fafc;
-            padding: 12px 14px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: #64748b;
-            white-space: nowrap;
-          }
-
-          .sr-table tbody td {
-            padding: 14px;
-            vertical-align: middle;
-            font-size: 14px;
-            color: #334155;
-          }
-
-          .sr-table tbody tr.is-selected {
-            background: #eff6ff;
-          }
-
-          .sr-table tbody tr.is-disabled {
-            opacity: 0.5;
-          }
-
-          .sr-table tbody tr:hover:not(.is-disabled) {
-            background: #f8fafc;
-          }
-
-          .sr-table tbody tr.is-selected:hover {
-            background: #dbeafe;
-          }
-
-          .sr-table .col-check { width: 48px; text-align: center; }
-          .sr-table .col-product { min-width: 200px; }
-          .sr-table .col-num { width: 100px; text-align: right; font-weight: 600; }
-          .sr-table .col-num.is-danger { color: #dc2626; }
-          .sr-table .col-num.is-refund { color: #059669; font-weight: 700; }
-          .sr-table .col-qty { width: 100px; text-align: center; }
-          .sr-table .col-condition { width: 140px; text-align: center; }
-
-          .sr-table .col-product strong {
-            display: block;
-            font-size: 15px;
-            color: #0f172a;
-            margin-bottom: 2px;
-          }
-
-          .sr-table .col-product span {
-            font-size: 12px;
-            color: #94a3b8;
-          }
-
-          .sr-checkbox {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--Main, #2275fc);
-            cursor: pointer;
-          }
-
-          .sr-qty-input {
-            width: 72px;
-            height: 38px;
-            text-align: center;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 700;
-          }
-
-          .sr-qty-input:focus {
-            outline: none;
-            border-color: var(--Main, #2275fc);
-          }
-
-          .sr-qty-input:disabled {
-            background: #f1f5f9;
-            color: #94a3b8;
-          }
-
-          .sr-select {
-            width: 100%;
-            height: 38px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 0 8px;
-            font-size: 13px;
-            background: #fff;
-          }
-
-          .sr-select:disabled {
-            background: #f1f5f9;
-            color: #94a3b8;
-          }
-
-          .sr-checkout-panel {
-            padding: 18px;
-            gap: 16px;
-            overflow-y: auto;
-          }
-
-          .sr-bill-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-          }
-
-          .sr-bill-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            font-size: 13px;
-          }
-
-          .sr-bill-row span:first-child {
-            color: #64748b;
-            font-weight: 600;
-          }
-
-          .sr-bill-row strong {
-            color: #0f172a;
-            font-size: 14px;
-            text-align: right;
-          }
-
-          .sr-bill-row strong.is-green {
-            color: #059669;
-            font-size: 18px;
-          }
-
-          .sr-status {
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-          }
-
-          .sr-status.is-paid {
-            background: #dcfce7;
-            color: #15803d;
-          }
-
-          .sr-status.is-pending {
-            background: #fef3c7;
-            color: #b45309;
-          }
-
-          .sr-field label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: #64748b;
-          }
-
-          .sr-method-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-          }
-
-          .sr-method-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            padding: 10px 8px;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            background: #fff;
-            color: #475569;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s;
-          }
-
-          .sr-method-btn.is-active {
-            border-color: var(--Main, #2275fc);
-            background: #eff6ff;
-            color: #1d4ed8;
-          }
-
-          .sr-field textarea {
-            width: 100%;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 10px 12px;
-            font-size: 14px;
-            resize: vertical;
-            font-family: inherit;
-          }
-
-          .sr-field textarea:focus {
-            outline: none;
-            border-color: var(--Main, #2275fc);
-            box-shadow: 0 0 0 3px rgba(34, 117, 252, 0.1);
-          }
-
-          .sr-refund-box {
-            background: linear-gradient(135deg,rgb(68, 158, 16) 0%,rgb(105, 197, 82) 100%);
-            border-radius: 14px;
-            padding: 18px;
-            color: #fff;
-            margin-top: auto;
-          }
-
-          .sr-refund-label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            color: #fff;
-            margin-bottom: 4px;
-          }
-
-          .sr-refund-amount {
-            font-size: 36px;
-            font-weight: 800;
-            line-height: 1.1;
-            color: #fff;
-            margin-bottom: 4px;
-          }
-
-          .sr-refund-meta {
-            font-size: 12px;
-            color: #fff;
-          }
-
-          .sr-submit-btn {
-            width: 100%;
-            height: 54px;
-            border: none;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: #fff;
-            font-size: 16px;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            cursor: pointer;
-            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.35);
-            transition: transform 0.15s, box-shadow 0.15s;
-          }
-
-          .sr-submit-btn:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
-          }
-
-          .sr-submit-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-          }
-
-          .sr-hint {
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            font-size: 12px;
-            color: #b45309;
-          }
-
-          .sr-spinner {
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: srSpin 0.7s linear infinite;
-          }
-
-          .sr-spinner.light {
-            border-color: rgba(255, 255, 255, 0.3);
-            border-top-color: #fff;
-          }
-
-          .sr-btn-primary .sr-spinner {
-            border-color: rgba(255, 255, 255, 0.3);
-            border-top-color: #fff;
-          }
-
-          @keyframes srSpin {
-            to { transform: rotate(360deg); }
-          }
-
-          @media (max-width: 1100px) {
-            .sr-workspace {
-              grid-template-columns: 1fr;
-            }
-
-            .sr-checkout-panel {
-              order: -1;
-            }
-
-            .sr-refund-box {
-              margin-top: 0;
-            }
-          }
-
-          @media (max-width: 768px) {
-            .sr-shell {
-              margin: -15px;
-              padding: 12px;
-            }
-
-            .sr-header {
-              flex-direction: column;
-            }
-
-            .sr-search-bar {
-              flex-wrap: wrap;
-            }
-
-            .sr-search-form {
-              flex-direction: column;
-              width: 100%;
-            }
-
-            .sr-btn-primary {
-              width: 100%;
-              height: 48px;
-            }
-          }
+        <style>{`.sr-shell {
+  min-height: calc(100vh - 74px);
+  display: flex;
+  flex-direction: column;
+  background: #e8edf3;
+  padding: 18px 20px 20px;
+}
+
+.sr-items-panel,
+.sr-checkout-panel {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sr-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+.sr-title {
+  margin: 0 0 2px;
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.sr-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.sr-search-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+.sr-search-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  color: var(--Main, #2275fc);
+  flex-shrink: 0;
+}
+
+.sr-search-form {
+  flex: 1;
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.sr-search-form input {
+  flex: 1;
+  min-width: 0;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0 16px;
+  font-size: 16px;
+  font-weight: 500;
+  background: #f8fafc;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sr-search-form input:focus {
+  outline: none;
+  border-color: var(--Main, #2275fc);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(34, 117, 252, 0.12);
+}
+
+.sr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.sr-btn-primary {
+  min-width: 140px;
+  padding: 0 20px;
+  background: var(--Main, #2275fc);
+  color: #fff;
+}
+
+.sr-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.sr-btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.sr-btn-ghost {
+  padding: 0 16px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.sr-btn-ghost:hover {
+  background: #e2e8f0;
+}
+
+.sr-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+  text-align: center;
+  padding: 60px 24px;
+  color: #64748b;
+}
+
+.sr-empty-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+  color: var(--Main, #2275fc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.sr-empty-state h4 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  color: #0f172a;
+}
+
+.sr-empty-state p {
+  margin: 0;
+  font-size: 15px;
+  max-width: 400px;
+}
+
+.sr-workspace {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 14px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sr-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eef2f6;
+  flex-shrink: 0;
+}
+
+.sr-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.sr-panel-meta {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.sr-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.sr-table {
+  width: 95%;
+  margin: 10px auto;
+  border-collapse: collapse;
+}
+
+.sr-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8fafc;
+  padding: 12px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.sr-table tbody td {
+  padding: 14px;
+  vertical-align: middle;
+  font-size: 14px;
+  color: #334155;
+}
+
+.sr-table tbody tr.is-selected {
+  background: #eff6ff;
+}
+
+.sr-table tbody tr.is-disabled {
+  opacity: 0.5;
+}
+
+.sr-table tbody tr:hover:not(.is-disabled) {
+  background: #f8fafc;
+}
+
+.sr-table tbody tr.is-selected:hover {
+  background: #dbeafe;
+}
+
+.sr-table .col-check {
+  width: 48px;
+  text-align: center;
+}
+
+.sr-table .col-product {
+  min-width: 200px;
+}
+
+.sr-table .col-num {
+  width: 100px;
+  text-align: right;
+  font-weight: 600;
+}
+
+.sr-table .col-num.is-danger {
+  color: #dc2626;
+}
+
+.sr-table .col-num.is-refund {
+  color: #059669;
+  font-weight: 700;
+}
+
+.sr-table .col-qty {
+  width: 100px;
+  text-align: center;
+}
+
+.sr-table .col-condition {
+  width: 140px;
+  text-align: center;
+}
+
+.sr-table .col-product strong {
+  display: block;
+  font-size: 15px;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.sr-table .col-product span {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.sr-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--Main, #2275fc);
+  cursor: pointer;
+}
+
+.sr-qty-input {
+  width: 72px;
+  height: 38px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.sr-qty-input:focus {
+  outline: none;
+  border-color: var(--Main, #2275fc);
+}
+
+.sr-qty-input:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.sr-select {
+  width: 100%;
+  height: 38px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0 8px;
+  font-size: 13px;
+  background: #fff;
+}
+
+.sr-select:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+
+/* Checkout */
+
+.sr-checkout-panel {
+  padding: 18px;
+  gap: 16px;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: 100%;
+}
+
+.sr-bill-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sr-bill-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.sr-bill-row span:first-child {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.sr-bill-row strong {
+  color: #0f172a;
+  font-size: 14px;
+  text-align: right;
+}
+
+.sr-bill-row strong.is-green {
+  color: #059669;
+  font-size: 18px;
+}
+
+.sr-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sr-status.is-paid {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.sr-status.is-pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.sr-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.sr-method-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.sr-method-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sr-method-btn.is-active {
+  border-color: var(--Main, #2275fc);
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.sr-field textarea {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.sr-field textarea:focus {
+  outline: none;
+  border-color: var(--Main, #2275fc);
+  box-shadow: 0 0 0 3px rgba(34, 117, 252, 0.1);
+}
+
+.sr-refund-box {
+  background: linear-gradient(
+    135deg,
+    rgb(68, 158, 16) 0%,
+    rgb(105, 197, 82) 100%
+  );
+  border-radius: 14px;
+  padding: 18px;
+  color: #fff;
+  margin-top: auto;
+}
+
+.sr-refund-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.sr-refund-amount {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.sr-refund-meta {
+  font-size: 12px;
+  color: #fff;
+}
+
+.sr-submit-btn {
+  width: 100%;
+  height: 54px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.sr-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
+}
+
+.sr-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.sr-hint {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #b45309;
+}
+
+.sr-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: srSpin 0.7s linear infinite;
+}
+
+.sr-spinner.light {
+  border-color: rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+}
+
+.sr-btn-primary .sr-spinner {
+  border-color: rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+}
+
+@keyframes srSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* =========================
+   Tablet
+   ========================= */
+
+@media (max-width: 1100px) {
+  .sr-workspace {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .sr-checkout-panel {
+    order: -1;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .sr-refund-box {
+    margin-top: 0;
+  }
+}
+
+
+/* =========================
+   Mobile
+   ========================= */
+
+@media (max-width: 768px) {
+  .sr-shell {
+    margin: -15px;
+    padding: 12px;
+    min-height: auto;
+  }
+
+  .sr-header {
+    flex-direction: column;
+  }
+
+  .sr-search-bar {
+    flex-wrap: wrap;
+  }
+
+  .sr-search-form {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .sr-btn-primary {
+    width: 100%;
+    height: 48px;
+  }
+
+  .sr-workspace {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .sr-checkout-panel {
+    order: -1;
+    padding: 14px;
+    gap: 14px;
+    min-height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .sr-items-panel {
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .sr-table-scroll {
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  .sr-table {
+    width: 100%;
+    min-width: 700px;
+  }
+
+  .sr-refund-box {
+    margin-top: 0;
+  }
+
+  .sr-submit-btn {
+    height: 52px;
+  }
+}
+
+
+/* =========================
+   Small Mobile
+   ========================= */
+
+@media (max-width: 480px) {
+  .sr-shell {
+    padding: 10px;
+  }
+
+  .sr-checkout-panel {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .sr-method-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sr-bill-row {
+    gap: 8px;
+  }
+
+  .sr-refund-box {
+    padding: 14px;
+  }
+
+  .sr-refund-amount {
+    font-size: 30px;
+  }
+
+  .sr-submit-btn {
+    height: 50px;
+    font-size: 15px;
+  }
+}
         `}</style>
       </div>
     </Layout>
