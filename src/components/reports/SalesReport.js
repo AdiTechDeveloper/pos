@@ -8,7 +8,6 @@ import { useAppData } from "../../context/AppDataContext";
 import { RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
 import DataTable from "react-data-table-component";
 
-
 const getInvoiceCustomerName = (row) =>
   row.customer?.name ||
   row.customer_name ||
@@ -463,16 +462,12 @@ export default function SalesReport() {
               >
               Sales Report
               </h3>
-
             </div>
           </div>
-
         </div>
 
-        {/* FILTERS */}
         <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6 mt-6 mb-6">
             <div className="flex justify-between items-end gap-4 w-full">
-
           <div className="grid grid-cols-1 lg:grid-cols-8 gap-6 mb-6">
             <div>
               <label className="text-2xl font-semibold text-gray-900">
@@ -592,7 +587,6 @@ export default function SalesReport() {
           </div>
         </div>
 
-        {/* KPI CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-8 gap-6 mt-6 mb-10">
           <Card
             title="Gross Sales"
@@ -625,9 +619,6 @@ export default function SalesReport() {
           <SmallCard label="IGST" value={k.tax_breakdown.igst} />
         </div>
 
-      
-
-        {/* TABS */}
              <div className="flex flex-wrap justify-center gap-3 mt-10 mb-6 border-b border-gray-200 text-center">
         {["invoices", "products", "payments", "summary", "overrides"].map(
           (tab) => (
@@ -646,7 +637,6 @@ export default function SalesReport() {
         )}
       </div>
 
-        {/* TAB CONTENT */}
         {activeTab === "invoices" && <InvoiceTable data={report.invoices} />}
         {activeTab === "products" && <ProductTable data={report.products} />}
         {activeTab === "payments" && (
@@ -817,7 +807,6 @@ const InvoiceTable = ({ data }) => {
         }}
       />
 
-      {/* Totals strip - kept separate since DataTable has no <tfoot> */}
       <div className="grid grid-cols-8 gap-2 bg-gray-100 border-t-2 border-gray-200 px-4 py-4 font-bold text-gray-900 text-2xl">
         <div className="col-span-1">Total</div>
         <div className="text-right">
@@ -842,9 +831,6 @@ const InvoiceTable = ({ data }) => {
     </div>
   );
 };
-
-
-
 const ProductTable = ({ data }) => {
   const columns = [
     {
@@ -946,10 +932,6 @@ const PaymentTable = ({ data }) => (
     </div>
   </div>
 );
-
-// SAFE PAYMENT SUMMARY TABLE COMPONENT
-
-
 const PaymentSummaryTable = ({ summary }) => {
   const summaryEntries = Object.entries(summary || {});
 
@@ -1064,7 +1046,6 @@ const PaymentSummaryTable = ({ summary }) => {
     </div>
   );
 };
-
 
 const OverrideTable = ({ data }) => {
   const columns = [

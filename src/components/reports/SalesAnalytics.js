@@ -8,8 +8,6 @@ import { Link } from "react-router-dom";
 import { useAppData } from "../../context/AppDataContext";
 import { RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
 
-
-
 const SalesAnalytics = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
@@ -265,12 +263,9 @@ const SalesAnalytics = () => {
             </ul>
           </div>
 
-          {/* SUMMARY CARDS */}
           <SummaryCards summary={summary} />
 
-          {/* FILTER PANEL */}
           <div className="wg-box mt-6  mb-6 shadow-lg rounded-2xl p-6 border border-slate-200 w-full">
-            {/* <h5 className="text-2xl font-extrabold text-slate-800">Filters</h5> */}
 
             <div className="flex justify-between items-end gap-4 w-full">
               <div className="flex items-end gap-4">
@@ -346,9 +341,6 @@ const SalesAnalytics = () => {
             </div>
           </div>
 
-
-
-          {/* DATE-WISE TABLE */}
           <div className="wg-box shadow-xl rounded-2xl overflow-hidden border border-slate-200 mt-8">
             <DataTable
               title={
@@ -365,10 +357,8 @@ const SalesAnalytics = () => {
             />
           </div>
 
-          {/* HOURLY SALES */}
           {Object.keys(hourly).length > 0 && <HeatmapCard hourly={hourly} />}
 
-          {/* TOP / SLOW PRODUCTS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 mb-8">
             <ListCard title="Top Products" items={topProducts} type="top" />
             <ListCard
@@ -378,16 +368,12 @@ const SalesAnalytics = () => {
             />
           </div>
 
-          {/* PAYMENT METHODS */}
           <PaymentMethodsCard payment={paymentMethods} />
 
-          {/* HIGH/LOW SALES */}
           <HighLowCards highest={highestSale} lowest={lowestSale} />
 
-          {/* BRANCH PERFORMANCE */}
           <BranchPerformanceCard branches={branchPerformance} />
 
-          {/* BRAND SALES */}
           <BrandSalesCard brandSales={brandSales} />
         </div>
       </div>
@@ -395,7 +381,6 @@ const SalesAnalytics = () => {
   );
 };
 
-/* COMPONENTS */
 const FilterField = ({ label, children }) => (
   <div className="flex flex-col">
     <label className="text-2xl font-bold text-slate-500 uppercase tracking-wide mb-1">
@@ -567,7 +552,6 @@ const HighLowCards = ({ highest, lowest }) => (
     
     </div>
 
-    {/* Lowest Sale Day */}
     <div
       className="relative p-8 rounded-3xl overflow-hidden
                bg-gradient-to-br from-rose-50 via-red-100 to-rose-200
@@ -575,7 +559,6 @@ const HighLowCards = ({ highest, lowest }) => (
                border border-red-200
                transition-all duration-300 hover:shadow-[0_12px_40px_rgba(244,63,94,0.25)]"
     >
-      {/* Glow */}
       <div className="absolute inset-0 bg-red-300/20 blur-2xl opacity-0 hover:opacity-60 transition-all duration-500"></div>
 
       <div className="relative z-10 flex items-center justify-between">
@@ -601,7 +584,6 @@ const HighLowCards = ({ highest, lowest }) => (
       </div>
     </div>
   </div>
-  // </div>
 );
 
 const BranchPerformanceCard = ({ branches }) => {

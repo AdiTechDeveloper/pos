@@ -8,7 +8,6 @@ import Layout from "../layout";
 import { useAppData } from "../../context/AppDataContext";
 import { RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
 
-
 const GstReports = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
@@ -106,12 +105,10 @@ const GstReports = () => {
     end_date: new Date().toLocaleDateString("en-CA"),
   });
 
-  // Fetch Branches
   const fetchBranches = () => {
     appData?.loadBranches();
   };
 
-  // Fetch GST Report
   const fetchGstReport = useCallback(async () => {
     setLoading(true);
     try {
@@ -262,7 +259,6 @@ const GstReports = () => {
           <div className="wg-box mb-6 shadow-lg rounded-3xl p-8 border border-slate-200 bg-white">
             <div className="flex justify-between items-end gap-4 w-full">
             <div className="grid grid-cols-2 md:grid-cols-6 gap-6">
-              {/* Branch Selection */}
               <div className="flex flex-col">
                 <label className="text-xl font-bold text-slate-500 uppercase mb-2 ml-1 tracking-wide">
                   Branch
@@ -295,7 +291,6 @@ const GstReports = () => {
                 </select>
               </div>
 
-              {/* Start Date */}
               <div className="flex flex-col">
                 <label className="text-xl font-bold text-slate-500 uppercase mb-2 ml-1 tracking-wide">
                   Start Date
@@ -310,7 +305,6 @@ const GstReports = () => {
                 />
               </div>
 
-              {/* End Date */}
               <div className="flex flex-col">
                 <label className="text-xl font-bold text-slate-500 uppercase mb-2 ml-1 tracking-wide">
                   End Date
@@ -325,7 +319,6 @@ const GstReports = () => {
                 />
               </div>
 
-              {/* Refresh Button */}
               <div className="flex items-end">
                 <button
                   onClick={fetchGstReport}

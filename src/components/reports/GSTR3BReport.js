@@ -5,7 +5,6 @@ import { Link } from "react-router-dom";
 import { useAppData } from "../../context/AppDataContext";
 import { RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
 
-
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 export default function GSTR3BReport() {
@@ -84,7 +83,6 @@ export default function GSTR3BReport() {
                   {key.replace(/_/g, " ")}
                 </span>
                 <div className="flex items-center gap-2">
-                  {/* Status Dot */}
                   <div
                     className={`w-2 h-2 rounded-full animate-pulse ${isNegative ? "bg-rose-500" : "bg-emerald-500"}`}
                   ></div>
@@ -111,10 +109,7 @@ export default function GSTR3BReport() {
                     minimumFractionDigits: 2,
                   })}
                 </div>
-
-                <p
-                  className={`text-[10px] font-bold uppercase mt-1 pr-2 tracking-widest ${isNegative ? "text-rose-400" : "text-emerald-400"}`}
-                >
+                <p className={`text-[10px] font-bold uppercase mt-1 pr-2 tracking-widest ${isNegative ? "text-rose-400" : "text-emerald-400"}`}>
                   {isNegative ? "Liability / Reversal" : "Available / Taxable"}
                 </p>
               </div>
@@ -129,7 +124,7 @@ export default function GSTR3BReport() {
     <Layout>
       <div className="main-content-inner">
         <div className="main-content-wrap">
-          {/* TOP HEADER & BREADCRUMBS */}
+        
           <div className="flex justify-between items-center mb-8">
             <div className="flex items-center flex-wrap justify-between gap20 mb-27">
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -174,10 +169,8 @@ export default function GSTR3BReport() {
             </ul>
           </div>
 
-          {/* MODERN FILTERS PANEL */}
           <div className="wg-box mb-10 shadow-xl rounded-3xl p-8 border border-slate-200 bg-white">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {/* Branch Filter */}
               <div className="flex flex-col">
                 <label className="text-xl font-bold text-slate-500 uppercase mb-2 ml-1">
                   Branch
@@ -202,7 +195,6 @@ export default function GSTR3BReport() {
                 </select>
               </div>
 
-              {/* Start Date */}
               <div className="flex flex-col">
                 <label className="text-xl font-bold text-slate-500 uppercase mb-2 ml-1">
                   Start Date
@@ -217,7 +209,6 @@ export default function GSTR3BReport() {
                 />
               </div>
 
-              {/* End Date */}
               <div className="flex flex-col">
                 <label className="text-xl font-bold text-slate-500 uppercase mb-2 ml-1">
                   End Date
@@ -244,7 +235,6 @@ export default function GSTR3BReport() {
             </div>
           </div>
 
-          {/* RESULTS AREA WITH LOADING STATE */}
           <div className="relative">
             {loading && (
               <div className="absolute inset-0 z-10 bg-slate-50/50 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-3xl min-h-[400px]">
