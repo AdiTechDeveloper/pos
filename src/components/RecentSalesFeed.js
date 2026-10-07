@@ -142,7 +142,7 @@ const RecentSalesFeed = ({ role, user, filters = {}, storeId }) => {
                 <div className="text-xl text-gray-400">
                   
                   #{row.bill_no} ·{" "}
-                      {console.log(row.created_at)}
+                      {/* {console.log(row.created_at)} */}
                     {new Date(row.created_at).toLocaleString("en-IN")
                     }
                 </div>

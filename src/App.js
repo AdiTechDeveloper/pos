@@ -1027,6 +1027,16 @@ const router = createBrowserRouter(
         }
       />
 
+        <Route
+        path="/supplier-tracking"
+        element={
+          <Protected
+            Component={SupplierTracking}
+            requiredFeature="reports_suplier"
+          />
+        }
+      />
+
       {/* Fallback */}
       <Route
         path="*"
