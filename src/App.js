@@ -415,6 +415,7 @@ import {
   Route,
   RouterProvider,
   Navigate,
+  Router,
 } from "react-router-dom";
 
 import Login from "./components/login";
@@ -1055,7 +1056,6 @@ function App() {
         }}
       />
 
-  
       <RouterProvider router={router} />
     </AppDataProvider>
   );
