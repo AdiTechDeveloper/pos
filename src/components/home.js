@@ -154,7 +154,7 @@
 //           jobs.push([
 //             "purchaseToday",
 //             get("/api/reports/purchase-report", { date_range: "today" ,  store_id: adminStoreId ,}),
-            
+
 //           ]);
 //         }
 //         if (canCustomers) {
@@ -298,7 +298,7 @@
 //                 role={role}
 //                 user={user_data}
 //                  storeId={adminStoreId}
-                
+
 //               />
 //                         <MonthlySalesChart
 //                 role={role}
@@ -306,8 +306,8 @@
 //                 filters={{ branch_id: managerBranchId || "ALL" }}
 //                 storeId={adminStoreId}
 //               />
-             
-            
+
+
 //             </div>
 //           )}
 
@@ -488,10 +488,10 @@ const Home = () => {
   const managerBranchId =
     role === "manager"
       ? user_data?.branch_id ??
-        user_data?.user?.branch_id ??
-        user_data?.user?.branch_ids?.[0] ??
-        user_data?.branch_ids?.[0] ??
-        null
+      user_data?.user?.branch_id ??
+      user_data?.user?.branch_ids?.[0] ??
+      user_data?.branch_ids?.[0] ??
+      null
       : null;
 
   // Admin's own store
@@ -640,8 +640,8 @@ const Home = () => {
                       loading || !pk
                         ? "-"
                         : rupee(
-                            pk.total_purchase_value
-                          )
+                          pk.total_purchase_value
+                        )
                     }
                     color="#F59E0B"
                     loading={loading}
@@ -694,7 +694,9 @@ const Home = () => {
                 user={user_data}
                 filters={{
                   branch_id:
-                    managerBranchId || "ALL",
+                    role === "manager"
+                      ? managerBranchId
+                      : "",
                 }}
                 storeId={adminStoreId}
               />
@@ -721,11 +723,10 @@ const Home = () => {
           {isBackOffice &&
             (showLeftCol || showRightCol) && (
               <div
-                className={`grid grid-cols-1 gap-6 ${
-                  showLeftCol && showRightCol
+                className={`grid grid-cols-1 gap-6 ${showLeftCol && showRightCol
                     ? "lg:grid-cols-2"
                     : ""
-                }`}
+                  }`}
               >
 
                 {showLeftCol && (
