@@ -1,5 +1,11 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+
+
+
+import React, {
+  useEffect,
+  useState,
+} from "react";
+
 import {
   BarChart,
   Bar,
@@ -10,125 +16,231 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
+
 import { useAppData } from "../context/AppDataContext";
 import { CalendarDays } from "lucide-react";
 
 const MONTH_LABELS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
-const rupee = (v) => `₹${Number(v || 0).toLocaleString("en-IN")}`;
+const rupee = (value) =>
+  `₹${Number(value || 0).toLocaleString(
+    "en-IN"
+  )}`;
 
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload || !payload.length) return null;
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}) => {
+  if (
+    !active ||
+    !payload ||
+    !payload.length
+  ) {
+    return null;
+  }
   return (
+    
     <div className="bg-white border border-gray-200 shadow-lg rounded-xl px-4 py-2.5 text-sm">
-      <div className="font-semibold text-gray-800">{label}</div>
-      <div className="text-blue-600 font-bold">{rupee(payload[0].value)}</div>
+      <div className="font-semibold text-gray-800">
+        {label}
+      </div>
+
+      <div className="text-blue-600 font-bold">
+        {rupee(payload[0].value)}
+      </div>
     </div>
   );
 };
 
-const cacheKey = (year, monthIdx, branchId, storeId) =>
-  `monthlySales:${year}-${monthIdx}:${branchId || "all"}:${storeId || "all"}`;
+const MonthlySalesChart = ({
+  role,
+  user,
+  filters = {},
+  storeId,
+}) => {
+  console.log("MonthlySalesChart MOUNTED");
 
-// TODO (backend): replace this whole file with a single call like
-// GET /api/reports/sales-report?date_range=this_year&group_by=month
-// which would return all 12 monthly totals in ONE request. Until then,
-// this only fetches elapsed months and caches completed ones so repeat
-// dashboard loads only ever make 1 network call (for the current month).
-const MonthlySalesChart = ({ role, user, filters = {}, storeId }) => {
-  const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-  const appData = useAppData();
-  const branches = appData?.branches || [];
-  const [selectedBranch, setSelectedBranch] = useState(filters.branch_id || "");
+  const {
+    branches,
+    loadBranches,
+    loadMonthlySales,
+  } = useAppData();
+
+  const [selectedBranch, setSelectedBranch] =
+    useState(
+      filters.branch_id || ""
+    );
+
   const [data, setData] = useState(
-    MONTH_LABELS.map((m) => ({ month: m, sales: 0 })),
+    MONTH_LABELS.map((month) => ({
+      month,
+      sales: 0,
+    }))
   );
-  const [loading, setLoading] = useState(true);
 
-  // Which branch actually applies: admin picks one from the dropdown,
-  // manager is locked to their own branch from filters
-  const effectiveBranchId =
-    role === "admin" && selectedBranch && selectedBranch !== "ALL"
-      ? selectedBranch
-      : role === "manager" && filters.branch_id && filters.branch_id !== "ALL"
-        ? filters.branch_id
-        : null;
+  const [loading, setLoading] =
+    useState(true);
 
-  // Fetch branches list (admin only — needed to populate the dropdown)
   useEffect(() => {
-    if (role === "admin") {
-      appData?.loadBranches();
+    if (role !== "admin") {
+      return;
     }
-  }, [role]);
+
+    loadBranches();
+  }, [role, loadBranches]);
 
   useEffect(() => {
-    const load = async () => {
+    if (role !== "admin") {
+      return;
+    }
+
+    setSelectedBranch(
+      filters.branch_id || ""
+    );
+  }, [role, filters.branch_id]);
+
+  const managerBranchId =
+    filters.branch_id ||
+    user?.branch_id ||
+    user?.user?.branch_id ||
+    user?.user?.branch_ids?.[0] ||
+    user?.branch_ids?.[0] ||
+    null;
+
+  const effectiveBranchId =
+    role === "admin"
+      ? selectedBranch || null
+      : role === "manager"
+      ? managerBranchId
+      : null;
+
+      
+  useEffect(() => {
+    
+    let mounted = true;
+  console.log("MONTHLY EFFECT START", {
+    role,
+    effectiveBranchId,
+    storeId,
+  });
+    const loadData = async () => {
+          console.log("MONTHLY loadData START");
+
       setLoading(true);
-      const now = new Date();
-      const year = now.getFullYear();
-      const currentMonthIdx = now.getMonth(); // 0-based, e.g. Sep = 8
-      const token = user?.token;
 
-      const results = await Promise.all(
-        MONTH_LABELS.map(async (_, i) => {
-          // Never fetch future months - they're just 0
-          if (i > currentMonthIdx) return 0;
-
-          const key = cacheKey(year, i, effectiveBranchId, storeId);
-          const isCompletedMonth = i < currentMonthIdx;
-
-          if (isCompletedMonth) {
-            const cached = sessionStorage.getItem(key);
-            if (cached !== null) return Number(cached);
-          }
-
-          const from = `${year}-${String(i + 1).padStart(2, "0")}-01`;
-          const lastDay = new Date(year, i + 1, 0).getDate();
-          const to = `${year}-${String(i + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-
-          try {
-            const res = await axios.get(`${BASE_URL}/api/reports/sales-report`, {
-              headers: {
-                Accept: "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              params: {
-                date_range: "custom",
-                date_from: from,
-                date_to: to,
-                bill_status: "all",
-                branch_id: effectiveBranchId || null,
-                store_id: storeId || null,
-              },
-            });
-            const value = Number(res.data?.kpis?.gross_sales) || 0;
-
-            // Only cache completed months - current month keeps changing all day
-            if (isCompletedMonth) {
-              sessionStorage.setItem(key, String(value));
+      try {
+          console.log("CALLING loadMonthlySales");
+        const monthlySales =
+          await loadMonthlySales(
+            effectiveBranchId,
+            {
+              storeId,
+              year:
+                new Date().getFullYear(),
             }
-            return value;
-          } catch {
-            return 0;
-          }
-        }),
-      );
+          );
 
-      setData(MONTH_LABELS.map((m, i) => ({ month: m, sales: results[i] })));
-      setLoading(false);
+      console.log("MONTHLY API RESPONSE", monthlySales);
+        if (!mounted) {
+          return;
+        }
+
+        setData(
+          MONTH_LABELS.map(
+            (month, index) => ({
+              month,
+
+              sales: Number(
+                monthlySales?.[
+                  index + 1
+                ] || 0
+              ),
+            })
+          )
+        );
+      } catch (error) {
+        console.error(
+          "Monthly sales load error:",
+          error
+        );
+
+        if (!mounted) {
+          return;
+        }
+
+        setData(
+          MONTH_LABELS.map(
+            (month) => ({
+              month,
+              sales: 0,
+            })
+          )
+        );
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
     };
 
-    if (user?.token) load();
-  }, [user, effectiveBranchId, storeId, BASE_URL]);
+    if (
+      role === "manager" &&
+      !effectiveBranchId
+    ) {
+      setData(
+        MONTH_LABELS.map(
+          (month) => ({
+            month,
+            sales: 0,
+          })
+        )
+      );
 
-  const handleChange = (e) => {
-    setSelectedBranch(e.target.value);
+      setLoading(false);
+
+      return () => {
+        mounted = false;
+      };
+    }
+
+    loadData();
+
+    return () => {
+      mounted = false;
+    };
+  }, [
+    role,
+    effectiveBranchId,
+    storeId,
+    loadMonthlySales,
+  ]);
+
+  const handleChange = (event) => {
+    setSelectedBranch(
+      event.target.value
+    );
   };
 
-  const maxSales = Math.max(...data.map((d) => d.sales), 0);
+  const maxSales = Math.max(
+    ...data.map(
+      (item) => item.sales
+    ),
+    0
+  );
 
   if (loading) {
     return (
@@ -140,48 +252,115 @@ const MonthlySalesChart = ({ role, user, filters = {}, storeId }) => {
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-          <CalendarDays size={20} className="text-blue-600" />
-          Monthly Sales ({new Date().getFullYear()})
+          <CalendarDays
+            size={20}
+            className="text-blue-600"
+          />
+
+          Monthly Sales (
+          {new Date().getFullYear()}
+          )
         </h3>
+
         {role === "admin" && (
           <select
             name="branch_id"
             value={selectedBranch}
             onChange={handleChange}
             className="border border-gray-300 rounded-lg px-3 py-1.5 text-xl focus:ring-2 focus:ring-blue-400 outline-none"
-            style={{ width:200 }}
+            style={{
+              width: 200,
+            }}
           >
-            <option value="">All Branches</option>
-            {branches.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
+            <option value="">
+              All Branches
+            </option>
+
+            {branches.map(
+              (branch) => (
+                <option
+                  key={branch.id}
+                  value={branch.id}
+                >
+                  {branch.name}
+                </option>
+              )
+            )}
           </select>
         )}
       </div>
-      <ResponsiveContainer width="100%" height={280}>
-        <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F3F6" />
+
+      <ResponsiveContainer
+        width="100%"
+        height={280}
+      >
+        <BarChart
+          data={data}
+          margin={{
+            top: 4,
+            right: 8,
+            left: 0,
+            bottom: 0,
+          }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            vertical={false}
+            stroke="#F1F3F6"
+          />
+
           <XAxis
             dataKey="month"
-            tick={{ fontSize: 12, fill: "#6B7280" }}
+            tick={{
+              fontSize: 12,
+              fill: "#6B7280",
+            }}
             axisLine={false}
             tickLine={false}
           />
+
           <YAxis
-            tick={{ fontSize: 12, fill: "#6B7280" }}
+            tick={{
+              fontSize: 12,
+              fill: "#6B7280",
+            }}
             axisLine={false}
             tickLine={false}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
-          <Bar dataKey="sales" radius={[6, 6, 0, 0]}>
-            {data.map((entry, i) => (
-              <Cell
-                key={i}
-                fill={entry.sales === maxSales && maxSales > 0 ? "#2377FC" : "#BFDBFE"}
-              />
-            ))}
+
+          <Tooltip
+            content={
+              <CustomTooltip />
+            }
+            cursor={{
+              fill:
+                "rgba(0,0,0,0.03)",
+            }}
+          />
+
+          <Bar
+            dataKey="sales"
+            radius={[
+              6,
+              6,
+              0,
+              0,
+            ]}
+          >
+            {data.map(
+              (entry, index) => (
+                <Cell
+                  key={index}
+                  fill={
+                    entry.sales ===
+                      maxSales &&
+                    maxSales > 0
+                      ? "#2377FC"
+                      : "#BFDBFE"
+                  }
+                />
+              )
+            )}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
