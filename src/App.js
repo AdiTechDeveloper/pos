@@ -476,6 +476,7 @@ import DiscardProducts from "./components/DiscartProducts";
 import AdvancePayment from "./components/AdvancePayment";
 import ChangePassword from "./components/ChangePassword";
 import customer from "./components/customer";
+import AiInsights from "./components/AiInsights";
 import SupplierTracking from "./components/reports/SuplierTracking";
 
 import CustomerPortalLogin from "./components/CustomerPortalLogin";
@@ -1055,7 +1056,6 @@ function App() {
         }}
       />
 
-      
       <RouterProvider router={router} />
     </AppDataProvider>
   );

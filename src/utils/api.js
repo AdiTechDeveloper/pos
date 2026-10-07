@@ -104,3 +104,21 @@ export const getCustomerWalletBalance = (mobile) =>
   axios.get(`${BASE_URL}/api/customers/wallet-balance/${mobile}`, {
     headers: getAuthHeader(),
   });
+
+export const getAiInsights = (token, branchId) =>
+  axios.get(`${BASE_URL}/api/ai-insights`, {
+    headers: { Authorization: `Bearer ${token}` },
+    params: { branch_id: branchId },
+  });
+
+export const refreshAiInsights = (token, branchId) =>
+  axios.post(
+    `${BASE_URL}/api/ai-insights/refresh`,
+    { branch_id: branchId },
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+
+export const getAiInsightBranches = (token) =>
+  axios.get(`${BASE_URL}/api/ai-insights/branches`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
