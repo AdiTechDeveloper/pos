@@ -6,7 +6,7 @@ import { hasFeature } from "../utils/hasFeature";
 
 import { PiKeyReturnBold, PiWallet } from "react-icons/pi";
 
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 
 import {
   IoHomeOutline,
@@ -35,7 +35,6 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
-
 
   const activeMenuRef = useRef(null);
 
@@ -308,6 +307,11 @@ const Navbar = () => {
 
   const adminMenus = [
     {
+      name: "Know You Bussiness",
+      path: "/ai-insights",
+      feature: "ai_insights",
+    },
+    {
       name: "Branches",
       path: "/branch",
       icon: <i className="icon-briefcase" />,
@@ -324,6 +328,12 @@ const Navbar = () => {
   ];
 
   const managerMenus = [
+    {
+      name: "Know You Bussiness",
+      path: "/ai-insights",
+      icon: <Sparkles className="w-10 h-10" />,
+      feature: "ai_insights",
+    },
     {
       name: "Cashiers",
       path: "/staff",

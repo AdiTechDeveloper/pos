@@ -41,6 +41,8 @@ const ReceiptModal = forwardRef(
       <div style={styles.overlay}>
         <div style={styles.modal}>
           <div ref={ref} style={styles.receiptBox}>
+            <div style={styles.watermark}>VAKARO POS</div>
+
             {/* ================= HEADER ================= */}
             <div style={styles.center}>
               <div style={styles.storeName}>{store?.name || "STORE NAME"}</div>
@@ -183,6 +185,8 @@ const ReceiptModal = forwardRef(
                   <div key={i}>{line}</div>
                 ))}
             </div>
+
+            <div style={styles.footer}>Powered by Vakaro POS Software.</div>
           </div>
 
           {/* ================= ACTIONS ================= */}
@@ -329,5 +333,18 @@ const styles = {
     fontWeight: "bold",
     fontSize: 14,
     marginBottom: 6,
+  },
+
+  watermark: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%) rotate(-30deg)",
+    fontSize: 48,
+    fontWeight: "bold",
+    color: "rgba(0,0,0,0.05)",
+    whiteSpace: "nowrap",
+    pointerEvents: "none",
+    zIndex: 0,
   },
 };
