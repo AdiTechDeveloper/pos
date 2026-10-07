@@ -373,419 +373,400 @@ export default function CartPanel({
 
   return (
     <>
-      <div className="pos-cart">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex flex-col gap-2">
-            <h2 className="font-extrabold text-5xl">Current Orders</h2>
-            {role === "cashier" && (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  background: "#f0fdf4",
-                  border: "1px solid #bbf7d0",
-                  color: "#15803d",
-                  borderRadius: "20px",
-                  padding: "3px 12px",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  width: "fit-content",
-                }}
-              >
-                <span
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    background: "#22c55e",
-                    display: "inline-block",
-                    boxShadow: "0 0 0 2px rgba(34,197,94,0.3)",
-                    animation: "pulse 2s infinite",
-                  }}
-                />
-                Shift Open
-              </span>
-            )}
-          </div>
-
-          {role !== "cashier" ? (
-            <Link
-              to="/dashboard"
-              className="px-8 py-4 text-2xl rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md transition"
-            >
-              Dashboard
-            </Link>
-          ) : (
-            <div className="flex flex-row gap-2 items-end">
-              <button
-                onClick={handleBreak}
-                className="px-6 py-3 text-2xl rounded-xl bg-red-500 hover:bg-yellow-600 text-white font-semibold shadow-md transition"
-              >
-                🔒 Break
-              </button>
-              <button
-                onClick={handleEndShiftClick}
-                className="px-6 py-3 text-2xl rounded-xl bg-green-600 hover:bg-red-700 text-white font-semibold shadow-md transition"
-              >
-                End Shift
-              </button>
-            </div>
-          )}
+      <div className="pos-cart min-h-screen bg-slate-50 p-6">
+  {/* Header */}
+  <div className="flex items-center justify-between mb-6">
+    <div>
+      <div className="flex items-center gap-3">
+        <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center">
+          <span className="text-2xl">🛒</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex items-center justify-between">
-          <label className="text-xl font-bold text-gray-700">Bill Date:</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-4 py-2 border rounded-xl text-xl font-semibold bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        <div>
+          <h2 className="text-3xl font-extrabold text-slate-900">
+            Your cart
+          </h2>
+
+          <p className="text-md text-slate-500 mt-1">
+            {cart.length} items ·{" "}
+            {cart.reduce((sum, item) => sum + Number(item.qty || 0), 0)} qty
+          </p>
+        </div>
+      </div>
+
+      {role === "cashier" && (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            background: "#f0fdf4",
+            border: "1px solid #bbf7d0",
+            color: "#15803d",
+            borderRadius: "20px",
+            padding: "4px 12px",
+            fontSize: "13px",
+            fontWeight: 600,
+            marginTop: "10px",
+          }}
+        >
+          <span
+            style={{
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              background: "#22c55e",
+              display: "inline-block",
+            }}
           />
+          Shift Open
+        </span>
+      )}
+    </div>
+
+    {role !== "cashier" ? (
+      <Link
+        to="/dashboard"
+        className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-sm transition"
+      >
+        Dashboard
+      </Link>
+    ) : (
+      <div className="flex gap-2">
+        <button
+          onClick={handleBreak}
+          className="px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold shadow-sm transition"
+        >
+          🔒 Break
+        </button>
+
+        <button
+          onClick={handleEndShiftClick}
+          className="px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold shadow-sm transition"
+        >
+          End Shift
+        </button>
+      </div>
+    )}
+  </div>
+
+  {/* Bill Date */}
+  <div className="bg-white border border-slate-200 rounded-2xl p-4 mb-6 shadow-sm">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm font-semibold text-slate-500">
+          Bill date
+        </p>
+        <p className="text-base font-bold text-slate-800 mt-1">
+          Select billing date
+        </p>
+      </div>
+
+      <input
+        type="date"
+        value={selectedDate}
+        onChange={(e) => setSelectedDate(e.target.value)}
+        className="px-4 py-3 border border-slate-200 rounded-xl text-base font-bold text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+  </div>
+
+  {/* Cart Items */}
+  <div className="flex-1 overflow-y-auto">
+    {cart.length === 0 ? (
+      <div className="bg-white border border-slate-200 rounded-2xl min-h-[360px] flex flex-col items-center justify-center text-center shadow-sm">
+        <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mb-5">
+          <span className="text-4xl">🛒</span>
         </div>
 
-        {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto">
-          {cart.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center py-20">
-              <p className="text-5xl font-extrabold text-gray-400">
-                Empty Cart
-              </p>
-              <p className="text-2xl text-gray-500 mt-8">
-                Add products to begin billing
-              </p>
-            </div>
-          ) : (
-            cart.map((item) => {
-              const { gstAmount, finalPrice } = getPriceWithGST(item);
-              const override = priceOverrides[item.cart_key];
-              const isEditing = override?.editing;
-              const isOverridden =
-                item.is_price_overridden && item.original_price;
+        <h3 className="text-2xl font-extrabold text-slate-700">
+          Your cart is empty
+        </h3>
 
-              return (
-                <div
-                  key={`${item.inventory_id}_${item.selling_price}`}
-                  className="bg-white p-3 rounded-xl shadow border border-gray-100 mb-3"
-                  style={{
-                    border: isOverridden
-                      ? "2px solid #f59e0b"
-                      : "2px solid transparent",
-                  }}
+        <p className="text-base text-slate-400 mt-2">
+          Add products to begin billing
+        </p>
+      </div>
+    ) : (
+      cart.map((item) => {
+        const { gstAmount, finalPrice } = getPriceWithGST(item);
+        const override = priceOverrides[item.cart_key];
+        const isEditing = override?.editing;
+        const isOverridden =
+          item.is_price_overridden && item.original_price;
+
+        return (
+          <div
+            key={`${item.inventory_id}_${item.selling_price}`}
+            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm mb-4"
+            style={{
+              border: isOverridden
+                ? "2px solid #f59e0b"
+                : "1px solid #e2e8f0",
+            }}
+          >
+            {/* Product Header */}
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="font-bold text-lg text-slate-900">
+                  {item.name}
+                </p>
+
+                {isOverridden && (
+                  <span
+                    className="inline-block mt-1"
+                    style={{
+                      fontSize: "11px",
+                      background: "#fef3c7",
+                      color: "#b45309",
+                      border: "1px solid #fcd34d",
+                      borderRadius: "6px",
+                      padding: "2px 8px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    ⚠ Price Overridden
+                  </span>
+                )}
+              </div>
+
+              {/* Quantity */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => decreaseQty(item)}
+                  className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-xl font-bold text-slate-700 flex items-center justify-center"
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <p
-                      className="font-bold"
-                      style={{ fontSize: "17px", color: "black" }}
-                    >
-                      {item.name}
-                    </p>
-                    {isOverridden && (
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          background: "#fef3c7",
-                          color: "#b45309",
-                          border: "1px solid #fcd34d",
-                          borderRadius: "6px",
-                          padding: "2px 8px",
-                          fontWeight: 600,
-                        }}
-                      >
-                        ⚠ Price Overridden
-                      </span>
-                    )}
-                    <div className="flex items-center justify-end gap-2 mt-3">
-                      <button
-                        onClick={() => decreaseQty(item)}
-                        className="bg-gray-200 hover:bg-gray-300 rounded-full w-12 h-12 text-3xl flex items-center justify-center"
-                      >
-                        -
-                      </button>
+                  −
+                </button>
 
+                <input
+                  type="text"
+                  value={item.qty}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => {
+                    let val = e.target.value;
+
+                    if (val === "") {
+                      setCart((prev) =>
+                        prev.map((i) =>
+                          i.inventory_id === item.inventory_id
+                            ? { ...i, qty: "" }
+                            : i
+                        )
+                      );
+                      return;
+                    }
+
+                    const newQty = Math.max(1, Number(val));
+
+                    setCart((prev) =>
+                      prev.map((i) =>
+                        i.inventory_id === item.inventory_id
+                          ? { ...i, qty: newQty }
+                          : i
+                      )
+                    );
+                  }}
+                  className="w-12 h-10 text-center text-lg font-bold border border-slate-200 rounded-xl bg-white"
+                />
+
+                <button
+                  onClick={() => increaseQty(item)}
+                  className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-xl font-bold text-slate-700 flex items-center justify-center"
+                >
+                  +
+                </button>
+
+                <button
+                  onClick={() => removeItem(item)}
+                  className="w-10 h-10 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Product Price */}
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-500">
+                  Unit Price
+                </span>
+
+                <div className="flex items-center gap-2">
+                  {isOverridden && (
+                    <span className="text-sm text-slate-400 line-through">
+                      ₹{Number(item.original_price).toFixed(2)}
+                    </span>
+                  )}
+
+                  {isEditing ? (
+                    <div className="flex items-center gap-2">
                       <input
-                        type="text"
-                        min="1"
-                        value={item.qty}
-                        onFocus={(e) => e.target.select()}
-                        onChange={(e) => {
-                          let val = e.target.value;
-                          if (val === "") {
-                            setCart((prev) =>
-                              prev.map((i) =>
-                                i.inventory_id === item.inventory_id
-                                  ? { ...i, qty: "" }
-                                  : i,
-                              ),
-                            );
-                            return;
-                          }
-                          const newQty = Math.max(1, Number(val));
-                          setCart((prev) =>
-                            prev.map((i) =>
-                              i.inventory_id === item.inventory_id
-                                ? { ...i, qty: newQty }
-                                : i,
-                            ),
-                          );
+                        type="number"
+                        value={override.tempValue}
+                        autoFocus
+                        onChange={(e) =>
+                          setPriceOverrides((prev) => ({
+                            ...prev,
+                            [item.cart_key]: {
+                              ...prev[item.cart_key],
+                              tempValue: e.target.value,
+                            },
+                          }))
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter")
+                            confirmPriceOverride(item);
+
+                          if (e.key === "Escape")
+                            cancelPriceEdit(item);
                         }}
-                        className="w-12 text-center text-3xl font-bold border rounded-xl p-2"
-                        style={{ appearance: "textfield" }}
+                        className="w-24 px-2 py-1 border-2 border-orange-400 rounded-lg font-semibold outline-none"
                       />
 
                       <button
-                        onClick={() => increaseQty(item)}
-                        className="bg-gray-200 hover:bg-gray-300 rounded-full w-12 h-12 text-3xl text-bold flex items-center justify-center"
+                        onClick={() => confirmPriceOverride(item)}
+                        className="px-3 py-1 bg-green-500 text-white rounded-lg font-bold"
                       >
-                        +
+                        ✓
                       </button>
 
                       <button
-                        onClick={() => removeItem(item)}
-                        className="bg-red-100 hover:bg-red-200 rounded-full w-12 h-12 text-red-600 flex items-center justify-center text-xl"
+                        onClick={() => cancelPriceEdit(item)}
+                        className="px-3 py-1 bg-red-500 text-white rounded-lg font-bold"
                       >
                         ✕
                       </button>
                     </div>
-                  </div>
+                  ) : (
+                    <span
+                      className={`font-bold ${
+                        isOverridden
+                          ? "text-orange-600"
+                          : "text-slate-900"
+                      }`}
+                    >
+                      ₹{Number(item.selling_price).toFixed(2)}
 
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className="text-gray-600"
-                          style={{ fontSize: "14px" }}
-                        >
-                          Unit Price:
-                        </span>
-
-                        {isOverridden && (
-                          <span
-                            style={{
-                              textDecoration: "line-through",
-                              color: "#9ca3af",
-                              fontSize: "14px",
-                            }}
-                          >
-                            ₹{Number(item.original_price).toFixed(2)}
-                          </span>
-                        )}
-
-                        {isEditing ? (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              value={override.tempValue}
-                              autoFocus
-                              onChange={(e) =>
-                                setPriceOverrides((prev) => ({
-                                  ...prev,
-                                  [item.cart_key]: {
-                                    ...prev[item.cart_key],
-                                    tempValue: e.target.value,
-                                  },
-                                }))
-                              }
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter")
-                                  confirmPriceOverride(item);
-                                if (e.key === "Escape") cancelPriceEdit(item);
-                              }}
-                              style={{
-                                width: "100px",
-                                border: "2px solid #f59e0b",
-                                borderRadius: "8px",
-                                padding: "4px 8px",
-                                fontSize: "15px",
-                                fontWeight: 600,
-                                color: "#92400e",
-                                outline: "none",
-                              }}
-                            />
-                            <button
-                              onClick={() => confirmPriceOverride(item)}
-                              style={{
-                                background: "#10b981",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: "6px",
-                                padding: "4px 10px",
-                                fontSize: "14px",
-                                cursor: "pointer",
-                                fontWeight: 600,
-                              }}
-                            >
-                              ✓
-                            </button>
-                            <button
-                              onClick={() => cancelPriceEdit(item)}
-                              style={{
-                                background: "#ef4444",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: "6px",
-                                padding: "4px 10px",
-                                fontSize: "14px",
-                                cursor: "pointer",
-                                fontWeight: 600,
-                              }}
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ) : (
-                          <span
-                            style={{
-                              fontWeight: 700,
-                              fontSize: "15px",
-                              color: isOverridden ? "#b45309" : "#111",
-                            }}
-                          >
-                            ₹{Number(item.selling_price).toFixed(2)}
-                            <span
-                              className="text-xs ml-1"
-                              style={{ fontWeight: 400, color: "#6b7280" }}
-                            >
-                              (
-                              {Number(item.gst_inclusive) === 1
-                                ? "Incl."
-                                : "Excl."}{" "}
-                              GST)
-                            </span>
-                          </span>
-                        )}
-
-                        {!isEditing && isProductOverrideAllowed(item) && (
-                          <>
-                            <button
-                              onClick={() => startPriceEdit(item)}
-                              title="Override price"
-                              style={{
-                                background: "none",
-                                border: "1px solid #d1d5db",
-                                borderRadius: "6px",
-                                padding: "2px 8px",
-                                fontSize: "13px",
-                                cursor: "pointer",
-                                color: "#6b7280",
-                              }}
-                            >
-                              ✏️ Edit
-                            </button>
-
-                            {isOverridden && (
-                              <button
-                                onClick={() => resetPrice(item)}
-                                title="Reset to original price"
-                                style={{
-                                  background: "none",
-                                  border: "1px solid #fcd34d",
-                                  borderRadius: "6px",
-                                  padding: "2px 8px",
-                                  fontSize: "13px",
-                                  cursor: "pointer",
-                                  color: "#b45309",
-                                }}
-                              >
-                                ↺ Reset
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </div>
-
-                      <p
-                        className="text-gray-500 mt-1"
-                        style={{ fontSize: "13px" }}
-                      >
-                        GST ({item.gst_percent}%): ₹
-                        {(gstAmount * item.qty).toFixed(2)}
-                      </p>
-                      <p className="font-bold text-green-700 mt-1">
-                        Subtotal: ₹{(finalPrice * item.qty).toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
+                      <span className="text-xs ml-1 text-slate-400 font-normal">
+                        (
+                        {Number(item.gst_inclusive) === 1
+                          ? "Incl."
+                          : "Excl."}{" "}
+                        GST)
+                      </span>
+                    </span>
+                  )}
                 </div>
-              );
-            })
-          )}
+              </div>
 
-          {/* Total + Checkout */}
-          <div className="pt-8 border-t mt-8">
-            <div className="flex justify-between text-4xl font-extrabold mb-8">
-              <span>Total (Incl. GST)</span>
-              <span>₹{total.toFixed(2)}</span>
+              <div className="flex justify-between mt-2">
+                <span className="text-sm text-slate-500">
+                  GST ({item.gst_percent}%)
+                </span>
+
+                <span className="text-sm text-slate-600">
+                  ₹{(gstAmount * item.qty).toFixed(2)}
+                </span>
+              </div>
+
+              <div className="flex justify-between mt-2">
+                <span className="font-semibold text-slate-700">
+                  Subtotal
+                </span>
+
+                <span className="font-bold text-green-600">
+                  ₹{(finalPrice * item.qty).toFixed(2)}
+                </span>
+              </div>
+
+              {!isEditing && isProductOverrideAllowed(item) && (
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => startPriceEdit(item)}
+                    className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50"
+                  >
+                    ✏️ Edit
+                  </button>
+
+                  {isOverridden && (
+                    <button
+                      onClick={() => resetPrice(item)}
+                      className="px-3 py-1.5 text-sm border border-orange-200 rounded-lg text-orange-600 hover:bg-orange-50"
+                    >
+                      ↺ Reset
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-            <button
-              onClick={() => setShowPayment(true)}
-              disabled={cart.length === 0}
-              className={`w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl ${
-                cart.length === 0 ? "cursor-not-allowed" : ""
-              }`}
-            >
-              Checkout
-            </button>
-
-            <button
-              // onClick={() => navigate("/customer-dues")}
-              onClick={() => navigate("/customer-dues")}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl mt-6"
-            >
-              Customer Dues
-            </button>
-
-            <button
-              onClick={() => setShowAddAdvance(true)}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white p-6 rounded-3xl text-4xl font-extrabold shadow-2xl mt-6"
-            >
-              Add Advance
-            </button>
           </div>
+        );
+      })
+    )}
 
-          {showPayment && (
-            <PaymentModal
-              total={total}
-              onClose={() => setShowPayment(false)}
-              onConfirm={handlePayment}
-              cart_data={cart}
-            />
-          )}
-
-          {showReceipt && printData && (
-            <ReceiptModal
-              ref={receiptRef}
-              isOpen={showReceipt}
-              onClose={() => setShowReceipt(false)}
-              onPrint={printReceipt}
-              data={printData}
-              cart_detail={printData.items}
-              cart_total={printData.total}
-            />
-          )}
-
-          {showEndShift && (
-            <EndShiftModal
-              isOpen={showEndShift}
-              branchId={
-                user_data?.user?.branch_ids?.[0] || user_data?.branch_ids?.[0]
-              }
-              onClose={() => setShowEndShift(false)}
-              onShiftClosed={handleShiftClosed}
-            />
-          )}
-
-          {showAddAdvance && (
-            <AddAdvanceModal
-              onClose={() => setShowAddAdvance(false)}
-              onSuccess={() => {
-                toast.success("Advance added successfully!");
-              }}
-            />
-          )}
-        </div>
+    {/* Summary */}
+    <div className="bg-white border border-slate-200 rounded-2xl p-5 mt-6 shadow-sm">
+      <div className="flex justify-between text-base mb-3">
+        <span className="text-slate-500">Subtotal</span>
+        <span className="font-semibold text-slate-800">
+          ₹{total.toFixed(2)}
+        </span>
       </div>
+
+      <div className="flex justify-between text-base pb-4 border-b border-dashed border-slate-200">
+        <span className="text-slate-500">GST</span>
+        <span className="font-semibold text-slate-800">
+          ₹0.00
+        </span>
+      </div>
+
+      <div className="flex justify-between items-center mt-4">
+        <span className="text-xl font-extrabold text-slate-900">
+          Total
+        </span>
+
+        <span className="text-2xl font-extrabold text-slate-900">
+          ₹{total.toFixed(2)}
+        </span>
+      </div>
+
+      {/* Checkout */}
+      <button
+        onClick={() => setShowPayment(true)}
+        disabled={cart.length === 0}
+        className={`w-full mt-5 py-4 rounded-xl text-lg font-extrabold text-white shadow-sm transition ${
+          cart.length === 0
+            ? "bg-slate-300 cursor-not-allowed"
+            : "bg-green-600 hover:bg-green-700"
+        }`}
+      >
+        Pay ₹{total.toFixed(2)}
+      </button>
+
+      {/* Customer Dues */}
+      <button
+        onClick={() => navigate("/customer-dues")}
+        className="w-full mt-3 py-4 rounded-xl text-lg font-extrabold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition"
+      >
+        Customer Dues
+      </button>
+
+      {/* Add Advance */}
+      <button
+        onClick={() => setShowAddAdvance(true)}
+        className="w-full mt-3 py-4 rounded-xl text-lg font-extrabold bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition"
+      >
+        Add Advance
+      </button>
+    </div>
+  </div>
+</div>
     </>
   );
 }
+
+
+
+
