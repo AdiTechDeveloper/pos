@@ -1,4 +1,4 @@
-import React, { useState, useEffect , useRef} from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAppData } from "../context/AppDataContext";
@@ -112,7 +112,6 @@ const Navbar = () => {
       path: "/supplier-tracking",
       feature: "reports_suplier",
     },
-
   ];
 
   const visibleReportLinks = reportLinks.filter(
@@ -309,6 +308,7 @@ const Navbar = () => {
     {
       name: "Know You Bussiness",
       path: "/ai-insights",
+      icon: <Sparkles className="w-10 h-10" />,
       feature: "ai_insights",
     },
     {
@@ -370,8 +370,7 @@ const Navbar = () => {
       <Link
         ref={isActive(item.path) ? activeMenuRef : null}
         to={item.path}
-        className={`app-sidebar-link ${isActive(item.path) ? "active" : ""
-          }`}
+        className={`app-sidebar-link ${isActive(item.path) ? "active" : ""}`}
         onClick={closeSidebar}
         title={isCollapsed ? item.name : undefined}
       >
@@ -856,8 +855,9 @@ const Navbar = () => {
 
       {/* SIDEBAR */}
       <aside
-        className={`app-sidebar ${isOpen ? "open" : ""} ${isCollapsed ? "collapsed" : ""
-          }`}
+        className={`app-sidebar ${isOpen ? "open" : ""} ${
+          isCollapsed ? "collapsed" : ""
+        }`}
       >
         {/* HEADER */}
         <div className="app-sidebar-header">
@@ -875,8 +875,9 @@ const Navbar = () => {
             <li className="app-sidebar-menu-item">
               <Link
                 to="/dashboard"
-                className={`app-sidebar-link ${isActive("/dashboard") ? "active" : ""
-                  }`}
+                className={`app-sidebar-link ${
+                  isActive("/dashboard") ? "active" : ""
+                }`}
                 onClick={closeSidebar}
                 title={isCollapsed ? "Dashboard" : undefined}
               >
@@ -925,8 +926,9 @@ const Navbar = () => {
                         <Link
                           ref={isActive(item.path) ? activeMenuRef : null}
                           to={item.path}
-                          className={`app-sidebar-submenu-link ${isActive(item.path) ? "active" : ""
-                            }`}
+                          className={`app-sidebar-submenu-link ${
+                            isActive(item.path) ? "active" : ""
+                          }`}
                           onClick={closeSidebar}
                         >
                           {item.name}

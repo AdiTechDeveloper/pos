@@ -81,10 +81,7 @@ import CustomerPortalLogin from "./components/CustomerPortalLogin";
 
 const Protected = ({ Component, requiredFeature }) => {
   return (
-    <ProtectedRoute
-      component={Component}
-      requiredFeature={requiredFeature}
-    />
+    <ProtectedRoute component={Component} requiredFeature={requiredFeature} />
   );
 };
 
@@ -95,20 +92,13 @@ const Public = ({ Component }) => {
 const router = createBrowserRouter(
   createRoutesFromElements(
     <>
-      <Route
-        path="/customer-portal"
-        element={<CustomerPortalLogin />}
-      />
+      {/* Customer Portal */}
+      <Route path="/customer-portal" element={<CustomerPortalLogin />} />
 
-      <Route
-        path="/"
-        element={<Public Component={Login} />}
-      />
+      {/* Public Routes */}
+      <Route path="/" element={<Public Component={Login} />} />
 
-      <Route
-        path="/register"
-        element={<Public Component={Register} />}
-      />
+      <Route path="/register" element={<Public Component={Register} />} />
 
       <Route
         path="/cashier_login"
@@ -120,53 +110,41 @@ const router = createBrowserRouter(
         element={<Protected Component={ChangePassword} />}
       />
 
-      <Route
-        path="/pos"
-        element={<Protected Component={POS} />}
-      />
+      <Route path="/pos" element={<Protected Component={POS} />} />
 
+      <Route path="/dashboard" element={<Protected Component={Home} />} />
+
+      {/* AiInsights */}
       <Route
-        path="/dashboard"
-        element={<Protected Component={Home} />}
+        path="/ai-insights"
+        element={
+          <Protected Component={AiInsights} requiredFeature="ai_insights" />
+        }
       />
 
       <Route
         path="/product"
-        element={
-          <Protected
-            Component={Product}
-            requiredFeature="products"
-          />
-        }
+        element={<Protected Component={Product} requiredFeature="products" />}
       />
 
       <Route
         path="/print-barcode"
         element={
-          <Protected
-            Component={PrintBarcode}
-            requiredFeature="products"
-          />
+          <Protected Component={PrintBarcode} requiredFeature="products" />
         }
       />
 
       <Route
         path="/create-product"
         element={
-          <Protected
-            Component={CreateEditProduct}
-            requiredFeature="products"
-          />
+          <Protected Component={CreateEditProduct} requiredFeature="products" />
         }
       />
 
       <Route
         path="/product/edit/:id"
         element={
-          <Protected
-            Component={CreateEditProduct}
-            requiredFeature="products"
-          />
+          <Protected Component={CreateEditProduct} requiredFeature="products" />
         }
       />
 
@@ -180,11 +158,8 @@ const router = createBrowserRouter(
         }
       />
 
-      
-      <Route
-        path="/store"
-        element={<Protected Component={Store} />}
-      />
+      {/* Store */}
+      <Route path="/store" element={<Protected Component={Store} />} />
 
       <Route
         path="/stores/view/:id"
@@ -199,10 +174,7 @@ const router = createBrowserRouter(
       <Route
         path="/branch"
         element={
-          <Protected
-            Component={Branch}
-            requiredFeature="branch_management"
-          />
+          <Protected Component={Branch} requiredFeature="branch_management" />
         }
       />
 
@@ -226,10 +198,8 @@ const router = createBrowserRouter(
         }
       />
 
-      <Route
-        path="/category"
-        element={<Protected Component={Category} />}
-      />
+      {/* Category */}
+      <Route path="/category" element={<Protected Component={Category} />} />
 
       <Route
         path="/create-category"
@@ -310,10 +280,7 @@ const router = createBrowserRouter(
       />
 
       {/* Sales */}
-      <Route
-        path="/sale-bill"
-        element={<Protected Component={SaleBill} />}
-      />
+      <Route path="/sale-bill" element={<Protected Component={SaleBill} />} />
 
       <Route
         path="/create-sale-bill"
@@ -324,10 +291,7 @@ const router = createBrowserRouter(
       <Route
         path="/sales-bill/return"
         element={
-          <Protected
-            Component={SalesReturn}
-            requiredFeature="sales_returns"
-          />
+          <Protected Component={SalesReturn} requiredFeature="sales_returns" />
         }
       />
 
@@ -356,10 +320,7 @@ const router = createBrowserRouter(
       <Route
         path="/suppliers"
         element={
-          <Protected
-            Component={SupplierBill}
-            requiredFeature="suppliers"
-          />
+          <Protected Component={SupplierBill} requiredFeature="suppliers" />
         }
       />
 
@@ -384,10 +345,7 @@ const router = createBrowserRouter(
       />
 
       {/* Brand */}
-      <Route
-        path="/brand"
-        element={<Protected Component={Brand} />}
-      />
+      <Route path="/brand" element={<Protected Component={Brand} />} />
 
       <Route
         path="/create-brand"
@@ -423,33 +381,20 @@ const router = createBrowserRouter(
       <Route
         path="/staff"
         element={
-          <Protected
-            Component={Staff}
-            requiredFeature="staff_management"
-          />
+          <Protected Component={Staff} requiredFeature="staff_management" />
         }
       />
 
       {/* Customers */}
       <Route
         path="/customers"
-        element={
-          <Protected
-            Component={customer}
-            requiredFeature="customers"
-          />
-        }
+        element={<Protected Component={customer} requiredFeature="customers" />}
       />
 
       {/* GST Rates */}
       <Route
         path="/gst-rates"
-        element={
-          <Protected
-            Component={GstRate}
-            requiredFeature="gst_rates"
-          />
-        }
+        element={<Protected Component={GstRate} requiredFeature="gst_rates" />}
       />
 
       <Route
@@ -485,10 +430,7 @@ const router = createBrowserRouter(
       <Route
         path="/reports/stock-summary"
         element={
-          <Protected
-            Component={StockSummury}
-            requiredFeature="reports_stock"
-          />
+          <Protected Component={StockSummury} requiredFeature="reports_stock" />
         }
       />
 
@@ -545,40 +487,28 @@ const router = createBrowserRouter(
       <Route
         path="/reports/sales-report"
         element={
-          <Protected
-            Component={SalesReport}
-            requiredFeature="reports_sales"
-          />
+          <Protected Component={SalesReport} requiredFeature="reports_sales" />
         }
       />
 
       <Route
         path="/reports/gst-output-sales"
         element={
-          <Protected
-            Component={GstReports}
-            requiredFeature="reports_gst"
-          />
+          <Protected Component={GstReports} requiredFeature="reports_gst" />
         }
       />
 
       <Route
         path="/reports/GSTR3B"
         element={
-          <Protected
-            Component={GSTR3BReport}
-            requiredFeature="reports_gst"
-          />
+          <Protected Component={GSTR3BReport} requiredFeature="reports_gst" />
         }
       />
 
       <Route
         path="/reports/GSTR1-Summary"
         element={
-          <Protected
-            Component={GSTR1Summary}
-            requiredFeature="reports_gst"
-          />
+          <Protected Component={GSTR1Summary} requiredFeature="reports_gst" />
         }
       />
 
@@ -595,9 +525,16 @@ const router = createBrowserRouter(
       <Route
         path="/reports/shift-report"
         element={
+          <Protected Component={ShiftHistory} requiredFeature="reports_shift" />
+        }
+      />
+
+      <Route
+        path="/supplier-tracking"
+        element={
           <Protected
-            Component={ShiftHistory}
-            requiredFeature="reports_shift"
+            Component={SupplierTracking}
+            requiredFeature="reports_suplier"
           />
         }
       />
@@ -605,10 +542,7 @@ const router = createBrowserRouter(
       <Route
         path="/customer-dues"
         element={
-          <Protected
-            Component={CustomerDues}
-            requiredFeature="customers"
-          />
+          <Protected Component={CustomerDues} requiredFeature="customers" />
         }
       />
 
@@ -622,12 +556,10 @@ const router = createBrowserRouter(
         }
       />
 
-      <Route
-        path="*"
-        element={<Navigate to="/" replace />}
-      />
-    </>
-  )
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </>,
+  ),
 );
 
 function App() {

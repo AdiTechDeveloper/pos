@@ -21,6 +21,10 @@ const formatPaymentMethod = (method) => {
   const value = String(method || "").trim();
   const normalized = value.toLowerCase().replace(/\s+/g, "");
 
+  if (!value || normalized === "n/a" || normalized === "na") {
+    return "Due";
+  }
+
   if (normalized.includes("cash") && normalized.includes("online")) {
     return "Split Payment";
   }
@@ -28,7 +32,7 @@ const formatPaymentMethod = (method) => {
   return value || "-";
 };
 
-export default function SalesReport() { 
+export default function SalesReport() {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
@@ -107,7 +111,7 @@ export default function SalesReport() {
     const generatedSummary = {};
 
     (report.invoices?.rows || []).forEach((inv) => {
-      const method = inv.payment_methods || "Unknown";
+      const method = inv.payment_methods || "N/A";
       if (!generatedSummary[method]) {
         generatedSummary[method] = {
           amount: 0,
@@ -115,9 +119,15 @@ export default function SalesReport() {
           bills: [],
         };
       }
-      generatedSummary[method].amount += Number(
-        inv.paid_amount || inv.total_amount || 0,
-      );
+
+      const isDue = method === "N/A";
+      const paidAmount = Number(inv.paid_amount) || 0;
+      const totalAmount = Number(inv.total_amount) || 0;
+      const dueAmount = Number(inv.due_amount) || 0;
+
+      generatedSummary[method].amount += isDue
+        ? dueAmount
+        : paidAmount || totalAmount;
       generatedSummary[method].count += 1;
       if (inv.bill_no) {
         generatedSummary[method].bills.push(inv.bill_no);
@@ -439,7 +449,7 @@ export default function SalesReport() {
   return (
     <Layout>
       <div className="p-8 bg-white min-h-screen text-gray-900">
-          <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+        <div className="flex items-center flex-wrap justify-between gap20 mb-27">
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <span
               style={{
@@ -460,130 +470,132 @@ export default function SalesReport() {
                   lineHeight: 1.2,
                 }}
               >
-              Sales Report
+                Sales Report
               </h3>
             </div>
           </div>
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6 mt-6 mb-6">
-            <div className="flex justify-between items-end gap-4 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-8 gap-6 mb-6">
-            <div>
-              <label className="text-2xl font-semibold text-gray-900">
-                Date Range
-              </label>
-              <select
-                className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
-                value={filters.date_range}
-                onChange={(e) =>
-                  setFilters({ ...filters, date_range: e.target.value })
-                }
-              >
-                <option value="today">Today</option>
-                <option value="yesterday">Yesterday</option>
-                <option value="last_7_days">Last 7 Days</option>
-                <option value="this_month">This Month</option>
-                <option value="custom">Custom</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-2xl font-semibold text-gray-900">
-                Bill Status
-              </label>
-              <select
-                className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
-                value={filters.bill_status}
-                onChange={(e) =>
-                  setFilters({ ...filters, bill_status: e.target.value })
-                }
-              >
-                <option value="all">All</option>
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-2xl font-semibold text-gray-900">
-                Branch
-              </label>
-              <select
-                className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
-                value={filters.branch_id}
-                onChange={(e) =>
-                  setFilters({ ...filters, branch_id: e.target.value })
-                }
-              >
-                <option value="">All Branches</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {filters.date_range === "custom" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="flex justify-between items-end gap-4 w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-8 gap-6 mb-6">
               <div>
                 <label className="text-2xl font-semibold text-gray-900">
-                  From
+                  Date Range
                 </label>
-                <input
-                  type="date"
+                <select
                   className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
-                  value={filters.date_from}
+                  value={filters.date_range}
                   onChange={(e) =>
-                    setFilters({ ...filters, date_from: e.target.value })
+                    setFilters({ ...filters, date_range: e.target.value })
                   }
-                />
+                >
+                  <option value="today">Today</option>
+                  <option value="yesterday">Yesterday</option>
+                  <option value="last_7_days">Last 7 Days</option>
+                  <option value="this_month">This Month</option>
+                  <option value="custom">Custom</option>
+                </select>
               </div>
+
               <div>
                 <label className="text-2xl font-semibold text-gray-900">
-                  To
+                  Bill Status
                 </label>
-                <input
-                  type="date"
+                <select
                   className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
-                  value={filters.date_to}
+                  value={filters.bill_status}
                   onChange={(e) =>
-                    setFilters({ ...filters, date_to: e.target.value })
+                    setFilters({ ...filters, bill_status: e.target.value })
                   }
-                />
+                >
+                  <option value="all">All</option>
+                  <option value="completed">Completed</option>
+                  <option value="pending">Pending</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-2xl font-semibold text-gray-900">
+                  Branch
+                </label>
+                <select
+                  className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
+                  value={filters.branch_id}
+                  onChange={(e) =>
+                    setFilters({ ...filters, branch_id: e.target.value })
+                  }
+                >
+                  <option value="">All Branches</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
-          )}
 
-          <div className="flex flex-col lg:flex-row items-center gap-4 justify-between">
-          
-            <div className="flex flex-wrap gap-4">
-              <button
-                onClick={resetFilters}
-                title={loading ? "Loading..." : "Refresh"}
-                className="flex items-center justify-center bg-green-600 text-white h-[40px] w-[40px] rounded-xl shadow-md hover:bg-green-700 transition-colors shrink-0 mb-[2px]"
-              >
-                <RefreshCw className={loading ? "animate-spin" : ""} size={21} />
-              </button>
-              <button
-                onClick={exportToExcel}
-                title="Export as CSV"
-                className="flex items-center justify-center bg-green-500 text-white w-[40px] h-[40px] rounded-xl hover:bg-green-700 shadow-md"
-              >
-                <FileSpreadsheet size={21} />
-              </button>
+            {filters.date_range === "custom" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="text-2xl font-semibold text-gray-900">
+                    From
+                  </label>
+                  <input
+                    type="date"
+                    className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
+                    value={filters.date_from}
+                    onChange={(e) =>
+                      setFilters({ ...filters, date_from: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-2xl font-semibold text-gray-900">
+                    To
+                  </label>
+                  <input
+                    type="date"
+                    className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
+                    value={filters.date_to}
+                    onChange={(e) =>
+                      setFilters({ ...filters, date_to: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+            )}
 
-              <button
-                onClick={exportToPDF}
-                title="Export as PDF"
-                className="flex items-center justify-center bg-red-500 text-white w-[40px] h-[40px] rounded-xl hover:bg-red-700 shadow-md"
-              >
-                <FileDown size={21} />
-              </button>
+            <div className="flex flex-col lg:flex-row items-center gap-4 justify-between">
+              <div className="flex flex-wrap gap-4">
+                <button
+                  onClick={resetFilters}
+                  title={loading ? "Loading..." : "Refresh"}
+                  className="flex items-center justify-center bg-green-600 text-white h-[40px] w-[40px] rounded-xl shadow-md hover:bg-green-700 transition-colors shrink-0 mb-[2px]"
+                >
+                  <RefreshCw
+                    className={loading ? "animate-spin" : ""}
+                    size={21}
+                  />
+                </button>
+                <button
+                  onClick={exportToExcel}
+                  title="Export as CSV"
+                  className="flex items-center justify-center bg-green-500 text-white w-[40px] h-[40px] rounded-xl hover:bg-green-700 shadow-md"
+                >
+                  <FileSpreadsheet size={21} />
+                </button>
+
+                <button
+                  onClick={exportToPDF}
+                  title="Export as PDF"
+                  className="flex items-center justify-center bg-red-500 text-white w-[40px] h-[40px] rounded-xl hover:bg-red-700 shadow-md"
+                >
+                  <FileDown size={21} />
+                </button>
+              </div>
             </div>
-          </div>
           </div>
         </div>
 
@@ -591,7 +603,7 @@ export default function SalesReport() {
           <Card
             title="Gross Sales"
             value={k.gross_sales}
-            variant="bg-blue-50 text-blue-700 border-blue-200"                                      
+            variant="bg-blue-50 text-blue-700 border-blue-200"
           />
           <Card
             title="COGS"
@@ -614,28 +626,29 @@ export default function SalesReport() {
             value={k.total_due}
             variant="bg-rose-50 text-rose-700 border-rose-200"
           />
-           <SmallCard label="CGST" value={k.tax_breakdown.cgst} />
+          <SmallCard label="CGST" value={k.tax_breakdown.cgst} />
           <SmallCard label="SGST" value={k.tax_breakdown.sgst} />
           <SmallCard label="IGST" value={k.tax_breakdown.igst} />
         </div>
 
-             <div className="flex flex-wrap justify-center gap-3 mt-10 mb-6 border-b border-gray-200 text-center">
-        {["invoices", "products", "payments", "summary", "overrides"].map(
-          (tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-5 py-3 rounded-t-2xl font-semibold text-2xl transition-all ${
-                activeTab === tab
-                  ? "bg-blue-600 text-white border-b-2 border-blue-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              }`}
-            >
-              {tab === "summary" ? "SUMMARY" : tab.toUpperCase()}
-            </button>
-          ),
-        )}
-      </div>
+        {/* TABS */}
+        <div className="flex flex-wrap justify-center gap-3 mt-10 mb-6 border-b border-gray-200 text-center">
+          {["invoices", "products", "payments", "summary", "overrides"].map(
+            (tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-5 py-3 rounded-t-2xl font-semibold text-2xl transition-all ${
+                  activeTab === tab
+                    ? "bg-blue-600 text-white border-b-2 border-blue-600"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                {tab === "summary" ? "SUMMARY" : tab.toUpperCase()}
+              </button>
+            ),
+          )}
+        </div>
 
         {activeTab === "invoices" && <InvoiceTable data={report.invoices} />}
         {activeTab === "products" && <ProductTable data={report.products} />}
@@ -662,10 +675,14 @@ const Card = ({
   <div
     className={`bg-gradient-to-br ${variant} p-4 m- 6 rounded-3xl shadow-xl border border-gray-200 hover:-translate-y-1 transform transition-all duration-300`}
   >
-    <p className="text-xl font-semibold text-gray-700 mb-3 text-center">{title}</p>
+    <p className="text-xl font-semibold text-gray-700 mb-3 text-center">
+      {title}
+    </p>
     <h2 className="text-2xl font-bold text-gray-900 text-center">₹{value}</h2>
     {extra && (
-      <p className="text-2xl text-gray-700 font-medium mt-4 text-center">{extra}</p>
+      <p className="text-2xl text-gray-700 font-medium mt-4 text-center">
+        {extra}
+      </p>
     )}
   </div>
 );
@@ -731,9 +748,7 @@ const InvoiceTable = ({ data }) => {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="font-semibold text-gray-900">
-          ₹{row.total_amount}
-        </span>
+        <span className="font-semibold text-gray-900">₹{row.total_amount}</span>
       ),
     },
     {
@@ -831,6 +846,7 @@ const InvoiceTable = ({ data }) => {
     </div>
   );
 };
+
 const ProductTable = ({ data }) => {
   const columns = [
     {
@@ -839,9 +855,7 @@ const ProductTable = ({ data }) => {
       sortable: true,
       grow: 2,
       cell: (row) => (
-        <span className="font-semibold text-gray-800">
-          {row.product_name}
-        </span>
+        <span className="font-semibold text-gray-800">{row.product_name}</span>
       ),
     },
     {
@@ -859,9 +873,7 @@ const ProductTable = ({ data }) => {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="font-semibold text-gray-700">
-          ₹{row.net_revenue}
-        </span>
+        <span className="font-semibold text-gray-700">₹{row.net_revenue}</span>
       ),
     },
     {
@@ -932,6 +944,9 @@ const PaymentTable = ({ data }) => (
     </div>
   </div>
 );
+
+// SAFE PAYMENT SUMMARY TABLE COMPONENT
+
 const PaymentSummaryTable = ({ summary }) => {
   const summaryEntries = Object.entries(summary || {});
 
@@ -954,22 +969,35 @@ const PaymentSummaryTable = ({ summary }) => {
       name: "Payment Method",
       selector: (row) => row.method,
       sortable: true,
-      cell: (row) => (
-        <span className="inline-block px-4 py-2 bg-blue-100 text-blue-900 rounded-xl font-bold text-lg">
-          {formatPaymentMethod(row.method).toUpperCase()}
-        </span>
-      ),
+      cell: (row) => {
+        const label = formatPaymentMethod(row.method).toUpperCase();
+        const isDue = label === "DUE";
+        return (
+          <span
+            className={`inline-block px-4 py-2 rounded-xl font-bold text-lg ${
+              isDue ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-900"
+            }`}
+          >
+            {label}
+          </span>
+        );
+      },
     },
     {
       name: "Total Amount",
       selector: (row) => row.amount,
       sortable: true,
       right: true,
-      cell: (row) => (
-        <span className="font-bold text-green-600">
-          ₹{Number(row.amount || 0).toFixed(2)}
-        </span>
-      ),
+      cell: (row) => {
+        const isDue = row.method === "N/A";
+        return (
+          <span
+            className={`font-bold ${isDue ? "text-red-600" : "text-green-600"}`}
+          >
+            ₹{Number(row.amount || 0).toFixed(2)}
+          </span>
+        );
+      },
     },
     {
       name: "Bill Count",
@@ -1064,9 +1092,7 @@ const OverrideTable = ({ data }) => {
       sortable: true,
       grow: 2,
       cell: (row) => (
-        <span className="font-semibold text-gray-800">
-          {row.product_name}
-        </span>
+        <span className="font-semibold text-gray-800">{row.product_name}</span>
       ),
     },
     {
@@ -1140,8 +1166,9 @@ const StatusBadge = ({ status }) => {
 
   return (
     <span
-      className={`px-6 py-4 rounded-full text-2xl font-semibold ${colors[status] || "bg-gray-200 text-gray-800 border border-gray-300"
-        }`}
+      className={`px-6 py-4 rounded-full text-2xl font-semibold ${
+        colors[status] || "bg-gray-200 text-gray-800 border border-gray-300"
+      }`}
     >
       {status}
     </span>
