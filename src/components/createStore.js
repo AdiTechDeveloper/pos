@@ -31,7 +31,6 @@ const CreateStore = () => {
           Authorization: `Bearer ${user_data?.token}`,
         },
       });
-      console.log(res.data.data);
       setEditingData(res.data.data);
     } catch (error) {
       toast.error(

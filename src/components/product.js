@@ -11,9 +11,8 @@ import { useAppData } from "../context/AppDataContext";
 const Product = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const navigate = useNavigate();
-  // const [products, setProducts] = useState([]);
   const appData = useAppData();
-const products = appData?.products || [];
+  const products = appData?.products || [];
   const [search, setSearch] = useState("");
   const [filteredData, setFilteredData] = useState(products);
   const [currentPage, setCurrentPage] = useState(1);
@@ -37,156 +36,31 @@ const products = appData?.products || [];
     localStorage.setItem("product_detail", null);
   };
 
-  // const handleDelete = async (id) => {
-  //   const response = await axios.delete(`${BASE_URL}/api/products/${id}`, {
-  //     headers: {
-  //       accept: "application/json",
-  //       Authorization: `Bearer ${user_data.token}`,
-  //     },
-  //   });
-  //   if (response) {
-  //     navigate("/product");
-  //     toast.success("Product Deleted");
-  //     fetchProduct();
-  //   }
-  // };
+  const handleDelete = async (id) => {
+    try {
+      const response = await axios.delete(`${BASE_URL}/api/products/${id}`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${user_data.token}`,
+        },
+      });
 
-  // const fetchProduct = async () => {
+      if (response.status === 200) {
+        appData?.invalidate("products");
+        await appData?.loadProducts();
 
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/all-products`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
+        toast.success("Product Deleted");
+        navigate("/product");
+      }
+    } catch (error) {
+      console.error("Error deleting product:", error);
 
-  //     const rows = [];
-
-  //     response.data.products.forEach((product) => {
-  //       if (product.batches && product.batches.length > 0) {
-  //         const grouped = {};
-
-  //         product.batches.forEach((inv) => {
-  //           const key = `${inv.batch_no}-${inv.batch_barcode}-${inv.mrp}-${inv.selling_price}`;
-
-  //           if (!grouped[key]) {
-  //             grouped[key] = {
-  //               row_id: `inv-${product.id}-${key}`,
-  //               inventory_ids: [inv.id],
-
-  //               product_id: product.id,
-  //               sku: product.sku,
-  //               name: product.name,
-  //               brand: product.brand,
-  //               category: product.category,
-  //               hsn_code: product.hsn_code,
-  //               gst_rate: product.gst_rate,
-  //               gst_inclusive: product.gst_inclusive,
-  //               is_price_override: product.is_price_override,
-
-  //               batch_no: inv.batch_no,
-
-  //               mrp: Number(inv.mrp),
-  //               selling_price: Number(inv.selling_price),
-
-  //               qty: Number(inv.qty_available) || 0,
-  //               free: Number(inv.free) || 0,
-
-  //               cost_total:
-  //                 Number(inv.cost_price) * Number(inv.qty_available || 0),
-
-  //               barcodes: new Set([inv.batch_barcode]),
-  //             };
-  //           } else {
-  //             grouped[key].inventory_ids.push(inv.id);
-  //             grouped[key].qty += Number(inv.qty_available) || 0;
-  //             grouped[key].free += Number(inv.free) || 0;
-  //             grouped[key].cost_total +=
-  //               Number(inv.cost_price) * Number(inv.qty_available || 0);
-  //             grouped[key].barcodes.add(inv.batch_barcode);
-  //           }
-  //         });
-
-  //         console.log(product);
-
-  //         Object.values(grouped).forEach((row) => {
-  //           row.total_qty = row.qty + row.free;
-  //           row.cost_price = row.qty
-  //             ? (row.cost_total / row.qty).toFixed(2)
-  //             : 0;
-
-  //           row.show_barcode = row.barcodes.size === 1;
-  //           row.barcode = row.show_barcode ? [...row.barcodes][0] : null;
-
-  //           delete row.barcodes;
-  //           rows.push(row);
-  //         });
-  //       } else {
-  //         rows.push({
-  //           row_id: `prod-${product.id}`,
-
-  //           product_id: product.id,
-  //           sku: product.sku,
-  //           name: product.name,
-  //           brand: product.brand,
-  //           category: product.category,
-  //           hsn_code: product.hsn_code,
-  //           gst_rate: product.gst_rate,
-  //           gst_inclusive: product.gst_inclusive,
-  //           is_price_override: product.is_price_override,
-
-  //           batch_no: "-",
-  //           barcode: product.barcode ?? null,
-
-  //           mrp: Number(product.min_price) || 0,
-  //           selling_price: Number(product.min_price) || 0,
-  //           cost_price: product.cost_price ?? 0,
-
-  //           qty: 0,
-  //           free: 0,
-  //           total_qty: 0,
-  //           show_barcode: !!product.barcode,
-  //         });
-  //       }
-  //     });
-
-  //     setProducts(rows);
-  //   } catch (error) {
-  //     console.error("Error fetching products:", error);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchProduct();
-  // }, []);
-const handleDelete = async (id) => {
-  try {
-    const response = await axios.delete(`${BASE_URL}/api/products/${id}`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${user_data.token}`,
-      },
-    });
-
-    if (response.status === 200) {
-      appData?.invalidate("products");
-      await appData?.loadProducts();
-
-      toast.success("Product Deleted");
-      navigate("/product");
+      toast.error(error.response?.data?.message || "Failed to delete product");
     }
-  } catch (error) {
-    console.error("Error deleting product:", error);
-
-    toast.error(
-      error.response?.data?.message || "Failed to delete product"
-    );
-  }
-};
+  };
   useEffect(() => {
-  appData?.loadProducts();
-}, []);
+    appData?.loadProducts();
+  }, []);
 
   useEffect(() => {
     const text = search.toLowerCase();
@@ -348,7 +222,6 @@ const handleDelete = async (id) => {
           <span className="item edit" title="Edit">
             <Link
               to={`/product/edit/${row.product_id}`}
-              
               onClick={() =>
                 handleEdit({
                   id: row.product_id,
@@ -383,8 +256,10 @@ const handleDelete = async (id) => {
       <div className="main-content-inner">
         <div className="main-content-wrap">
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-             <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div className="flex items-center flex-wrap justify-between gap20 mb-27">
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+              >
                 <span
                   style={{
                     width: "5px",
@@ -413,11 +288,10 @@ const handleDelete = async (id) => {
                       margin: "2px 0 0 0",
                     }}
                   >
-                    	View, add, and manage your product catalog and stock
+                    View, add, and manage your product catalog and stock
                   </p>
                 </div>
               </div>
-
             </div>
             <ul className="breadcrumbs flex items-center flex-wrap justify-start gap10">
               <li>

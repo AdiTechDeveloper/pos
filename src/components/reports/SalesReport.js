@@ -478,7 +478,7 @@ export default function SalesReport() {
 
         <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6 mt-3 mb-6">
           <div className="flex justify-between items-end gap-4 w-full">
-            <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
               <div>
                 <label className="text-2xl font-semibold text-gray-900">
                   Date Range
