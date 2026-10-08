@@ -4,6 +4,7 @@ import React, {
   useState,
   useCallback,
 } from "react";
+
 import axios from "axios";
 import { hasFeature } from "../utils/hasFeature";
 
@@ -117,15 +118,15 @@ const RESPONSE_PATH = {
   branches: (res) =>
     toArray(
       res.data?.branches ??
-      res.data?.data ??
-      res.data
+        res.data?.data ??
+        res.data
     ),
 
   managerBranches: (res) =>
     toArray(
       res.data?.branches ??
-      res.data?.data ??
-      res.data
+        res.data?.data ??
+        res.data
     ),
 
   categories: (res) =>
@@ -145,133 +146,117 @@ const RESPONSE_PATH = {
     const rows = [];
 
     products.forEach((product) => {
-      if (
-        product.batches &&
-        product.batches.length > 0
-      ) {
-        const grouped = {};
+      const inventories = Array.isArray(product.inventories)
+        ? product.inventories
+        : [];
 
-        product.batches.forEach((inv) => {
-          const key = `${inv.batch_no}-${inv.batch_barcode}-${inv.mrp}-${inv.selling_price}`;
+      let totalQty = 0;
+      let totalFree = 0;
+      let costTotal = 0;
 
-          if (!grouped[key]) {
-            grouped[key] = {
-              row_id: `inv-${product.id}-${key}`,
-              inventory_ids: [inv.id],
+      const inventoryIds = [];
+      const barcodeSet = new Set();
 
-              product_id: product.id,
-              sku: product.sku,
-              name: product.name,
-              brand: product.brand,
-              category: product.category,
-              hsn_code: product.hsn_code,
-              gst_rate: product.gst_rate,
-              gst_inclusive: product.gst_inclusive,
-              is_price_override:
-                product.is_price_override,
+      inventories.forEach((inv) => {
+        const qty =
+          Number(
+            inv.qty ??
+              inv.qty_available ??
+              0
+          ) || 0;
 
-              batch_no: inv.batch_no,
+        const free =
+          Number(
+            inv.free_qty ??
+              inv.free ??
+              0
+          ) || 0;
 
-              mrp: Number(inv.mrp),
-              selling_price:
-                Number(inv.selling_price),
+        totalQty += qty;
+        totalFree += free;
 
-              qty:
-                Number(inv.qty_available) || 0,
+        costTotal +=
+          Number(inv.cost_price || 0) * qty;
 
-              free:
-                Number(inv.free) || 0,
+        if (inv.id) {
+          inventoryIds.push(inv.id);
+        }
 
-              cost_total:
-                Number(inv.cost_price) *
-                Number(
-                  inv.qty_available || 0
-                ),
+        if (inv.batch_barcode) {
+          barcodeSet.add(inv.batch_barcode);
+        }
+      });
 
-              barcodes: new Set([
-                inv.batch_barcode,
-              ]),
-            };
-          } else {
-            grouped[key].inventory_ids.push(
-              inv.id
-            );
+      const hasInventory = inventories.length > 0;
 
-            grouped[key].qty +=
-              Number(inv.qty_available) || 0;
+      const avgCostPrice = totalQty
+        ? (
+            costTotal / totalQty
+          ).toFixed(2)
+        : 0;
 
-            grouped[key].free +=
-              Number(inv.free) || 0;
+      const showBarcode =
+        barcodeSet.size === 1;
 
-            grouped[key].cost_total +=
-              Number(inv.cost_price) *
-              Number(
-                inv.qty_available || 0
-              );
+      rows.push({
+        row_id: `prod-${product.id}`,
 
-            grouped[key].barcodes.add(
-              inv.batch_barcode
-            );
-          }
-        });
+        inventory_ids: inventoryIds,
 
-        Object.values(grouped).forEach(
-          (row) => {
-            row.total_qty =
-              row.qty + row.free;
+        product_id: product.id,
 
-            row.cost_price = row.qty
-              ? (
-                row.cost_total / row.qty
-              ).toFixed(2)
-              : 0;
+        sku: product.sku,
 
-            row.show_barcode =
-              row.barcodes.size === 1;
+        name: product.name,
 
-            row.barcode = row.show_barcode
-              ? [...row.barcodes][0]
-              : null;
+        brand: product.brand,
 
-            delete row.barcodes;
+        category: product.category,
 
-            rows.push(row);
-          }
-        );
-      } else {
-        rows.push({
-          row_id: `prod-${product.id}`,
+        hsn_code: product.hsn_code,
 
-          product_id: product.id,
-          sku: product.sku,
-          name: product.name,
-          brand: product.brand,
-          category: product.category,
-          hsn_code: product.hsn_code,
-          gst_rate: product.gst_rate,
-          gst_inclusive: product.gst_inclusive,
-          is_price_override:
-            product.is_price_override,
+        gst_rate: product.gst_rate,
 
-          batch_no: "-",
-          barcode: product.barcode ?? null,
+        gst_inclusive:
+          product.gst_inclusive,
 
-          mrp:
-            Number(product.min_price) || 0,
+        is_price_override:
+          product.is_price_override,
 
-          selling_price:
-            Number(product.min_price) || 0,
+        batch_no: "-",
 
-          cost_price:
-            product.cost_price ?? 0,
+        barcode: showBarcode
+          ? [...barcodeSet][0]
+          : product.barcode ?? null,
 
-          qty: 0,
-          free: 0,
-          total_qty: 0,
-          show_barcode:
-            !!product.barcode,
-        });
-      }
+        mrp:
+          Number(product.min_price) ||
+          Number(product.mrp) ||
+          0,
+
+        selling_price:
+          Number(product.min_price) ||
+          Number(product.selling_price) ||
+          0,
+
+        cost_price: hasInventory
+          ? avgCostPrice
+          : product.cost_price ?? 0,
+
+        qty: totalQty,
+
+        free: totalFree,
+
+        total_qty:
+          totalQty + totalFree,
+
+        batch_count:
+          inventories.length,
+
+        show_barcode:
+          showBarcode ||
+          !!product.barcode,
+      });
     });
 
     return rows;
@@ -334,6 +319,7 @@ function getUser() {
     return null;
   }
 }
+
 function getToken() {
   try {
     return (
@@ -345,7 +331,6 @@ function getToken() {
     return null;
   }
 }
-
 
 function getRole() {
   return getUser()?.role || null;
@@ -381,6 +366,7 @@ function ensureCacheOwner() {
   Object.keys(dashboardInFlight).forEach(
     (k) => delete dashboardInFlight[k]
   );
+
   Object.keys(monthlySalesCache).forEach(
     (k) => delete monthlySalesCache[k]
   );
@@ -453,6 +439,69 @@ function getDashboardCacheKey() {
   });
 }
 
+function fetchProducts(
+  branchId = null,
+  { force = false } = {}
+) {
+  ensureCacheOwner();
+
+  const cacheKey =
+    `products_${branchId || "all"}`;
+
+  const now = Date.now();
+
+  if (
+    !force &&
+    lastFetched[cacheKey] &&
+    now - lastFetched[cacheKey] < CACHE_TTL
+  ) {
+    return Promise.resolve();
+  }
+
+  if (inFlight[cacheKey]) {
+    return inFlight[cacheKey];
+  }
+
+  const params = {};
+
+  if (branchId) {
+    params.branch_id = branchId;
+  }
+
+  inFlight[cacheKey] = axios
+    .get(ENDPOINTS.products, {
+      params,
+    })
+    .then((res) => {
+      const value = RESPONSE_PATH.products
+        ? RESPONSE_PATH.products(res)
+        : [];
+
+      lastFetched[cacheKey] =
+        Date.now();
+
+      notifyListeners(
+        "products",
+        value
+      );
+
+      return value;
+    })
+    .catch((err) => {
+      console.error(
+        "Failed to load products",
+        err
+      );
+
+      throw err;
+    })
+    .finally(() => {
+      inFlight[cacheKey] = null;
+    });
+
+  return inFlight[cacheKey];
+}
+
 function fetchKey(
   key,
   { force = false, storeId } = {}
@@ -464,8 +513,7 @@ function fetchKey(
   if (
     !force &&
     lastFetched[key] &&
-    now - lastFetched[key] <
-    CACHE_TTL
+    now - lastFetched[key] < CACHE_TTL
   ) {
     return Promise.resolve();
   }
@@ -489,8 +537,8 @@ function fetchKey(
       const value = RESPONSE_PATH[key]
         ? RESPONSE_PATH[key](res)
         : res.data?.data ??
-        res.data ??
-        [];
+          res.data ??
+          [];
 
       lastFetched[key] =
         Date.now();
@@ -526,8 +574,7 @@ function fetchStockExpiryAlerts({
   if (
     !force &&
     lastFetched[key] &&
-    now - lastFetched[key] <
-    CACHE_TTL
+    now - lastFetched[key] < CACHE_TTL
   ) {
     return Promise.resolve();
   }
@@ -564,6 +611,7 @@ function fetchStockExpiryAlerts({
 
   return inFlight[key];
 }
+
 function fetchMonthlySales(
   branchId = null,
   {
@@ -589,23 +637,31 @@ function fetchMonthlySales(
   });
 
   const now = Date.now();
-  const cached = monthlySalesCache[cacheKey];
+  const cached =
+    monthlySalesCache[cacheKey];
 
   if (
     !force &&
     cached &&
     now - cached.timestamp < CACHE_TTL
   ) {
-    return Promise.resolve(cached.data);
+    return Promise.resolve(
+      cached.data
+    );
   }
 
-  if (monthlySalesInFlight[cacheKey]) {
-    return monthlySalesInFlight[cacheKey];
+  if (
+    monthlySalesInFlight[cacheKey]
+  ) {
+    return monthlySalesInFlight[
+      cacheKey
+    ];
   }
 
   const authHeaders = {
     Accept: "application/json",
-    Authorization: `Bearer ${token}`,
+    Authorization:
+      `Bearer ${token}`,
   };
 
   const params = {
@@ -615,37 +671,47 @@ function fetchMonthlySales(
     branch_id: branchId || null,
   };
 
-  monthlySalesInFlight[cacheKey] = axios
-    .get("/api/reports/monthly-sales", {
-      headers: authHeaders,
-      params,
-    })
-    .then((res) => {
-      const data = res.data?.monthly_sales || {};
+  monthlySalesInFlight[cacheKey] =
+    axios
+      .get(
+        "/api/reports/monthly-sales",
+        {
+          headers: authHeaders,
+          params,
+        }
+      )
+      .then((res) => {
+        const data =
+          res.data?.monthly_sales ||
+          {};
 
-      monthlySalesCache[cacheKey] = {
-        data,
-        timestamp: Date.now(),
-      };
+        monthlySalesCache[
+          cacheKey
+        ] = {
+          data,
+          timestamp: Date.now(),
+        };
 
-      return data;
-    })
-    .catch((err) => {
-      console.error(
-        "Failed to load monthly sales",
-        err
-      );
+        return data;
+      })
+      .catch((err) => {
+        console.error(
+          "Failed to load monthly sales",
+          err
+        );
 
-      throw err;
-    })
-    .finally(() => {
-      monthlySalesInFlight[cacheKey] = null;
-    });
+        throw err;
+      })
+      .finally(() => {
+        monthlySalesInFlight[
+          cacheKey
+        ] = null;
+      });
 
-  return monthlySalesInFlight[cacheKey];
+  return monthlySalesInFlight[
+    cacheKey
+  ];
 }
-
-
 
 function fetchDashboard({
   force = false,
@@ -663,8 +729,7 @@ function fetchDashboard({
   if (
     !force &&
     cached &&
-    now - cached.timestamp <
-    CACHE_TTL
+    now - cached.timestamp < CACHE_TTL
   ) {
     notifyListeners(
       "dashboard",
@@ -694,17 +759,17 @@ function fetchDashboard({
   const managerBranchId =
     role === "manager"
       ? user?.branch_id ??
-      user?.user?.branch_id ??
-      user?.user?.branch_ids?.[0] ??
-      user?.branch_ids?.[0] ??
-      null
+        user?.user?.branch_id ??
+        user?.user?.branch_ids?.[0] ??
+        user?.branch_ids?.[0] ??
+        null
       : null;
 
   const adminStoreId =
     role === "admin"
       ? user?.store_id ??
-      user?.user?.store_id ??
-      null
+        user?.user?.store_id ??
+        null
       : null;
 
   const authHeaders = {
@@ -715,7 +780,10 @@ function fetchDashboard({
       `Bearer ${user?.token}`,
   };
 
-  const get = (path, params) =>
+  const get = (
+    path,
+    params
+  ) =>
     axios.get(path, {
       headers: authHeaders,
       params,
@@ -751,7 +819,6 @@ function fetchDashboard({
           profitLossToday: null,
 
           lowStockProducts: [],
-          // monthlySales: null,
         };
 
         dashboardCache[
@@ -845,6 +912,7 @@ function fetchDashboard({
             }
           ),
         ]);
+
         // if (canSales) {
         //   jobs.push([
         //     "salesToday",
@@ -960,7 +1028,6 @@ function fetchDashboard({
 
       const results =
         await Promise.allSettled(
-
           jobs.map(
             ([, promise]) =>
               promise
@@ -1031,6 +1098,7 @@ function fetchDashboard({
               response?.invoices
                 ?.rows || [];
           }
+
           // if (key === "monthlySales") {
           //   data.monthlySales =
           //     response?.monthly_sales || {};
@@ -1103,7 +1171,6 @@ function fetchDashboard({
   ];
 }
 
-
 export function AppDataProvider({
   children,
 }) {
@@ -1142,6 +1209,7 @@ export function AppDataProvider({
       customers: [],
 
       advancePayments: [],
+
       monthlySales: {
         "1": 85000,
         "2": 92000,
@@ -1237,11 +1305,18 @@ export function AppDataProvider({
       []
     );
 
-  const loadMonthlySales = useCallback(
-    (branchId = null, opts = {}) =>
-      fetchMonthlySales(branchId, opts),
-    []
-  );
+  const loadMonthlySales =
+    useCallback(
+      (
+        branchId = null,
+        opts = {}
+      ) =>
+        fetchMonthlySales(
+          branchId,
+          opts
+        ),
+      []
+    );
 
   const invalidate =
     useCallback(
@@ -1254,7 +1329,7 @@ export function AppDataProvider({
           ).forEach(
             (cacheKey) =>
               delete dashboardCache[
-              cacheKey
+                cacheKey
               ]
           );
 
@@ -1263,7 +1338,7 @@ export function AppDataProvider({
           ).forEach(
             (cacheKey) =>
               delete dashboardInFlight[
-              cacheKey
+                cacheKey
               ]
           );
 
@@ -1281,7 +1356,7 @@ export function AppDataProvider({
           ).forEach(
             (cacheKey) =>
               delete expiredProductsCache[
-              cacheKey
+                cacheKey
               ]
           );
 
@@ -1290,8 +1365,47 @@ export function AppDataProvider({
           ).forEach(
             (cacheKey) =>
               delete expiredProductsInFlight[
-              cacheKey
+                cacheKey
               ]
+          );
+
+          return;
+        }
+
+        // Products now have branch-specific cache keys.
+        if (key === "products") {
+          Object.keys(
+            lastFetched
+          ).forEach(
+            (cacheKey) => {
+              if (
+                cacheKey === "products" ||
+                cacheKey.startsWith(
+                  "products_"
+                )
+              ) {
+                delete lastFetched[
+                  cacheKey
+                ];
+              }
+            }
+          );
+
+          Object.keys(
+            inFlight
+          ).forEach(
+            (cacheKey) => {
+              if (
+                cacheKey === "products" ||
+                cacheKey.startsWith(
+                  "products_"
+                )
+              ) {
+                delete inFlight[
+                  cacheKey
+                ];
+              }
+            }
           );
 
           return;
@@ -1311,6 +1425,7 @@ export function AppDataProvider({
     dashboard,
 
     loadDashboard,
+
     loadMonthlySales,
 
     branches: isManager
@@ -1355,8 +1470,19 @@ export function AppDataProvider({
     loadStaff: () =>
       load("staff"),
 
-    loadProducts: () =>
-      load("products"),
+    loadProducts: (opts = {}) =>
+      fetchProducts(
+        opts.branch_id || null,
+        opts
+      ),
+
+    loadPurchaseProducts: (
+      opts
+    ) =>
+      load(
+        "purchaseProducts",
+        opts
+      ),
 
     loadExpiredProducts: (
       filters,
@@ -1375,10 +1501,10 @@ export function AppDataProvider({
         opts
       ),
 
-    loadPurchaseProducts: () =>
-      load(
-        "purchaseProducts"
-      ),
+    // loadPurchaseProducts: () =>
+    //   load(
+    //     "purchaseProducts"
+    //   ),
 
     loadSaleProducts: () =>
       load("saleProducts"),
@@ -1432,6 +1558,7 @@ export function AppDataProvider({
 }
 
 export const useAppData =
-  () => useContext(
-    AppDataContext
-  );
+  () =>
+    useContext(
+      AppDataContext
+    );

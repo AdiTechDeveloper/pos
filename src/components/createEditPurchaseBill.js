@@ -837,10 +837,16 @@ const CreateEditPurchaseBill = () => {
         toast.success("Purchase bill saved successfully!");
       }
 
-      appData?.invalidate("purchaseBills");
-      await appData?.loadPurchaseBills();
+    appData?.invalidate("purchaseBills");
+await appData?.loadPurchaseBills();
 
-      navigate("/purchase-bill");
+appData?.invalidate("products");
+appData?.invalidate("purchaseProducts");
+
+await appData?.loadProducts({ force: true });
+await appData?.loadPurchaseProducts({ force: true });
+
+navigate("/purchase-bill");
 
     } catch (error) {
       console.log(error.response?.data);

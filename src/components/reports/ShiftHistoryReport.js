@@ -627,7 +627,7 @@ const ShiftHistory = () => {
               value={filters.cashier_id}
               onChange={handleFilterChange}
               style={{
-                height: "40px",
+                height: "50px",
                 borderRadius: "8px",
                 border: "1px solid #cbd5e1",
                 fontSize: "13px",
