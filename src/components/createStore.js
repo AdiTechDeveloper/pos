@@ -31,7 +31,7 @@ const CreateStore = () => {
           Authorization: `Bearer ${user_data?.token}`,
         },
       });
-
+      console.log(res.data.data);
       setEditingData(res.data.data);
     } catch (error) {
       toast.error(
@@ -68,7 +68,8 @@ const CreateStore = () => {
 
   const featureKeys = Object.keys(featureCatalog);
   const allFeaturesSelected =
-    featureKeys.length > 0 && featureKeys.every((key) => selectedFeatures.includes(key));
+    featureKeys.length > 0 &&
+    featureKeys.every((key) => selectedFeatures.includes(key));
 
   const toggleAllFeatures = () => {
     setSelectedFeatures(allFeaturesSelected ? [] : featureKeys);
@@ -277,7 +278,13 @@ const CreateStore = () => {
                 >
                   {/* NAME */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
                       <div className="body-title">
                         Store Name <span className="tf-color-1">*</span>
                       </div>
@@ -288,13 +295,23 @@ const CreateStore = () => {
                         readOnly={isEdit}
                         style={{ width: "100%" }}
                       />
-                      <ErrorMessage name="name" component="p" className="error-text" />
+                      <ErrorMessage
+                        name="name"
+                        component="p"
+                        className="error-text"
+                      />
                     </div>
                   </fieldset>
 
                   {/* TAGLINE */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
                       <div className="body-title">Tagline</div>
                       <Field
                         type="text"
@@ -302,13 +319,23 @@ const CreateStore = () => {
                         placeholder="Enter store tagline (optional)"
                         style={{ width: "100%" }}
                       />
-                      <ErrorMessage name="tagline" component="p" className="error-text" />
+                      <ErrorMessage
+                        name="tagline"
+                        component="p"
+                        className="error-text"
+                      />
                     </div>
                   </fieldset>
 
                   {/* ADDRESS */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
                       <div className="body-title">
                         Address <span className="tf-color-1">*</span>
                       </div>
@@ -318,28 +345,49 @@ const CreateStore = () => {
                         placeholder="Enter address"
                         style={{ width: "100%" }}
                       />
-                      <ErrorMessage name="address" component="p" className="error-text" />
+                      <ErrorMessage
+                        name="address"
+                        component="p"
+                        className="error-text"
+                      />
                     </div>
                   </fieldset>
 
                   {/* STATE */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
                       <div className="body-title">
                         State <span className="tf-color-1">*</span>
                       </div>
-                      <div className="select flex-grow" style={{ width: "100%" }}>
-                        <Field as="select" name="state" style={{ width: "100%" }}>
+                      <div
+                        className="select flex-grow"
+                        style={{ width: "100%" }}
+                      >
+                        <Field
+                          as="select"
+                          name="state"
+                          style={{ width: "100%" }}
+                        >
                           <option value="">Select state</option>
                           <option value="Andhra Pradesh">Andhra Pradesh</option>
-                          <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                          <option value="Arunachal Pradesh">
+                            Arunachal Pradesh
+                          </option>
                           <option value="Assam">Assam</option>
                           <option value="Bihar">Bihar</option>
                           <option value="Chhattisgarh">Chhattisgarh</option>
                           <option value="Goa">Goa</option>
                           <option value="Gujarat">Gujarat</option>
                           <option value="Haryana">Haryana</option>
-                          <option value="Himachal Pradesh">Himachal Pradesh</option>
+                          <option value="Himachal Pradesh">
+                            Himachal Pradesh
+                          </option>
                           <option value="Jharkhand">Jharkhand</option>
                           <option value="Karnataka">Karnataka</option>
                           <option value="Kerala">Kerala</option>
@@ -367,19 +415,31 @@ const CreateStore = () => {
                             Dadra and Nagar Haveli and Daman and Diu
                           </option>
                           <option value="Delhi">Delhi</option>
-                          <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                          <option value="Jammu and Kashmir">
+                            Jammu and Kashmir
+                          </option>
                           <option value="Ladakh">Ladakh</option>
                           <option value="Lakshadweep">Lakshadweep</option>
                           <option value="Puducherry">Puducherry</option>
                         </Field>
                       </div>
-                      <ErrorMessage name="state" component="p" className="error-text" />
+                      <ErrorMessage
+                        name="state"
+                        component="p"
+                        className="error-text"
+                      />
                     </div>
                   </fieldset>
 
                   {/* PHONE */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
                       <div className="body-title">
                         Phone <span className="tf-color-1">*</span>
                       </div>
@@ -390,13 +450,23 @@ const CreateStore = () => {
                         maxLength={10}
                         style={{ width: "100%" }}
                       />
-                      <ErrorMessage name="phone" component="p" className="error-text" />
+                      <ErrorMessage
+                        name="phone"
+                        component="p"
+                        className="error-text"
+                      />
                     </div>
                   </fieldset>
 
                   {/* CONTACT PERSON */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
                       <div className="body-title">
                         Contact Person <span className="tf-color-1">*</span>
                       </div>
@@ -416,7 +486,13 @@ const CreateStore = () => {
 
                   {/* GSTIN */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
                       <div className="body-title">
                         GSTIN <span className="tf-color-1">*</span>
                       </div>
@@ -426,13 +502,23 @@ const CreateStore = () => {
                         placeholder="Enter GSTIN"
                         style={{ width: "100%" }}
                       />
-                      <ErrorMessage name="gstin" component="p" className="error-text" />
+                      <ErrorMessage
+                        name="gstin"
+                        component="p"
+                        className="error-text"
+                      />
                     </div>
                   </fieldset>
 
                   {/* USERNAME */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
                       <div className="body-title">
                         Username <span className="tf-color-1">*</span>
                       </div>
@@ -442,15 +528,26 @@ const CreateStore = () => {
                         placeholder="Enter username"
                         style={{ width: "100%" }}
                       />
-                      <ErrorMessage name="username" component="p" className="error-text" />
+                      <ErrorMessage
+                        name="username"
+                        component="p"
+                        className="error-text"
+                      />
                     </div>
                   </fieldset>
 
                   {/* PASSWORD */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
                       <div className="body-title">
-                        Password {!isEdit && <span className="tf-color-1">*</span>}
+                        Password{" "}
+                        {!isEdit && <span className="tf-color-1">*</span>}
                       </div>
                       <Field
                         type="text"
@@ -462,13 +559,23 @@ const CreateStore = () => {
                         }
                         style={{ width: "100%" }}
                       />
-                      <ErrorMessage name="password" component="p" className="error-text" />
+                      <ErrorMessage
+                        name="password"
+                        component="p"
+                        className="error-text"
+                      />
                     </div>
                   </fieldset>
 
                   {/* CONFIRM PASSWORD */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
                       <div className="body-title">
                         Confirm Password{" "}
                         {!isEdit && <span className="tf-color-1">*</span>}
@@ -496,7 +603,13 @@ const CreateStore = () => {
                       gridColumn: "1 / -1",
                     }}
                   >
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
                       <div className="body-title">
                         Logo {!isEdit && <span className="tf-color-1">*</span>}
                       </div>
@@ -509,7 +622,11 @@ const CreateStore = () => {
                         }}
                         style={{ width: "100%" }}
                       />
-                      <ErrorMessage name="logo" component="p" className="error-text" />
+                      <ErrorMessage
+                        name="logo"
+                        component="p"
+                        className="error-text"
+                      />
 
                       {values.logo !== null && (
                         <img
@@ -535,7 +652,13 @@ const CreateStore = () => {
                       gridColumn: "1 / -1",
                     }}
                   >
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
                       <div
                         style={{
                           display: "flex",
@@ -566,7 +689,8 @@ const CreateStore = () => {
                               fontWeight: 500,
                             }}
                           >
-                            {selectedFeatures.length} of {featureKeys.length} selected
+                            {selectedFeatures.length} of {featureKeys.length}{" "}
+                            selected
                           </span>
                         </div>
 
@@ -578,9 +702,13 @@ const CreateStore = () => {
                             padding: "8px 12px",
                             border: "1px solid #bfdbfe",
                             borderRadius: "6px",
-                            backgroundColor: allFeaturesSelected ? "#dbeafe" : "#f8fafc",
+                            backgroundColor: allFeaturesSelected
+                              ? "#dbeafe"
+                              : "#f8fafc",
                             color: "#1d4ed8",
-                            cursor: featureKeys.length ? "pointer" : "not-allowed",
+                            cursor: featureKeys.length
+                              ? "pointer"
+                              : "not-allowed",
                             fontSize: "13px",
                             fontWeight: 600,
                             opacity: featureKeys.length ? 1 : 0.6,
@@ -595,7 +723,9 @@ const CreateStore = () => {
                               width: "16px",
                               height: "16px",
                               accentColor: "#2563eb",
-                              cursor: featureKeys.length ? "pointer" : "not-allowed",
+                              cursor: featureKeys.length
+                                ? "pointer"
+                                : "not-allowed",
                             }}
                           />
                           Select all
@@ -605,7 +735,7 @@ const CreateStore = () => {
                       <div
                         style={{
                           display: "grid",
-                          gridTemplateColumns:  "repeat(10, 1fr)",
+                          gridTemplateColumns: "repeat(10, 1fr)",
                           gap: "14px",
                         }}
                       >
@@ -624,7 +754,9 @@ const CreateStore = () => {
                                 border: isSelected
                                   ? "1px solid #60a5fa"
                                   : "1px solid #e2e8f0",
-                                backgroundColor: isSelected ? "#eff6ff" : "#ffffff",
+                                backgroundColor: isSelected
+                                  ? "#eff6ff"
+                                  : "#ffffff",
                                 color: isSelected ? "#1d4ed8" : "#374151",
                                 cursor: "pointer",
                                 fontWeight: isSelected ? 600 : 400,
@@ -646,7 +778,9 @@ const CreateStore = () => {
                                 }}
                               />
                               {info.icon && <span>{info.icon}</span>}
-                              <span style={{ fontSize: "14px" }}>{info.label}</span>
+                              <span style={{ fontSize: "14px" }}>
+                                {info.label}
+                              </span>
                             </label>
                           );
                         })}
@@ -670,11 +804,15 @@ const CreateStore = () => {
                           : "Save"}
                     </button>
                     <button type="button" className="ml-5 tf-button style-1">
-                      <a href="/store"  style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
+                      <a
+                        href="/store"
+                        style={{ color: "inherit", textDecoration: "none" }}
+                      >
+                        {" "}
+                        Cancel
+                      </a>
                     </button>
                   </div>
-
-                 
                 </Form>
               )}
             </Formik>
