@@ -11,29 +11,11 @@ const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 const GstRate = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  // const [gstRates, setGstRates] = useState([]);
   const appData = useAppData();
   const gstRates = appData?.gstRates || [];
   const [filteredData, setFilteredData] = useState(gstRates);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
-  // const fetchGstRate = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/gst-rates`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     setGstRates(response.data.gstRates);
-  //   } catch (error) {
-  //     console.error("Error fetching gst Rates:", error);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchGstRate();
-  // }, []);
   useEffect(() => {
   appData?.loadGstRates();
 }, []);
@@ -63,19 +45,6 @@ const GstRate = () => {
       handleDelete(id);
     }
   };
-  // const handleDelete = async (id) => {
-  //   const response = await axios.delete(`${BASE_URL}/api/gst-rates/${id}`, {
-  //     headers: {
-  //       accept: "application/json",
-  //       Authorization: `Bearer ${user_data.token}`,
-  //     },
-  //   });
-  //   if (response) {
-  //     navigate("/gst-rates");
-  //     toast.success("Gst Rates Deleted");
-  //     fetchGstRate();
-  //   }
-  // };
 
   const handleDelete = async (id) => {
   try {
@@ -103,12 +72,6 @@ const GstRate = () => {
 };
 
   const columns = [
-    // {
-    //   name: "Id",
-    //   selector: (row) => row.id,
-    //   sortable: true,
-    //   width: "100px",
-    // },
     {
       name: "Rate",
       selector: (row) => row.rate,

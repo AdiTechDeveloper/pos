@@ -174,7 +174,6 @@ export default function AddAdvanceModal({ onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-3xl shadow-2xl w-2xl overflow-hidden">
-        {/* HEADER */}
         <div className="flex items-center justify-between px-7 py-5 border-b border-slate-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
@@ -198,11 +197,8 @@ export default function AddAdvanceModal({ onClose, onSuccess }) {
           </button>
         </div>
 
-        {/* BODY */}
         <div className="grid grid-cols-1 md:grid-cols-2">
-          {/* LEFT SIDE — CUSTOMER + AMOUNT */}
           <div className="p-7 md:border-r border-slate-200 flex flex-col gap-6">
-            {/* Customer Details */}
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2 text-xl font-bold tracking-wide text-slate-500">
                 <User size={15} /> CUSTOMER DETAILS
@@ -326,7 +322,6 @@ export default function AddAdvanceModal({ onClose, onSuccess }) {
 
             <hr className="border-slate-200" />
 
-            {/* Amount */}
             <div className="flex flex-col gap-3">
               <div className="text-2xl font-bold tracking-wide text-slate-500">
                 ADVANCE AMOUNT
@@ -377,7 +372,6 @@ export default function AddAdvanceModal({ onClose, onSuccess }) {
               )}
             </div>
 
-            {/* Payment method */}
             <div className="flex flex-col gap-3">
               <div className="text-sm font-bold tracking-wide text-slate-500">
                 RECEIVED VIA
@@ -419,7 +413,6 @@ export default function AddAdvanceModal({ onClose, onSuccess }) {
             </div>
           </div>
 
-          {/* RIGHT SIDE — KEYPAD */}
           <div className="p-4 bg-slate-50 flex flex-col gap-4 items-center justify-center">
             <div className="grid grid-cols-3 gap-3 w-full">
               {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "⌫"].map(
@@ -446,7 +439,6 @@ export default function AddAdvanceModal({ onClose, onSuccess }) {
           </div>
         </div>
 
-        {/* SUMMARY + ACTIONS */}
         <div className="flex justify-end items-center gap-3 px-7 py-5 border-t border-slate-200">
           <button
             type="button"

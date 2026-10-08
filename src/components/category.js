@@ -10,47 +10,17 @@ const Category = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
   const [search, setSearch] = useState("");
-  // const [categories, setCategories] = useState([]);
   const appData = useAppData();
   const categories = appData?.categories || [];
   const [filteredData, setFilteredData] = useState(categories);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const navigate = useNavigate();
 
-  // const fetchCategory = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/categories`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     setCategories(response.data.categories);
-  //   } catch (error) {
-  //     console.error("Error fetching categories:", error);
-  //   }
-  // };
-  // useEffect(() => {
-  //   fetchCategory();
-  // }, []);
 
   useEffect(() => {
     appData?.loadCategories();
 }, []);
 
-  // const handleDelete = async (id) => {
-  //   const response = await axios.delete(`${BASE_URL}/api/categories/${id}`, {
-  //     headers: {
-  //       accept: "application/json",
-  //       Authorization: `Bearer ${user_data.token}`,
-  //     },
-  //   });
-  //   if (response) {
-  //     navigate("/category");
-  //     toast.success("Category Deleted");
-  //     fetchCategory();
-  //   }
-  // };
 
   const handleDelete = async (id) => {
   try {
@@ -78,12 +48,6 @@ const Category = () => {
 };
 
   const columns = [
-    // {
-    //   name: "Id",
-    //   selector: (row) => row.id,
-    //   sortable: true,
-    //   width: "100px",
-    // },
     {
       name: "Name",
       selector: (row) => row.name,

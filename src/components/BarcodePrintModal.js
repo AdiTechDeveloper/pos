@@ -79,7 +79,6 @@ const BarcodePrintModal = ({ product, onClose }) => {
               Preview (Scaling may vary from actual label)
             </p>
             <div style={styles.previewScroll}>
-              {/* This maps the same logic as the print area so you see what you get */}
               {Array.from({ length: qty }).map((_, i) => (
                 <div key={i} style={styles.previewSticker}>
                   <BarcodePrintSheet product={product} />
@@ -111,7 +110,6 @@ const BarcodePrintModal = ({ product, onClose }) => {
           </button>
         </div>
 
-        {/* ACTUAL PRINT DATA (HIDDEN) */}
         <div style={{ display: "none" }}>
           <div ref={printRef}>
             {Array.from({ length: qty }).map((_, i) => (

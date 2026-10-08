@@ -13,9 +13,7 @@ const CreateEditPurchaseReturn = () => {
   const navigate = useNavigate();
   const appData = useAppData();
   const branches = appData?.branches || [];
-  // const [suppliers, setSupplierBill] = useState([]);
-  // const [purchaseBills, setPurchaseBills] = useState([]);
-  // const [purchaseLines, setPurchaseLines] = useState([]);
+ 
   const suppliers = appData?.suppliers || [];
   const purchaseBills = appData?.purchaseBills || [];
   const purchaseLines = appData?.purchaseLines || [];
@@ -63,58 +61,7 @@ const CreateEditPurchaseReturn = () => {
     }
   }, []);
 
-  // const fetchPurchaseBill = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/purchase-bill`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     setPurchaseBills(response.data.data);
-  //   } catch (error) {
-  //     console.error("Error fetching categories:", error);
-  //   }
-  // };
-
-  // const fetchPurchaseLine = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/purchase-line`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     setPurchaseLines(response.data.data);
-  //   } catch (error) {
-  //     console.error("Error fetching categories:", error);
-  //   }
-  // };
-
-  // const fetchBranch = () => {
-  //   appData?.loadBranches();
-  // };
-
-  // const fetchSupplierBill = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/suppliers`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     setSupplierBill(response.data.suppliers);
-  //   } catch (error) {
-  //     console.error("Error fetching categories:", error);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchBranch();
-  //   fetchSupplierBill();
-  //   fetchPurchaseBill();
-  //   // fetchPurchaseLine();
-  // }, []);
+  
   useEffect(() => {
     appData?.loadBranches();
     appData?.loadSuppliers();
@@ -122,54 +69,7 @@ const CreateEditPurchaseReturn = () => {
     appData?.loadPurchaseLines();
   }, []);
 
-  // const handlePurchaseBillSelection = async (selectedBillId, setFieldValue) => {
-
-  //   try {
-  //     const billDetails = purchaseBills.find(
-  //       (b) => b.id === parseInt(selectedBillId),
-  //     );
-
-  //     if (billDetails) {
-  //       setFieldValue("branch_id", billDetails.branch_id?.toString() || "");
-  //       setFieldValue("supplier_id", billDetails.supplier_id?.toString() || "");
-
-  //       // const response = await axios.get(`${BASE_URL}/api/purchase-line`, {
-  //       //   params: { purchase_bill_id: selectedBillId },
-  //       //   headers: { Authorization: `Bearer ${user_data.token}` },
-  //       // });
-
-  //       // const apiLines = response.data.data;
-
-  //       // const filteredLines = apiLines.filter(
-  //       //   (line) =>
-  //       //     line.purchase_bill_id == selectedBillId ||
-  //       //     line.purchase_id == selectedBillId,
-  //       // );
-
-
-  //       const filteredLines = purchaseLines.filter(
-  //         (line) =>
-  //           line.purchase_bill_id == selectedBillId ||
-  //           line.purchase_id == selectedBillId,
-  //       );
-
-
-
-  //       const formattedLines = filteredLines.map((line) => ({
-  //         purchase_bill_line_id: line.id.toString(),
-  //         qty: line.qty,
-  //         product_id: line.product_id,
-  //       }));
-
-  //       setFieldValue("lines", formattedLines);
-
-
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching bill lines:", error);
-  //     toast.error("Failed to load bill items");
-  //   }
-  // };
+  
 
   const handlePurchaseBillSelection = async (
     selectedBillId,
@@ -447,16 +347,7 @@ const CreateEditPurchaseReturn = () => {
                           </div>
                         ))}
 
-                        {/* <button
-                          type="button"
-                          className="ml-5 tf-button style-1"
-                          style={{ color: "inherit", textDecoration: "none" }} 
-                          onClick={() =>
-                            push({ purchase_bill_line_id: "", qty: "" })
-                          }
-                        >
-                          + Add Product
-                        </button> */}
+                       
                       </>
                     )}
                   </FieldArray>

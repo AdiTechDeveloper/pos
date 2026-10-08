@@ -38,7 +38,6 @@ const CreateEditBrand = () => {
     loadBrandData();
   }, []);
 
-  // Validation Schema
   const validationSchema = Yup.object({
     name: Yup.string()
       .required("Name is required")
@@ -51,38 +50,7 @@ const CreateEditBrand = () => {
       .max(255, "Description cannot exceed 255 characters"),
   });
 
-  // Submit (Create + Update)
-  // const handleSubmit = async (values) => {
-  //   try {
-  //     let url = "";
-  //     let method = "";
-
-  //     if (isEdit) {
-  //       // UPDATE PRODUCT
-  //       url = `${BASE_URL}/api/brands/${id}`;
-  //       method = "put";
-  //     } else {
-  //       // CREATE PRODUCT
-  //       url = `${BASE_URL}/api/brands`;
-  //       method = "post";
-  //     }
-
-  //     const response = await axios({
-  //       method,
-  //       url,
-  //       data: values,
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-
-  //     toast.success(isEdit ? "Brand Updated!" : "Brand Created!");
-  //     navigate("/brand");
-  //   } catch (error) {
-  //     console.error("Error saving product:", error);
-  //   }
-  // };
+ 
   const handleSubmit = async (values) => {
     try {
       let url = "";
@@ -175,7 +143,6 @@ const CreateEditBrand = () => {
                   </div>
 
                   <div className="flex col">
-                    {/* SUBMIT BUTTON */}
                     <button className="tf-button w208" type="submit">
                       {isEdit ? "Update Brand" : "Create Brand"}
                     </button>

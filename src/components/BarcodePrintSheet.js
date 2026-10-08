@@ -42,7 +42,6 @@ const BarcodePrintSheet = forwardRef(({ product }, ref) => {
         margin={0}
       />
 
-      {/* Footer Info Container */}
       <div
         style={{
           width: "100%",
@@ -53,7 +52,6 @@ const BarcodePrintSheet = forwardRef(({ product }, ref) => {
           fontFamily: "sans-serif",
         }}
       >
-        {/* Row 1: SKU & Price spaced out evenly */}
         <div
           style={{
             fontSize: "8.5px",
@@ -68,15 +66,13 @@ const BarcodePrintSheet = forwardRef(({ product }, ref) => {
           <span>MRP: ₹{product?.mrp}</span>
         </div>
 
-        {/* Row 2: Customer Attractive, Bold LM Price Centered */}
         <div
           style={{
             fontSize: "11px",
-            fontWeight: "800", // Extra bold
-            textAlign: "center",
+            fontWeight: "800", 
             width: "100%",
             marginTop: "1px",
-            color: "#000", // Solid deep contrast black for thermal printers
+            color: "#000", 
             letterSpacing: "0.2px",
           }}
         >

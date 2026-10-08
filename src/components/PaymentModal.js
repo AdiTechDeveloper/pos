@@ -19,8 +19,8 @@ const POINT_VALUE = 1; // 1 loyalty point = ₹1 (keep in sync with backend)
 
 export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
   const [cashGiven, setCashGiven] = useState(null);
-  const [onlineGiven, setOnlineGiven] = useState(""); // NEW: split mein online amount
-  const [activeField, setActiveField] = useState("cash"); // NEW: keypad kis field ko edit kare ("cash" | "online")
+  const [onlineGiven, setOnlineGiven] = useState(""); 
+  const [activeField, setActiveField] = useState("cash");
   const [paymentType, setPaymentType] = useState("cash");
   const [customerName, setCustomerName] = useState("");
   const [customerMobile, setCustomerMobile] = useState("");
@@ -39,7 +39,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
 
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [allCustomers, setAllCustomers] = useState([]); // name search ke liye saare customers
+  const [allCustomers, setAllCustomers] = useState([]);
 
   const parse = (v) => (parseFloat(v) ? parseFloat(v) : 0);
 
@@ -104,7 +104,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  // modal khulte hi customers ki list ek baar load karo (name suggestion ke liye)
+ 
   useEffect(() => {
     axios
       .get(`${BASE_URL}/api/customers`, { headers: getAuthHeader() })
@@ -112,7 +112,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
         const payload = res.data;
         let list = payload?.data ?? payload?.customers ?? payload;
 
-        // agar Laravel pagination hai to asli list list.data mein hoti hai
+      
         if (list && !Array.isArray(list) && Array.isArray(list.data)) {
           list = list.data;
         }
@@ -194,11 +194,9 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     }
   }, [paymentType, netTotal]);
 
-  // name type karne par matching customers dhundo
   const searchCustomersByName = (value) => {
     const q = value.trim().toLowerCase();
 
-    // 2 letters se kam pe suggestion nahi (1 karna ho to 2 ko 1 kar do)
     if (q.length < 2) {
       setFilteredSuggestions([]);
       setShowSuggestions(false);
@@ -208,7 +206,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     const matches = allCustomers
       .filter((c) => (c.name || "").toLowerCase().includes(q))
       .sort((a, b) => {
-        // jo naam us text se shuru hota hai wo upar aaye
+        
         const aStarts = (a.name || "").toLowerCase().startsWith(q) ? 0 : 1;
         const bStarts = (b.name || "").toLowerCase().startsWith(q) ? 0 : 1;
         return aStarts - bStarts;
@@ -219,9 +217,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     setShowSuggestions(matches.length > 0);
   };
 
-  // suggestion pe click karne par saari details fill karo
   const selectCustomer = (c) => {
-    // mobile ke wahi rules jo mobile input mein hain
     const mobile = String(c.mobile || "")
       .replace(/\s+/g, "")
       .replace(/\D/g, "")
@@ -234,7 +230,6 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     setCustomerArea(c.area || "");
     setCustomerCity(c.city || "");
 
-    // mobile set hote hi upar wala effect due/wallet/loyalty le aata hai
     setCustomerMobile(mobile);
     setMobileError(mobile.length === 10 ? "" : "Enter 10 digit mobile number");
     setNameError("");
@@ -243,12 +238,10 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     setFilteredSuggestions([]);
   };
 
-  // ---------- NEW: keypad / quick amount ab active field ko edit karte hain ----------
   const activeValue = isSplit && activeField === "online" ? onlineGiven : cashGiven;
 
   const setActiveValue = (next) => {
     if (isSplit && activeField === "online") {
-      // online amount bill se zyada nahi ho sakta
       if (parse(next) > netTotal) {
         setOnlineGiven(String(netTotal));
       } else {
@@ -260,7 +253,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
   };
 
   const keypad = (k) => {
-    // FIX: cashGiven kabhi number (input se) bhi hota hai, isliye String() zaroori hai
+   
     const prev = String(activeValue ?? "");
 
     if (k === "C") return setActiveValue("");
@@ -268,14 +261,12 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     if (k === ".") return setActiveValue(prev.includes(".") ? prev : prev + ".");
     return setActiveValue(prev + k);
   };
-  // -----------------------------------------------------------------------------------
 
   const handleMethod = (type) => {
     if (paymentType === "online" && type !== "online") {
       setCashGiven(null);
     }
 
-    // split ke fields hamesha fresh start hon
     if (type === "split") {
       setCashGiven(null);
       setOnlineGiven("");
@@ -389,7 +380,6 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
         return;
       }
 
-      // cash: sirf utna hi "amount" jitna bill ke liye chahiye, baaki change
       if (splitCashApplied > 0) {
         payments.push({
           method: "cash",
@@ -406,9 +396,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
           transaction_id: "",
         });
       }
-      // splitRemaining > 0 ho to wo due (pay later) maana jayega, mobile upar validate ho chuka hai
     }
-    // ------------------------------------------------------------
 
     if (paymentType === "wallet") {
       const walletApplied = Math.min(walletBalance, netTotal);
@@ -1134,7 +1122,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                         "7",
                         "8",
                         "9",
-                        ".", // FIX: pehle "," tha, jo keypad handler mein kabhi match nahi hota tha
+                        ".", 
                         "0",
                         "⌫",
                       ].map((k) => (

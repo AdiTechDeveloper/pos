@@ -99,7 +99,6 @@ const ForgotPasswordModal = ({ onClose }) => {
       >
         <div className="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
 
-          {/* ================= HEADER ================= */}
           <div className="modal-header border-bottom px-4 px-md-5 pt-4 pb-3">
             <div>
               <h4 className="fw-bold text-dark mb-2">
@@ -119,7 +118,6 @@ const ForgotPasswordModal = ({ onClose }) => {
             />
           </div>
 
-          {/* ================= FORM ================= */}
           <form onSubmit={handleSubmit}>
 
             <div className="modal-body px-4 px-md-5 py-4">
@@ -148,7 +146,6 @@ const ForgotPasswordModal = ({ onClose }) => {
                 )}
               </div>
 
-              {/* RECOVERY PIN */}
               <div className="mb-4">
                 <label className="form-label text-xl text-dark mb-4">
                   Recovery PIN
@@ -181,7 +178,6 @@ const ForgotPasswordModal = ({ onClose }) => {
                 </div>
               </div>
 
-              {/* ================= DIVIDER ================= */}
               <div className="d-flex align-items-center gap-3 my-4">
                 <hr className="flex-grow-1 m-0 opacity-25" />
 
@@ -192,7 +188,6 @@ const ForgotPasswordModal = ({ onClose }) => {
                 <hr className="flex-grow-1 m-0 opacity-25" />
               </div>
 
-              {/* NEW PASSWORD */}
               <div className="mb-4 ">
                 <label className="form-label text-xl text-dark mb-4">
                   New Password
@@ -216,7 +211,6 @@ const ForgotPasswordModal = ({ onClose }) => {
                 )}
               </div>
 
-              {/* CONFIRM PASSWORD */}
               <div className="mb-2">
                 <label className="form-label text-xl text-dark mb-4">
                   Confirm Password
@@ -246,7 +240,6 @@ const ForgotPasswordModal = ({ onClose }) => {
               </div>
             </div>
 
-            {/* ================= FOOTER ================= */}
             <div className="modal-footer border-top px-4 px-md-5 py-3 bg-light">
 
               <button

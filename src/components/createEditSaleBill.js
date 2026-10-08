@@ -12,9 +12,7 @@ const CreateEditSaleBill = () => {
   const { id } = useParams(); // if id exists -> Edit Mode
   const navigate = useNavigate();
   const appData = useAppData();
-  // const branches = appData?.managerBranches || [];
-  // const [suppliers, setSupplierBill] = useState([]);
-  // const [products, setProducts] = useState([]);
+ 
   const products = appData?.saleProducts || [];
   const branches = appData?.managerBranches || [];
 
@@ -22,52 +20,13 @@ const CreateEditSaleBill = () => {
 
   const isEdit = Boolean(id);
 
-  // const fetchBranch = () => {
-  //   appData?.loadManagerBranches(); 
-  // };
 
-  // useEffect(() => {
-  //   fetchBranch();
-  // }, []);
   useEffect(() => {
     appData?.loadManagerBranches();
     appData?.loadSaleProducts();
   }, []);
 
-  // const fetchSupplierBill = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/suppliers`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     setSupplierBill(response.data.suppliers);
-  //   } catch (error) {
-  //     console.error("Error fetching categories:", error);
-  //   }
-  // };
-  // useEffect(() => {
-  //   fetchSupplierBill();
-  // }, []);
-
-  // const fetchProduct = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/products`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     setProducts(response.data.products);
-  //   } catch (error) {
-  //     console.error("Error fetching categories:", error);
-  //   }
-  // };
-  // useEffect(() => {
-  //   fetchProduct();
-  // }, []);
-
+ 
   const initialValues = {
     lines: [
       {

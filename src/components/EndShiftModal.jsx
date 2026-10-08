@@ -101,7 +101,6 @@ export default function EndShiftModal({
         padding: "16px",
       }}
     >
-      {/* Dialog */}
       <div
         style={{
           background: "#fff",
@@ -124,7 +123,6 @@ export default function EndShiftModal({
           }}
         >
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {/* Row container for Icon and H2 */}
             <div
               style={{
                 display: "flex",
@@ -150,7 +148,6 @@ export default function EndShiftModal({
               </h2>
             </div>
 
-            {/* Paragraph below the row */}
             <p
               style={{
                 color: "#ffffff",
@@ -195,7 +192,6 @@ export default function EndShiftModal({
             </p>
           ) : (
             <>
-              {/* Cash Breakdown Card */}
               <div
                 style={{
                   background: "#f8fafc",
@@ -289,7 +285,6 @@ export default function EndShiftModal({
               </div>
 
               <form onSubmit={handleSubmit}>
-                {/* Expenses row */}
                 <div
                   style={{ display: "flex", gap: "12px", marginBottom: "14px" }}
                 >
@@ -335,7 +330,6 @@ export default function EndShiftModal({
                   </div>
                 </div>
 
-                {/* Actual cash */}
                 <div style={{ marginBottom: "16px" }}>
                   <label
                     style={{
@@ -365,7 +359,6 @@ export default function EndShiftModal({
                   />
                 </div>
 
-                {/* Discrepancy badge */}
                 {hasActual &&
                   discrepancy !== null &&
                   Math.abs(discrepancy) > 0.01 && (
@@ -387,7 +380,6 @@ export default function EndShiftModal({
                     </div>
                   )}
 
-                {/* Buttons */}
                 <div style={{ display: "flex", gap: "12px" }}>
                   <button
                     type="button"

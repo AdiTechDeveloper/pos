@@ -1,28 +1,17 @@
 
 
 import React, { useEffect, useState } from "react";
-
 import Layout from "./layout";
-
 import ProfitLossWidget from "./ProfitLossWidget";
-
 import LowStockAlert from "./lowStockAlert";
-
 import StatCard from "./StatCard";
-
 import PaymentBreakdown from "./PaymentBreakdown";
-
 import MonthlySalesChart from "./MonthlySalesChart";
-
 import TopLowSellingProducts from "./TopLowSellingProducts";
-
 import CustomerDuesWidget from "./CustomerDuesWidget";
-
 import RecentSalesFeed from "./RecentSalesFeed";
-
-// import TaxAndActionsWidget from "./TaxAndActionsWidget";
-
 import { hasFeature } from "../utils/hasFeature";
+
 
 import { useAppData } from "../context/AppDataContext";
 
@@ -96,7 +85,6 @@ const Home = () => {
   const canBills = hasFeature("sales_bills");
   const canCustomers = hasFeature("customers");
 
-  // Manager's own branch - admin sees all branches, manager is scoped to one
   const managerBranchId =
     role === "manager"
       ? user_data?.branch_id ??
@@ -106,7 +94,6 @@ const Home = () => {
       null
       : null;
 
-  // Admin's own store
   const adminStoreId =
     role === "admin"
       ? user_data?.user?.store_id ?? null
@@ -126,7 +113,6 @@ const Home = () => {
       canCustomers
     );
 
-  // Dashboard data comes from AppDataContext
   const stores = dashboard?.stores || [];
   const todaySales = dashboard?.todaySales || null;
   const todayPurchase = dashboard?.todayPurchase || null;
@@ -184,7 +170,6 @@ const Home = () => {
       (a.total_collected || 0)
   )[0];
 
-  // bottom section — kaunse columns dikhane hain
   const showLeftCol =
     canFinancial || canStock;
 
@@ -196,7 +181,6 @@ const Home = () => {
       <div className="main-content-inner">
         <div className="main-content-wrap">
 
-          {/* ---------------- SUPERADMIN ---------------- */}
           {role === "superadmin" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
               <StatCard
@@ -210,7 +194,6 @@ const Home = () => {
             </div>
           )}
 
-          {/* ---------------- ADMIN / MANAGER ---------------- */}
           {nothingEnabled && (
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
               <h3 className="text-2xl font-bold mb-2">
@@ -291,7 +274,6 @@ const Home = () => {
               </div>
             )}
 
-          {/* Payment split + Monthly sales chart */}
           {isBackOffice && canSales && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
@@ -316,7 +298,6 @@ const Home = () => {
             </div>
           )}
 
-          {/* Top / Low selling products */}
           {isBackOffice && canSales && (
             <div className="mb-8">
               <TopLowSellingProducts
@@ -331,7 +312,6 @@ const Home = () => {
             </div>
           )}
 
-          {/* Bottom widgets */}
           {isBackOffice &&
             (showLeftCol || showRightCol) && (
               <div
@@ -391,21 +371,10 @@ const Home = () => {
                       />
                     )}
 
-                    {/* 
-                    {canSales && (
-                      <TaxAndActionsWidget
-                        taxBreakdown={sk?.tax_breakdown}
-                        loading={loading}
-                      />
-                    )}
-                    */}
-
                   </div>
                 )}
-
               </div>
             )}
-
         </div>
       </div>
     </Layout>

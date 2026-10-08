@@ -14,9 +14,6 @@ const CreatePurchaseReplace = () => {
   const navigate = useNavigate();
   const appData = useAppData();
   const branches = appData?.managerBranches || [];
-  // const [suppliers, setSupplierBill] = useState([]);
-  // const [purchaseBills, setPurchaseBills] = useState([]);
-  // const [purchaseLines, setPurchaseLines] = useState([]);
   const suppliers = appData?.suppliers || [];
   const purchaseBills = appData?.purchaseBills || [];
   const purchaseLines = appData?.purchaseLines || [];
@@ -26,7 +23,6 @@ const CreatePurchaseReplace = () => {
   const [error, setError] = useState("");
   const [fieldValue, setFieldValue] = useState(() => () => { });
   const [activeRowIndex, setActiveRowIndex] = useState(null);
-  // const [products, setProducts] = useState([]);
   const products = appData?.saleProducts || [];
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
@@ -88,59 +84,7 @@ const CreatePurchaseReplace = () => {
     }
   }, []);
 
-  // const fetchPurchaseBill = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/purchase-bill`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     setPurchaseBills(response.data.data);
-  //   } catch (error) {
-  //     console.error("Error fetching categories:", error);
-  //   }
-  // };
-
-  // const fetchBranch = () => {
-  //   appData?.loadManagerBranches();
-  // };
-
-  // const fetchProduct = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/products`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     setProducts(response.data.products);
-  //   } catch (error) {
-  //     console.error("Error fetching categories:", error);
-  //   }
-  // };
-
-  // const fetchSupplierBill = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/suppliers`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     setSupplierBill(response.data.suppliers);
-  //   } catch (error) {
-  //     console.error("Error fetching categories:", error);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchBranch();
-  //   fetchSupplierBill();
-  //   fetchPurchaseBill();
-  //   fetchProduct();
-  // }, []);
-
+  
   useEffect(() => {
     appData?.loadManagerBranches();
     appData?.loadSuppliers();
@@ -159,8 +103,6 @@ const CreatePurchaseReplace = () => {
         setFieldValue("branch_id", billDetails.branch_id?.toString() || "");
         setFieldValue("supplier_id", billDetails.supplier_id?.toString() || "");
 
-
-
         const filteredLines = purchaseLines.filter(
           (line) =>
             line.purchase_bill_id == selectedBillId ||
@@ -177,8 +119,6 @@ const CreatePurchaseReplace = () => {
         }));
 
         setFieldValue("lines", formattedLines);
-
-        // setPurchaseLines(filteredLines);
       }
     } catch (error) {
       console.error("Error fetching bill lines:", error);
@@ -186,7 +126,6 @@ const CreatePurchaseReplace = () => {
     }
   };
 
-  // Validation Schema
   const validationSchema = Yup.object().shape({
     purchase_bill_id: Yup.string().required("Purchase Bill Id is required"),
     branch_id: Yup.string().required("Branch is required"),
@@ -376,7 +315,6 @@ const CreatePurchaseReplace = () => {
                               borderLeft: "4px solid #3b82f6",
                             }}
                           >
-                            {/* Header for the Row */}
                             <div
                               style={{
                                 display: "flex",
@@ -411,10 +349,6 @@ const CreatePurchaseReplace = () => {
                             </div>
 
                             <div className="grid grid-cols-12 gap-6">
-
-                              {/* =========================
-                                 LEFT: SOURCE / RETURN
-                                    ========================== */}
                               <div
                                 className="col-span-12 lg:col-span-4"
                                 style={{
@@ -492,16 +426,8 @@ const CreatePurchaseReplace = () => {
                                   />
                                 </div>
                               </div>
-
-
-                              {/* =========================
-                                  RIGHT: REPLACEMENT
-                                ========================== */}
                               <div className="col-span-12 lg:col-span-8">
-
                                 <div className="grid grid-cols-12 gap-4">
-
-                                  {/* Replacement Product */}
                                   <div className="col-span-12 lg:col-span-5">
                                     <label className="block text-2xl font-medium text-gray-700 mb-2">
                                       Replacement Product
@@ -521,9 +447,6 @@ const CreatePurchaseReplace = () => {
                                       ))}
                                     </Field>
                                   </div>
-
-
-                                  {/* New Qty */}
                                   <div className="col-span-12 sm:col-span-6 lg:col-span-2">
                                     <label className="block text-2xl font-medium text-gray-700 mb-2">
                                       New Qty
@@ -538,7 +461,6 @@ const CreatePurchaseReplace = () => {
                                   </div>
 
 
-                                  {/* Rate */}
                                   <div className="col-span-12 sm:col-span-6 lg:col-span-2">
                                     <label className="block text-2xl font-medium text-gray-700 mb-2">
                                       Rate
@@ -551,9 +473,6 @@ const CreatePurchaseReplace = () => {
                                       placeholder="0.00"
                                     />
                                   </div>
-
-
-                                  {/* MRP */}
                                   <div className="col-span-12 sm:col-span-6 lg:col-span-2">
                                     <label className="block text-2xl font-medium text-gray-700 mb-2">
                                       MRP
@@ -567,8 +486,6 @@ const CreatePurchaseReplace = () => {
                                     />
                                   </div>
 
-
-                                  {/* New SP */}
                                   <div className="col-span-12 sm:col-span-6 lg:col-span-1">
                                     <label className="block text-2xl font-medium text-gray-700 mb-2">
                                       New SP
@@ -581,9 +498,6 @@ const CreatePurchaseReplace = () => {
                                       placeholder="0.00"
                                     />
                                   </div>
-
-
-                                  {/* New Batch Number */}
                                   <div className="col-span-12 lg:col-span-7">
                                     <label className="block text-2xl font-medium text-gray-700 mb-2">
                                       New Batch Number
@@ -599,17 +513,14 @@ const CreatePurchaseReplace = () => {
                                       }}
                                     />
                                   </div>
-
                                 </div>
                               </div>
-
                             </div>
                             <button
                               type="button"
                               className="btn btn-outline-primary text-2xl"
                               style={{
                                 border: "2px dashed #cbd5e1",
-                                // width: "100%",
                                 padding: "12px",
                                 borderRadius: "8px",
                                 fontWeight: "600",
@@ -629,10 +540,8 @@ const CreatePurchaseReplace = () => {
                             >
                               + Add Another Replacement Row
                             </button>
-
                           </div>
                         ))}
-
                       </>
                     )}
                   </FieldArray>

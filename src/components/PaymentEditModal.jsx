@@ -69,7 +69,6 @@ const PaymentEditModal = ({ bill, onClose, onSuccess }) => {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
       <div className="bg-white rounded-2xl shadow-2xl w-[520px]">
-        {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <h2 className="text-2xl font-semibold">Edit Payment</h2>
           <button onClick={onClose} className="text-gray-500 text-lg">
@@ -77,9 +76,7 @@ const PaymentEditModal = ({ bill, onClose, onSuccess }) => {
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-6">
-          {/* Bill Info */}
           <div className="mb-5 space-y-3">
             <div className="flex">
               <p className="text-2xl font-bold text-gray-500 mr-2">Bill No:</p>
@@ -98,11 +95,9 @@ const PaymentEditModal = ({ bill, onClose, onSuccess }) => {
             </div>
           </div>
 
-          {/* Payment Rows */}
           <div className="space-y-3">
             {payments.map((p, index) => (
               <div key={index} className="flex items-center gap-2 w-full">
-                {/* Select Box */}
                 <select
                   value={p.method}
                   onChange={(e) =>
@@ -115,7 +110,6 @@ const PaymentEditModal = ({ bill, onClose, onSuccess }) => {
                   <option value="wallet">Wallet</option>
                 </select>
 
-                {/* Input Box */}
                 <input
                   type="number"
                   value={p.amount}
@@ -126,7 +120,6 @@ const PaymentEditModal = ({ bill, onClose, onSuccess }) => {
                   placeholder="0"
                 />
 
-                {/* Cross / Remove Button */}
                 {payments.length > 1 && (
                   <button
                     type="button"
@@ -140,7 +133,6 @@ const PaymentEditModal = ({ bill, onClose, onSuccess }) => {
             ))}
           </div>
 
-          {/* Add Split */}
           <button
             onClick={addRow}
             className="mt-6 text-blue-600 font-semibold text-2xl hover:text-blue-700 transition"

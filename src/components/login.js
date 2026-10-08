@@ -123,7 +123,6 @@ const Login = () => {
         </div>
       </section>
 
-      {/* RIGHT SIDE LOGIN FORM */}
       <section className="vakaro-login-form-side">
         <div className="vakaro-login-card">
           <img
