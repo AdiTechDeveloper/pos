@@ -1,10 +1,4 @@
-
-
-
-import React, {
-  useEffect,
-  useState,
-} from "react";
+import React, { useEffect, useState } from "react";
 
 import {
   BarChart,
@@ -35,65 +29,34 @@ const MONTH_LABELS = [
   "Dec",
 ];
 
-const rupee = (value) =>
-  `₹${Number(value || 0).toLocaleString(
-    "en-IN"
-  )}`;
+const rupee = (value) => `₹${Number(value || 0).toLocaleString("en-IN")}`;
 
-const CustomTooltip = ({
-  active,
-  payload,
-  label,
-}) => {
-  if (
-    !active ||
-    !payload ||
-    !payload.length
-  ) {
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload || !payload.length) {
     return null;
   }
   return (
-    
     <div className="bg-white border border-gray-200 shadow-lg rounded-xl px-4 py-2.5 text-sm">
-      <div className="font-semibold text-gray-800">
-        {label}
-      </div>
+      <div className="font-semibold text-gray-800">{label}</div>
 
-      <div className="text-blue-600 font-bold">
-        {rupee(payload[0].value)}
-      </div>
+      <div className="text-blue-600 font-bold">{rupee(payload[0].value)}</div>
     </div>
   );
 };
 
-const MonthlySalesChart = ({
-  role,
-  user,
-  filters = {},
-  storeId,
-}) => {
-  console.log("MonthlySalesChart MOUNTED");
+const MonthlySalesChart = ({ role, user, filters = {}, storeId }) => {
+  const { branches, loadBranches, loadMonthlySales } = useAppData();
 
-  const {
-    branches,
-    loadBranches,
-    loadMonthlySales,
-  } = useAppData();
-
-  const [selectedBranch, setSelectedBranch] =
-    useState(
-      filters.branch_id || ""
-    );
+  const [selectedBranch, setSelectedBranch] = useState(filters.branch_id || "");
 
   const [data, setData] = useState(
     MONTH_LABELS.map((month) => ({
       month,
       sales: 0,
-    }))
+    })),
   );
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (role !== "admin") {
@@ -108,9 +71,7 @@ const MonthlySalesChart = ({
       return;
     }
 
-    setSelectedBranch(
-      filters.branch_id || ""
-    );
+    setSelectedBranch(filters.branch_id || "");
   }, [role, filters.branch_id]);
 
   const managerBranchId =
@@ -125,70 +86,44 @@ const MonthlySalesChart = ({
     role === "admin"
       ? selectedBranch || null
       : role === "manager"
-      ? managerBranchId
-      : null;
+        ? managerBranchId
+        : null;
 
-      
   useEffect(() => {
-    
     let mounted = true;
-  console.log("MONTHLY EFFECT START", {
-    role,
-    effectiveBranchId,
-    storeId,
-  });
+    
     const loadData = async () => {
-          console.log("MONTHLY loadData START");
-
       setLoading(true);
 
       try {
-          console.log("CALLING loadMonthlySales");
-        const monthlySales =
-          await loadMonthlySales(
-            effectiveBranchId,
-            {
-              storeId,
-              year:
-                new Date().getFullYear(),
-            }
-          );
+        const monthlySales = await loadMonthlySales(effectiveBranchId, {
+          storeId,
+          year: new Date().getFullYear(),
+        });
 
-      console.log("MONTHLY API RESPONSE", monthlySales);
         if (!mounted) {
           return;
         }
 
         setData(
-          MONTH_LABELS.map(
-            (month, index) => ({
-              month,
+          MONTH_LABELS.map((month, index) => ({
+            month,
 
-              sales: Number(
-                monthlySales?.[
-                  index + 1
-                ] || 0
-              ),
-            })
-          )
+            sales: Number(monthlySales?.[index + 1] || 0),
+          })),
         );
       } catch (error) {
-        console.error(
-          "Monthly sales load error:",
-          error
-        );
+        console.error("Monthly sales load error:", error);
 
         if (!mounted) {
           return;
         }
 
         setData(
-          MONTH_LABELS.map(
-            (month) => ({
-              month,
-              sales: 0,
-            })
-          )
+          MONTH_LABELS.map((month) => ({
+            month,
+            sales: 0,
+          })),
         );
       } finally {
         if (mounted) {
@@ -197,17 +132,12 @@ const MonthlySalesChart = ({
       }
     };
 
-    if (
-      role === "manager" &&
-      !effectiveBranchId
-    ) {
+    if (role === "manager" && !effectiveBranchId) {
       setData(
-        MONTH_LABELS.map(
-          (month) => ({
-            month,
-            sales: 0,
-          })
-        )
+        MONTH_LABELS.map((month) => ({
+          month,
+          sales: 0,
+        })),
       );
 
       setLoading(false);
@@ -222,25 +152,13 @@ const MonthlySalesChart = ({
     return () => {
       mounted = false;
     };
-  }, [
-    role,
-    effectiveBranchId,
-    storeId,
-    loadMonthlySales,
-  ]);
+  }, [role, effectiveBranchId, storeId, loadMonthlySales]);
 
   const handleChange = (event) => {
-    setSelectedBranch(
-      event.target.value
-    );
+    setSelectedBranch(event.target.value);
   };
 
-  const maxSales = Math.max(
-    ...data.map(
-      (item) => item.sales
-    ),
-    0
-  );
+  const maxSales = Math.max(...data.map((item) => item.sales), 0);
 
   if (loading) {
     return (
@@ -252,14 +170,8 @@ const MonthlySalesChart = ({
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-          <CalendarDays
-            size={20}
-            className="text-blue-600"
-          />
-
-          Monthly Sales (
-          {new Date().getFullYear()}
-          )
+          <CalendarDays size={20} className="text-blue-600" />
+          Monthly Sales ({new Date().getFullYear()})
         </h3>
 
         {role === "admin" && (
@@ -272,28 +184,18 @@ const MonthlySalesChart = ({
               width: 200,
             }}
           >
-            <option value="">
-              All Branches
-            </option>
+            <option value="">All Branches</option>
 
-            {branches.map(
-              (branch) => (
-                <option
-                  key={branch.id}
-                  value={branch.id}
-                >
-                  {branch.name}
-                </option>
-              )
-            )}
+            {branches.map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branch.name}
+              </option>
+            ))}
           </select>
         )}
       </div>
 
-      <ResponsiveContainer
-        width="100%"
-        height={280}
-      >
+      <ResponsiveContainer width="100%" height={280}>
         <BarChart
           data={data}
           margin={{
@@ -329,38 +231,23 @@ const MonthlySalesChart = ({
           />
 
           <Tooltip
-            content={
-              <CustomTooltip />
-            }
+            content={<CustomTooltip />}
             cursor={{
-              fill:
-                "rgba(0,0,0,0.03)",
+              fill: "rgba(0,0,0,0.03)",
             }}
           />
 
-          <Bar
-            dataKey="sales"
-            radius={[
-              6,
-              6,
-              0,
-              0,
-            ]}
-          >
-            {data.map(
-              (entry, index) => (
-                <Cell
-                  key={index}
-                  fill={
-                    entry.sales ===
-                      maxSales &&
-                    maxSales > 0
-                      ? "#2377FC"
-                      : "#BFDBFE"
-                  }
-                />
-              )
-            )}
+          <Bar dataKey="sales" radius={[6, 6, 0, 0]}>
+            {data.map((entry, index) => (
+              <Cell
+                key={index}
+                fill={
+                  entry.sales === maxSales && maxSales > 0
+                    ? "#2377FC"
+                    : "#BFDBFE"
+                }
+              />
+            ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>

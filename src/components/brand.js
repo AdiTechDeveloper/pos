@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import Layout from "./layout";
-// import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import axios from "axios";
@@ -11,25 +10,10 @@ const Brand = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  // const [brands, setBrands] = useState([]);
   const appData = useAppData();
 const brands = appData?.brands || [];
   const [filteredData, setFilteredData] = useState(brands);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
-
-  // const fetchBrand = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/brands`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     setBrands(response.data.brands);
-  //   } catch (error) {
-  //     console.error("Error fetching brands:", error);
-  //   }
-  // };
 
   const handleCreateBrand = () => {
     localStorage.setItem("brand_detail", null);
@@ -56,7 +40,6 @@ const brands = appData?.brands || [];
       await appData?.loadBrands();
 
       toast.success("Brand Deleted");
-      // navigate("/brand");
       navigate("/brand");
     }
   } catch (error) {
@@ -67,9 +50,7 @@ const brands = appData?.brands || [];
     );
   }
 };
-  // useEffect(() => {
-  //   fetchBrand();
-  // }, []);
+ 
   useEffect(() => {
   appData?.loadBrands();
 }, []);
@@ -90,12 +71,7 @@ const brands = appData?.brands || [];
   setFilteredData(result);
 }, [search, brands]);
   const columns = [
-    // {
-    //   name: "Id",
-    //   selector: (row) => row.id,
-    //   sortable: true,
-    //   width: "100px",
-    // },
+    
     {
       name: "Name",
       selector: (row) => row.name,

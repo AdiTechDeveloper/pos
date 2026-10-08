@@ -17,7 +17,6 @@ const Header = () => {
   const { alerts, total: alertTotal, loading } = useStockExpiryAlerts();
   const [openExpiryModal, setOpenExpiryModal] = useState(false);
 
-  // Change Password State Management
   const [openPasswordModal, setOpenPasswordModal] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     current_password: "",
@@ -27,7 +26,6 @@ const Header = () => {
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // SweetAlert2 Toaster Mixin Configuration
   const Toast = Swal.mixin({
     toast: true,
     position: "top-end",
@@ -137,8 +135,7 @@ const Header = () => {
               className=""
               id="logo_header_mobile"
               alt=""
-              // src="images/logo/logo.jpg"
-              // data-light="images/logo/logo.jpg"
+             
               data-dark="images/logo/logo-dark.png"
               data-width="154px"
               data-height="52px"
@@ -175,10 +172,7 @@ const Header = () => {
                 onClick={toggleMenu}
               >
                 <span className="header-user wg-user flex items-center justify-end gap-3 mr-10">
-                  {/* <span className="image">
-                    <img src="images/avatar/user-1.png" alt="" />
-                  </span> */}
-
+                 
                   <span className="flex flex-col items-end text-left">
                     <span className="body-title mb-1">
                       {user_data?.user?.name}
@@ -251,7 +245,6 @@ const Header = () => {
               </div>
               <form onSubmit={handlePasswordSubmit}>
                 <div className="modal-body text-left py-3">
-                  {/* Current Password */}
                   <div className="form-group mb-4">
                     <label className="form-label text-3xl mb-2 text-secondary mt-2">
                       Current Password
@@ -273,7 +266,6 @@ const Header = () => {
                     )}
                   </div>
 
-                  {/* New Password */}
                   <div className="form-group mb-4">
                     <label className="form-label text-3xl mb-2 text-secondary mt-2">
                       New Password
@@ -295,7 +287,6 @@ const Header = () => {
                     )}
                   </div>
 
-                  {/* Confirm New Password */}
                   <div className="form-group mb-3">
                     <label className="form-label text-3xl mb-2 text-secondary mt-2">
                       Confirm New Password

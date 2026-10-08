@@ -1,8 +1,5 @@
-
 import React from "react";
-
 import { AppDataProvider } from "./context/AppDataContext";
-
 import "./App.css";
 import "../src/assets/css/style.css";
 import "../src/assets/font/fonts.css";
@@ -10,7 +7,6 @@ import "../src/assets/icon/style.css";
 
 import Home from "./components/home";
 import Register from "./components/register";
-
 import {
   createBrowserRouter,
   createRoutesFromElements,
@@ -109,7 +105,6 @@ const router = createBrowserRouter(
         element={<Public Component={CashierLogin} />}
       />
 
-      {/* Protected Routes */}
       <Route
         path="/change-password"
         element={<Protected Component={ChangePassword} />}
@@ -127,7 +122,6 @@ const router = createBrowserRouter(
         }
       />
 
-      {/* Products */}
       <Route
         path="/product"
         element={<Protected Component={Product} requiredFeature="products" />}
@@ -177,7 +171,6 @@ const router = createBrowserRouter(
         element={<Protected Component={CreateStore} />}
       />
 
-      {/* Branch */}
       <Route
         path="/branch"
         element={
@@ -218,7 +211,6 @@ const router = createBrowserRouter(
         element={<Protected Component={CreateEditCategory} />}
       />
 
-      {/* Purchase Return */}
       <Route
         path="/purchase-return-bill"
         element={
@@ -228,7 +220,6 @@ const router = createBrowserRouter(
           />
         }
       />
-
       <Route
         path="/create-purchase-return-bill"
         element={
@@ -238,7 +229,6 @@ const router = createBrowserRouter(
           />
         }
       />
-
       <Route
         path="/purchase-return-bill/edit/:id"
         element={
@@ -259,7 +249,6 @@ const router = createBrowserRouter(
         }
       />
 
-      {/* Purchase Bills */}
       <Route
         path="/purchase-bill"
         element={
@@ -428,7 +417,6 @@ const router = createBrowserRouter(
         }
       />
 
-      {/* Stock / Alerts */}
       <Route
         path="/stock-expiry-alerts"
         element={
@@ -439,7 +427,6 @@ const router = createBrowserRouter(
         }
       />
 
-      {/* Reports */}
       <Route
         path="/reports/stock-summary"
         element={
@@ -552,7 +539,6 @@ const router = createBrowserRouter(
         }
       />
 
-      {/* Customer Dues */}
       <Route
         path="/customer-dues"
         element={

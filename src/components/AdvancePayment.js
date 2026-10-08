@@ -234,41 +234,25 @@ const CustomerEditModal = ({ customer, onClose, onSave }) => {
 };
 
 const AdvancePayment = () => {
-    const appData = useAppData();
+  const appData = useAppData();
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const [groupedData, setGroupedData] = useState([]);
   const advancePayments = appData?.advancePayments || [];
   const [search, setSearch] = useState("");
   const [editingCustomer, setEditingCustomer] = useState(null);
-  // const fetchData = async () => {
 
-  //   try {
-  //     const res = await axios.get(`${BASE_URL}/api/reports/advance-payments`, {
-  //       headers: {
-  //         Authorization: `Bearer ${user_data?.token}`,
-  //       },
-  //     });
-
-  //     if (res.data.status) {
-  //       groupCustomerData(res.data.data || []);
-  //     }
-  //   } catch (err) {
-  //     console.error("Failed to load advance payment report", err);
-  //   }
-  // };
   const fetchData = async () => {
-  await appData?.loadAdvancePayments();
-};
+    await appData?.loadAdvancePayments();
+  };
 
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-useEffect(() => {
-  fetchData();
-}, []);
-
-useEffect(() => {
-  groupCustomerData(advancePayments);
-}, [advancePayments]);;
+  useEffect(() => {
+    groupCustomerData(advancePayments);
+  }, [advancePayments]);;
 
   const groupCustomerData = (payments) => {
     const groupedMap = {};
@@ -290,10 +274,6 @@ useEffect(() => {
     setGroupedData(Object.values(groupedMap));
   };
 
-  // useEffect(() => {
-  //   fetchData();
-  // }, []);
-
   const handleCustomerUpdate = async (customerData) => {
     try {
       await axios.put(
@@ -312,17 +292,17 @@ useEffect(() => {
         currentGroups.map((group) =>
           group.customerInfo?.id === editingCustomer.id
             ? {
-                ...group,
-                customerInfo: { ...group.customerInfo, ...customerData },
-              }
+              ...group,
+              customerInfo: { ...group.customerInfo, ...customerData },
+            }
             : group,
         ),
       );
       appData?.invalidate("advancePayments");
-await appData?.loadAdvancePayments();
+      await appData?.loadAdvancePayments();
 
-setEditingCustomer(null);
-toast.success("Customer updated successfully");
+      setEditingCustomer(null);
+      toast.success("Customer updated successfully");
     } catch (error) {
       console.error("Failed to update customer", error);
       toast.error(error.response?.data?.message || "Failed to update customer");
@@ -463,7 +443,7 @@ toast.success("Customer updated successfully");
                       lineHeight: 1.2,
                     }}
                   >
-                 Advance Payment
+                    Advance Payment
                   </h3>
                   <p
                     style={{
@@ -472,7 +452,7 @@ toast.success("Customer updated successfully");
                       margin: "2px 0 0 0",
                     }}
                   >
-                   View and manage customer advance payments and dues
+                    View and manage customer advance payments and dues
                   </p>
                 </div>
               </div>
@@ -518,7 +498,7 @@ toast.success("Customer updated successfully");
             </div>
 
             <div className="table-responsive">
-            
+
               <DataTable
                 columns={columns}
                 data={filteredGroups}

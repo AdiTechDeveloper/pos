@@ -1,6 +1,3 @@
-
-
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -49,8 +46,6 @@ const RecentSalesFeed = ({
     }
   }, [role, loadBranches]);
 
-  // Use Dashboard cache for default view.
-  // API is only called when a specific branch is selected.
   useEffect(() => {
     let mounted = true;
 
@@ -58,10 +53,6 @@ const RecentSalesFeed = ({
       const isAllBranches =
         role === "admin" &&
         (!selectedBranch || selectedBranch === "ALL");
-
-      // const isManagerDashboard =
-      //   role === "manager" &&
-      //   (!filters.branch_id || filters.branch_id === "ALL");
 
       const isManagerDashboard = role === "manager";
 
@@ -180,7 +171,7 @@ const RecentSalesFeed = ({
       (a, b) =>
         new Date(b.created_at) - new Date(a.created_at)
     )
-    .slice(0, 6);
+    .slice(0, 5);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
@@ -238,7 +229,6 @@ const RecentSalesFeed = ({
 
                 <div className="text-xl text-gray-400">
                   #{row.bill_no} ·{" "}
-                      {/* {console.log(row.created_at)} */}
                     {new Date(row.created_at).toLocaleString("en-IN")
                     }
                 </div>

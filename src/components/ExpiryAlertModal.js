@@ -4,7 +4,6 @@ export default function ExpiryAlertModal({ open, onClose, alerts }) {
   const [severityFilter, setSeverityFilter] = useState("all");
   const [query, setQuery] = useState("");
 
-  // Close modal on ESC
   useEffect(() => {
     if (!open) return;
 
@@ -95,15 +94,13 @@ export default function ExpiryAlertModal({ open, onClose, alerts }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal */}
       <div className="relative w-full max-w-7xl mx-4 h-[85vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-        {/* Header */}
+      
         <div className="flex items-start justify-between px-6 py-5 border-b shrink-0">
           <div>
             <h2 className="text-4xl font-bold text-gray-800">
@@ -122,7 +119,6 @@ export default function ExpiryAlertModal({ open, onClose, alerts }) {
           </button>
         </div>
 
-        {/* Filters bar */}
         <div className="flex items-center justify-between gap-4 px-6 py-4 border-b shrink-0 flex-wrap">
           <div className="flex gap-2 flex-wrap">
             {filterPills.map((f) => (
@@ -149,7 +145,6 @@ export default function ExpiryAlertModal({ open, onClose, alerts }) {
           />
         </div>
 
-        {/* Content — scrollable */}
         <div className="flex-1 overflow-y-auto px-6">
           {filteredAlerts.length === 0 ? (
             <div className="py-24 text-center">
@@ -219,7 +214,6 @@ export default function ExpiryAlertModal({ open, onClose, alerts }) {
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t flex justify-between items-center shrink-0 bg-white">
           <p className="text-lg text-gray-500">
             Showing {filteredAlerts.length} of {alerts.length} expiring items

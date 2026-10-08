@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect } from "react";
 import { fetchLowStockProducts } from "../utils/reportService";
 import DataTable from "react-data-table-component";
@@ -28,15 +27,13 @@ const LowStockAlert = ({
     filters.branch_id || ""
   );
 
-  // Load branches from AppDataContext cache
   useEffect(() => {
     if (role === "admin") {
       loadBranches();
     }
   }, [role, loadBranches]);
 
-  // Use Dashboard cache for default view.
-  // API is only called when a specific branch is selected.
+ 
   useEffect(() => {
     let mounted = true;
 
@@ -49,7 +46,6 @@ const LowStockAlert = ({
         role === "manager" &&
         (!filters.branch_id || filters.branch_id === "ALL");
 
-      // Admin - All Branches
       if (isAllBranches && dashboard?.lowStockProducts) {
         if (mounted) {
           setLowStockProducts(
@@ -61,7 +57,6 @@ const LowStockAlert = ({
         return;
       }
 
-      // Manager - Default branch
       if (isManagerDashboard && dashboard?.lowStockProducts) {
         if (mounted) {
           setLowStockProducts(
@@ -75,7 +70,6 @@ const LowStockAlert = ({
 
       const params = {};
 
-      // Specific admin branch
       if (
         role === "admin" &&
         selectedBranch &&

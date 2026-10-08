@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import DonutChart from "./DonutChart";
@@ -6,9 +5,7 @@ import { Wallet } from "lucide-react";
 import { useAppData } from "../context/AppDataContext";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
 const rupee = (v) => `₹${Number(v || 0).toFixed(2)}`;
-
 const PALETTE = [
   "#23C55E",
   "#2377FC",
@@ -17,7 +14,6 @@ const PALETTE = [
   "#FC2359",
   "#06B6D4",
 ];
-
 const PaymentBreakdown = ({ role, user, filters = {}, storeId }) => {
   const {
     branches,
@@ -32,7 +28,6 @@ const PaymentBreakdown = ({ role, user, filters = {}, storeId }) => {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load branches from AppDataContext cache
   useEffect(() => {
     if (role === "admin") {
       loadBranches();
@@ -43,12 +38,6 @@ const PaymentBreakdown = ({ role, user, filters = {}, storeId }) => {
     let mounted = true;
 
     const fetchPayment = async () => {
-      /*
-       * Default dashboard view:
-       * Use already loaded Dashboard sales data.
-       *
-       * This avoids another /sales-report API call.
-       */
       const isAllBranches =
         role === "admin" &&
         (!selectedBranch || selectedBranch === "ALL");
@@ -58,11 +47,6 @@ const PaymentBreakdown = ({ role, user, filters = {}, storeId }) => {
         setLoading(false);
         return;
       }
-
-      /*
-       * Manager dashboard already has today's sales data
-       * for his own branch.
-       */
       const isManagerDashboard =
         role === "manager" &&
         (!filters.branch_id || filters.branch_id === "ALL");
@@ -73,9 +57,6 @@ const PaymentBreakdown = ({ role, user, filters = {}, storeId }) => {
         return;
       }
 
-      /*
-       * Only call API when a different branch is selected.
-       */
       const params = {
         date_range: "today",
         bill_status: "all",

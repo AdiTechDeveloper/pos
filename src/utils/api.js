@@ -51,7 +51,6 @@ export const createSalesBill = async (payload) => {
     key = generateIdempotencyKey();
     localStorage.setItem("store_idemp_key", key);
   }
-
   try {
     const res = await axios.post(`${BASE_URL}/api/sales-bills`, body, {
       headers: {

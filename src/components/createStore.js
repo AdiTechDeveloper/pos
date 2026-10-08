@@ -31,7 +31,6 @@ const CreateStore = () => {
           Authorization: `Bearer ${user_data?.token}`,
         },
       });
-      console.log(res.data.data);
       setEditingData(res.data.data);
     } catch (error) {
       toast.error(
@@ -303,7 +302,6 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
-                  {/* TAGLINE */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
                     <div
                       style={{
@@ -327,7 +325,6 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
-                  {/* ADDRESS */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
                     <div
                       style={{
@@ -353,7 +350,6 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
-                  {/* STATE */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
                     <div
                       style={{
@@ -458,7 +454,6 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
-                  {/* CONTACT PERSON */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
                     <div
                       style={{
@@ -484,7 +479,6 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
-                  {/* GSTIN */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
                     <div
                       style={{
@@ -510,7 +504,6 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
-                  {/* USERNAME */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
                     <div
                       style={{
@@ -536,7 +529,6 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
-                  {/* PASSWORD */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
                     <div
                       style={{
@@ -567,7 +559,6 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
-                  {/* CONFIRM PASSWORD */}
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
                     <div
                       style={{
@@ -594,7 +585,6 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
-                  {/* LOGO UPLOAD — spans full row, has a preview image */}
                   <fieldset
                     style={{
                       border: "none",
@@ -643,7 +633,6 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
-                  {/* FEATURES — spans full row, too wide/varied for a single column */}
                   <fieldset
                     style={{
                       border: "none",
@@ -788,7 +777,6 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
-                  {/* SUBMIT — spans full row */}
                   <div className="bot" style={{ gridColumn: "1 / -1" }}>
                     <button
                       className="tf-button w208"

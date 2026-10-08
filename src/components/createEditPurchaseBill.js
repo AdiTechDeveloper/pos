@@ -640,56 +640,6 @@ const CreateEditPurchaseBill = () => {
     appData?.loadBranches();
   };
 
-  // const fetchSupplierBill = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/suppliers`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     setSupplierBill(response.data.suppliers);
-  //   } catch (error) {
-  //     console.error("Error fetching suppliers:", error);
-  //   }
-  // };
-
-  // const fetchProduct = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/all-products`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     const sortedProducts = (response.data.products || []).sort((a, b) =>
-  //       (a.name || "").localeCompare(b.name || "", undefined, {
-  //         sensitivity: "base",
-  //       }),
-  //     );
-  //     setProducts(sortedProducts);
-  //   } catch (error) {
-  //     console.error("Error fetching products:", error);
-  //   }
-  // };
-
-  // const fetchGstRates = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/gst-rates`, {
-  //       headers: { Authorization: `Bearer ${user_data.token}` },
-  //     });
-  //     setGstRates(response.data.gstRates);
-  //   } catch (error) {
-  //     console.error("Error fetching GST rates:", error);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchBranch();
-  //   fetchSupplierBill();
-  //   fetchProduct();
-  //   fetchGstRates();
-  // }, []);
   useEffect(() => {
     appData?.loadBranches();
     appData?.loadSuppliers();
@@ -1039,7 +989,6 @@ navigate("/purchase-bill");
                       </h3>
                     </div>
 
-                    {/* Dynamic Status Badges */}
                     {isEdit && (
                       <div>
                         {isPaid && (
@@ -1088,7 +1037,6 @@ navigate("/purchase-bill");
                       }
                     }}
                   >
-                    {/* Bill Details */}
                     <div className="pb-card">
                       <p className="pb-section-label">Bill Details</p>
                       <div className="row mb-0">
@@ -1224,7 +1172,6 @@ navigate("/purchase-bill");
                       </div>
                     </div>
 
-                    {/* Line Items */}
                     <div className="pb-card">
                       <p className="pb-section-label">Line Items</p>
                       <FieldArray name="lines">
@@ -1491,7 +1438,6 @@ navigate("/purchase-bill");
                       </FieldArray>
                     </div>
 
-                    {/* Tax Type & Remarks */}
                     <div className="pb-card">
                       <p className="pb-section-label">
                         Billing &amp; Settlement
@@ -1560,11 +1506,9 @@ navigate("/purchase-bill");
                       </div>
                     </div>
 
-                    {/* Split Payments & Due/Paid Status Card */}
                     <div className="pb-card">
                       <p className="pb-section-label">Payments Ledger</p>
 
-                      {/* Dynamic Due / Paid Info Banner in Edit Mode */}
                       {isEdit && (
                         <>
                           {dueAmount > 0 ? (
@@ -1683,7 +1627,6 @@ navigate("/purchase-bill");
                       </FieldArray>
                     </div>
 
-                    {/* Actions & Summary */}
                     <div className="pb-bottom-row">
                       <button type="submit" className="ml-5 tf-button style-1">
                         {isEdit ? "Update Bill" : "Save Bill"}
@@ -1775,7 +1718,6 @@ navigate("/purchase-bill");
             </div>
           )}
 
-          {/* Product Modal */}
           {showProductModal && (
             <div
               className="pb-modal-overlay"
@@ -1790,19 +1732,7 @@ navigate("/purchase-bill");
                   <h5>Create Product</h5>
                 </div>
                 <div className="pb-modal-body">
-                  {/* <ProductForm
-                    onSuccess={(product) => {
-                      setProducts((prev) => [...prev, product]);
-                      if (formikRef.current && activeRowIndex !== null) {
-                        formikRef.current.setFieldValue(
-                          `lines.${activeRowIndex}.product_id`,
-                          product.id,
-                        );
-                      }
-                      setShowProductModal(false);
-                    }}
-                    onCancel={() => setShowProductModal(false)}
-                  /> */}
+                 
                   <ProductForm
                     onSuccess={async (product) => {
                       appData?.invalidate("purchaseProducts");

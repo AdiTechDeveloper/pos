@@ -17,7 +17,7 @@ const BarcodePrintWrapper = ({ isOpen, product, qty }) => {
             <style>
                 @page { 
                 margin: 0; 
-                size: 50mm 25mm; /* FORCE the page size here */
+                size: 50mm 25mm;
                 }
                 body { 
                 margin: 0; 

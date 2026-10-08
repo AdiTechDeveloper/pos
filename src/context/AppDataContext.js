@@ -1021,7 +1021,10 @@ function fetchDashboard({
           "bills",
 
           get(
-            "/api/sales-bills"
+            "/api/sales-bills",
+            {
+              limit: 5,
+            }
           ),
         ]);
       }

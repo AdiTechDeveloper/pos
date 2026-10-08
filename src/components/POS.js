@@ -126,10 +126,6 @@ export default function POSApp() {
   };
 
   const addToCart = (product) => {
-    console.log("========== ADD TO CART ==========");
-    console.log("PRODUCT RECEIVED:", product);
-    console.log("is_price_override:", product?.is_price_override);
-
     setCart((prev) => {
       const index = prev.findIndex(
         (item) =>

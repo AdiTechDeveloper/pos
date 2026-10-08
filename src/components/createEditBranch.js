@@ -44,7 +44,7 @@ const CreateEditBranch = () => {
   const validationSchema = Yup.object({
     name: Yup.string()
         .required("Name is required")
-        .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
+        .min(3, "Name must be at least 3 characters")
         .max(30, "Name cannot exceed 30 characters"),
   
    address: Yup.string()
@@ -66,7 +66,6 @@ const CreateEditBranch = () => {
       let method = "";
 
       if (isEdit) {
-        // UPDATE PRODUCT
         url = `${BASE_URL}/api/branches/${id}`;
         method = "put";
       } else {
@@ -118,7 +117,7 @@ const CreateEditBranch = () => {
                           name="name"
                           placeholder="Enter branch name"
                           className="mb-5"
-                          maxLength={30}  //Prevents typing past 30 characters
+                          maxLength={30}  
                         />
                         <ErrorMessage
                           name="name"
@@ -149,7 +148,6 @@ const CreateEditBranch = () => {
                         <Field as="select" name="state" className="mb-5">
                           <option value="">Select state</option>
 
-                          {/* States */}
                           <option value="Andhra Pradesh">Andhra Pradesh</option>
                           <option value="Arunachal Pradesh">
                             Arunachal Pradesh
@@ -183,7 +181,6 @@ const CreateEditBranch = () => {
                           <option value="Uttarakhand">Uttarakhand</option>
                           <option value="West Bengal">West Bengal</option>
 
-                          {/* Union Territories (optional) */}
                           <option value="Andaman and Nicobar Islands">
                             Andaman and Nicobar Islands
                           </option>
@@ -230,7 +227,6 @@ const CreateEditBranch = () => {
                     </fieldset>
                   </div>
                 
-                  {/* SUBMIT BUTTON */}
                   
                   <div className="flex col">
                   <button className="tf-button w208" type="submit">

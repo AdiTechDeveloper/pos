@@ -1,6 +1,3 @@
-
-
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -43,8 +40,6 @@ const CustomerDuesWidget = ({
     }
   }, [role, loadBranches]);
 
-  // Use Dashboard cache for default view.
-  // API is only called when a specific branch is selected.
   useEffect(() => {
     let mounted = true;
 
@@ -52,13 +47,8 @@ const CustomerDuesWidget = ({
       const isAllBranches =
         role === "admin" &&
         (!selectedBranch || selectedBranch === "ALL");
-
-      // const isManagerDashboard =
-      //   role === "manager" &&
-      //   (!filters.branch_id || filters.branch_id === "ALL");
       const isManagerDashboard = role === "manager";
 
-      // Admin - All Branches
       if (isAllBranches && dashboard?.customerDues) {
         if (mounted) {
           setDues(dashboard.customerDues);
@@ -67,8 +57,6 @@ const CustomerDuesWidget = ({
 
         return;
       }
-
-      // Manager - Default branch
       if (isManagerDashboard && dashboard?.customerDues) {
         if (mounted) {
           setDues(dashboard.customerDues);
@@ -77,10 +65,7 @@ const CustomerDuesWidget = ({
 
         return;
       }
-
       const params = {};
-
-      // Specific admin branch
       if (
         role === "admin" &&
         selectedBranch &&
@@ -92,7 +77,6 @@ const CustomerDuesWidget = ({
       if (storeId) {
         params.store_id = storeId;
       }
-
       setLoading(true);
 
       try {

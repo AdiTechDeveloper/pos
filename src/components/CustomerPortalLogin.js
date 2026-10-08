@@ -30,7 +30,6 @@ const CustomerPortalLogin = () => {
 
   const [expandedTransaction, setExpandedTransaction] = useState(null);
 
-  // Load dashboard using saved session token
   const fetchDashboard = useCallback(
     async (token) => {
       const response = await axios.get(
@@ -56,7 +55,6 @@ const CustomerPortalLogin = () => {
     [BASE_URL]
   );
 
-  // Restore customer session after page reload
   useEffect(() => {
     const token = localStorage.getItem("customer_portal_token");
 
@@ -73,7 +71,7 @@ const CustomerPortalLogin = () => {
         } else {
           setError(
             error.response?.data?.message ||
-              "Unable to restore your session."
+            "Unable to restore your session."
           );
         }
       })
@@ -147,15 +145,13 @@ const CustomerPortalLogin = () => {
         return;
       }
 
-      // Save token for reload persistence
       localStorage.setItem("customer_portal_token", token);
 
-      // Load dashboard
       await fetchDashboard(token);
     } catch (error) {
       setError(
         error.response?.data?.message ||
-          "Something went wrong. Please try again."
+        "Something went wrong. Please try again."
       );
     } finally {
       setLoading(false);
@@ -182,7 +178,7 @@ const CustomerPortalLogin = () => {
       } else {
         setError(
           error.response?.data?.message ||
-            "Unable to refresh dashboard."
+          "Unable to refresh dashboard."
         );
       }
     } finally {
@@ -240,7 +236,7 @@ const CustomerPortalLogin = () => {
     return (
       <div
         style={{
-          height:"100%", overflow:"scroll",
+          height: "100%", overflow: "scroll",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -290,7 +286,6 @@ const CustomerPortalLogin = () => {
     );
   }
 
-  // Dashboard
   if (customerData) {
     const { customer, summary, transactions = [] } =
       customerData;
@@ -298,7 +293,7 @@ const CustomerPortalLogin = () => {
     return (
       <div
         style={{
-          height:"100%", overflow:"scroll",
+          height: "100%", overflow: "scroll",
           background: "#f8fafc",
           padding: "20px 14px 40px",
           fontFamily:
@@ -436,7 +431,6 @@ const CustomerPortalLogin = () => {
             </div>
           )}
 
-          {/* Balance Card */}
           <div
             style={{
               background:
@@ -505,7 +499,6 @@ const CustomerPortalLogin = () => {
             </div>
           </div>
 
-          {/* Summary Cards */}
           <div
             style={{
               display: "grid",
@@ -788,7 +781,6 @@ const CustomerPortalLogin = () => {
                         borderBottom: "1px solid #f1f5f9",
                       }}
                     >
-                      {/* Transaction Row */}
                       <div
                         style={{
                           padding: "16px 18px",
@@ -845,8 +837,8 @@ const CustomerPortalLogin = () => {
                               {isCredit
                                 ? "Advance Payment"
                                 : bill
-                                ? `Bill #${bill.bill_no}`
-                                : "Advance Used"}
+                                  ? `Bill #${bill.bill_no}`
+                                  : "Advance Used"}
                             </div>
 
                             <div
@@ -1147,7 +1139,7 @@ const CustomerPortalLogin = () => {
                                 ₹
                                 {Number(
                                   bill.total_amount ||
-                                    0
+                                  0
                                 ).toFixed(2)}
                               </span>
                             </div>
@@ -1171,7 +1163,7 @@ const CustomerPortalLogin = () => {
                                 ₹
                                 {Number(
                                   bill.paid_amount ||
-                                    0
+                                  0
                                 ).toFixed(2)}
                               </span>
                             </div>
@@ -1207,7 +1199,6 @@ const CustomerPortalLogin = () => {
             )}
           </div>
 
-          {/* Footer */}
           <div
             style={{
               display: "flex",
@@ -1243,11 +1234,10 @@ const CustomerPortalLogin = () => {
     );
   }
 
-  // Login / OTP screen
   return (
     <div
       style={{
-        height:"100%", overflow:"scroll",
+        height: "100%", overflow: "scroll",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -1264,7 +1254,6 @@ const CustomerPortalLogin = () => {
           maxWidth: "400px",
         }}
       >
-        {/* Logo / Icon */}
         <div
           style={{
             width: "58px",

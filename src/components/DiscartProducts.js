@@ -38,49 +38,6 @@ const DiscardProducts = () => {
     appData?.loadBranches();
   }, [appData]);
 
-  // const fetchDiscardItems = useCallback(
-  //   async (currentFilters = appliedFilters) => {
-  //     const token = user_data?.token;
-
-  //     try {
-  //       setLoading(true);
-
-  //       const params = {
-  //         date_range: currentFilters.date_range,
-  //         branch_id: currentFilters.branch_id || null,
-  //       };
-
-  //       if (currentFilters.date_range === "custom") {
-  //         params.date_from = currentFilters.date_from;
-  //         params.date_to = currentFilters.date_to || todayString();
-  //       }
-
-  //       const response = await axios.get(`${BASE_URL}/api/expired-products`, {
-  //         headers: {
-  //           Accept: "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //         params,
-  //       });
-
-  //       setReport(response.data);
-  //     } catch (error) {
-  //       console.error("Error fetching discard items:", error.response || error);
-  //       setReport({
-  //         status: false,
-  //         data: [],
-  //         total_loss: 0,
-  //         branch_id: currentFilters.branch_id || "all",
-  //         from_date: currentFilters.date_from || null,
-  //         to_date: currentFilters.date_to || null,
-  //       });
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   },
-  //   [BASE_URL, appliedFilters, user_data?.token]
-  // );
-
  const fetchDiscardItems = useCallback(
   async (currentFilters = appliedFilters) => {
     try {
@@ -698,7 +655,6 @@ const ExpiryReportTable = ({ filteredRows, branchTotals, report }) => {
             </div>
           ))}
 
-          {/* Grand Total */}
           <div className="flex items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-5">
             <span className="text-xl font-bold text-gray-900">
               Grand Total Loss
