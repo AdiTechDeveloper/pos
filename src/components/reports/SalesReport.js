@@ -477,67 +477,8 @@ export default function SalesReport() {
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6 mt-6 mb-6">
-            <div className="flex justify-between items-end gap-4 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-8 gap-6 mb-6">
-            <div>
-              <label className="text-2xl font-semibold text-gray-900">
-                Date Range
-              </label>
-              <select
-                className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
-                value={filters.date_range}
-                onChange={(e) =>
-                  setFilters({ ...filters, date_range: e.target.value })
-                }
-              >
-                <option value="today">Today</option>
-                <option value="yesterday">Yesterday</option>
-                <option value="last_7_days">Last 7 Days</option>
-                <option value="this_month">This Month</option>
-                <option value="custom">Custom</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-2xl font-semibold text-gray-900">
-                Bill Status
-              </label>
-              <select
-                className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
-                value={filters.bill_status}
-                onChange={(e) =>
-                  setFilters({ ...filters, bill_status: e.target.value })
-                }
-              >
-                <option value="all">All</option>
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-2xl font-semibold text-gray-900">
-                Branch
-              </label>
-              <select
-                className="block w-full mt-3 rounded-2xl border border-gray-300 px-4 py-4 text-2xl"
-                value={filters.branch_id}
-                onChange={(e) =>
-                  setFilters({ ...filters, branch_id: e.target.value })
-                }
-              >
-                <option value="">All Branches</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {filters.date_range === "custom" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="flex justify-between items-end gap-4 w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-8 gap-6 mb-6">
               <div>
                 <label className="text-2xl font-semibold text-gray-900">
                   Date Range
