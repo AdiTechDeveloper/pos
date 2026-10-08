@@ -15,8 +15,15 @@ const Store = () => {
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
   const handleEdit = (row) => {
+    const adminUser = row.users?.find(
+      (u) => u.id === row.user_id || u.id === row.admin_id,
+    );
+
     navigate(`/create-store/${row.id}`, {
-      storeData: row,
+      state: {
+        storeData: row,
+        adminUsername: adminUser ? adminUser.username : "",
+      },
     });
   };
 
@@ -170,39 +177,38 @@ const Store = () => {
           {/* Page header + Breadcrumbs */}
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span
+              <span
+                style={{
+                  width: "5px",
+                  height: "34px",
+                  borderRadius: "999px",
+                  background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
+                  display: "inline-block",
+                }}
+              />
+              <div>
+                <h3
                   style={{
-                    width: "5px",
-                    height: "34px",
-                    borderRadius: "999px",
-                    background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
-                    display: "inline-block",
+                    fontSize: "24px",
+                    fontWeight: 800,
+                    color: "#111827",
+                    margin: 0,
+                    lineHeight: 1.2,
                   }}
-                />
-                <div>
-                  <h3
-                    style={{
-                      fontSize: "24px",
-                      fontWeight: 800,
-                      color: "#111827",
-                      margin: 0,
-                      lineHeight: 1.2,
-                    }}
-                  >
-                   All Store
-                  </h3>
-                  <p
-                    style={{
-                      fontSize: "13px",
-                      color: "#6b7280",
-                      margin: "2px 0 0 0",
-                    }}
-                  >
-                    Manage Store details
-                  </p>
-                </div>
+                >
+                  All Store
+                </h3>
+                <p
+                  style={{
+                    fontSize: "13px",
+                    color: "#6b7280",
+                    margin: "2px 0 0 0",
+                  }}
+                >
+                  Manage Store details
+                </p>
               </div>
-
+            </div>
 
             <ul className="breadcrumbs flex items-center flex-wrap gap10">
               <li>
