@@ -8,8 +8,6 @@ import { useAppData } from "../../context/AppDataContext";
 import { RotateCcw, FileSpreadsheet, FileDown } from "lucide-react";
 import DataTable from "react-data-table-component";
 
-
-
 export default function SalesReport() {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
@@ -24,7 +22,7 @@ export default function SalesReport() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
-  const [activeTab, setActiveTab] = useState("products"); // Defaulting to products to showcase analytics
+  const [activeTab, setActiveTab] = useState("products");
   const [filters, setFilters] = useState(defaultFilters);
   const appData = useAppData();
   const branches = appData?.branches || [];
@@ -449,7 +447,6 @@ export default function SalesReport() {
           ))}
         </div>
 
-        {/* RENDER DYNAMIC DATA ARRAYS FROM BACKEND */}
         {activeTab === "products" && (
           <ProductTable data={report.top_products || []} />
         )}
@@ -554,9 +551,6 @@ const ProductTable = ({ data }) => {
   );
 };
 
-
-
-
 const DuesTable = ({ data }) => {
   const columns = [
     {
@@ -611,8 +605,6 @@ const DuesTable = ({ data }) => {
     </div>
   );
 };
-
-
 
 const DailyTrendTable = ({ data }) => {
   const columns = [

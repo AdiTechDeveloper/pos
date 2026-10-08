@@ -301,7 +301,6 @@ export default function PurchaseReport() {
               >
                 <RefreshCw className={loading ? "animate-spin" : ""} size={21} />
               </button>
-              {/* CSVLink acts as a clickable element itself */}
               <button
                 onClick={getCsvData}
                 title="Export as CSV"
@@ -393,8 +392,6 @@ export default function PurchaseReport() {
             color="from-slate-50 to-slate-100"
           />
         </div>
-
-
 
         <div className="flex flex-wrap justify-center gap-3 mt-10 mb-6 border-b border-gray-200 text-center">
           {[
@@ -569,7 +566,6 @@ const BillsTable = ({ data }) => {
         }}
       />
 
-      {/* Totals */}
       <div className="grid grid-cols-7 gap-2 bg-gray-100 border-t-2 border-gray-200 px-4 py-4 font-bold text-gray-900 text-2xl">
         <div>Total</div>
 
@@ -594,7 +590,6 @@ const BillsTable = ({ data }) => {
     </div>
   );
 };
-
 
 const ProductsTable = ({ data }) => {
   const columns = [
@@ -684,8 +679,6 @@ const ProductsTable = ({ data }) => {
   );
 };
 
-
-
 const SupplierTable = ({ data }) => {
   const columns = [
     {
@@ -771,7 +764,6 @@ const SupplierTable = ({ data }) => {
         }}
       />
 
-      {/* Total */}
       <div className="grid grid-cols-5 gap-2 bg-gray-100 border-t-2 border-gray-200 px-4 py-4 font-bold text-gray-900 text-2xl">
         <div className="col-span-2">
           Total
@@ -788,8 +780,6 @@ const SupplierTable = ({ data }) => {
     </div>
   );
 };
-
-
 
 const StatusBadge = ({ status, received }) => {
   const colors = received

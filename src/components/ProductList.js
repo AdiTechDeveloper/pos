@@ -213,7 +213,7 @@ export default function ProductList({
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-4 gap-6">
         {loading &&
           [...Array(6)].map((_, i) => (
             <div

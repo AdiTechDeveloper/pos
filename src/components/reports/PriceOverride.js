@@ -9,7 +9,6 @@ import "jspdf-autotable";
 import autoTable from "jspdf-autotable";
 import { Check, RotateCcw, FileSpreadsheet, FileDown } from "lucide-react";
 
-
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const PriceOverride = () => {
@@ -28,7 +27,6 @@ const PriceOverride = () => {
     to_date: today,
     product_id: "",
     overridden_by: "",
-    // branch_id: "",
   });
 
   const [search, setSearch] = useState("");
@@ -66,7 +64,6 @@ const PriceOverride = () => {
       if (filters.to_date) params.to_date = filters.to_date;
       if (filters.product_id) params.product_id = filters.product_id;
       if (filters.overridden_by) params.overridden_by = filters.overridden_by;
-      // if (filters.branch_id) params.branch_id = filters.branch_id;
 
       const response = await axios.get(`${BASE_URL}/api/price-override-report`, {
         headers: {
@@ -100,7 +97,6 @@ const PriceOverride = () => {
         (r.product?.name?.toLowerCase() || "").includes(text) ||
         (r.bill?.bill_no?.toString() || "").includes(text) ||
         (r.overridden_by?.name?.toLowerCase() || "").includes(text)
-        // (r.branch?.name?.toLowerCase() || "").includes(text)
       );
     });
     setFilteredRecords(result);
@@ -116,7 +112,6 @@ const PriceOverride = () => {
       to_date: today,
       product_id: "",
       overridden_by: "",
-      //   branch_id: "",
     };
     setFilters(cleared);
     setLoading(true);
@@ -366,7 +361,6 @@ const PriceOverride = () => {
             </ul>
           </div>
 
-          {/* COMPACT LOSS MINI BOX - Small and clean */}
           <div style={{ maxWidth: "250px" }} className="mb-20">
             <div
               className="wg-box"
@@ -391,7 +385,6 @@ const PriceOverride = () => {
 
             <div style={{ display: "flex", flexDirection: "row", gap: "12px", alignItems: "flex-end", flexWrap: "nowrap" }}>
 
-              {/* From Date */}
               <div style={{ flex: 1, maxWidth: "150px" }}>
                 <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
                   START DATE
@@ -406,7 +399,6 @@ const PriceOverride = () => {
                 />
               </div>
 
-              {/* To Date */}
               <div style={{ flex: 1, maxWidth: "150px" }}>
                 <label style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
                   END DATE
@@ -421,7 +413,6 @@ const PriceOverride = () => {
                 />
               </div>
 
-              {/* Product ID Input */}
               <div style={{ flex: 1, maxWidth: "150px" }}>
                 <label style={{ fontSize: "13px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
                   PRODUCTS
@@ -444,7 +435,6 @@ const PriceOverride = () => {
                 </select>
               </div>
 
-              {/* Staff ID Input */}
               <div style={{ flex: 1, maxWidth: "150px" }}>
                 <label style={{ fontSize: "13px", fontWeight: "700", color: "#64748b", display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
                   STAFFS
@@ -467,7 +457,6 @@ const PriceOverride = () => {
                 </select>
               </div>
 
-              {/* Action Buttons: Unified into the layout alignment */}
               <div style={{ display: "flex", gap: "8px" }}>
                 <button
                   type="button"
@@ -488,7 +477,6 @@ const PriceOverride = () => {
               </div>
 
               <div className="flex gap-2">
-                {/* CSV/Excel Export */}
                 <button
                   onClick={getExportData}
                   title="Export as CSV"
@@ -509,7 +497,6 @@ const PriceOverride = () => {
 
           </div>
 
-          {/* Table Container Area */}
           <div className="wg-box">
             <div className="flex items-center justify-between gap10 flex-wrap mb-3">
               <div className="wg-filter flex-grow">

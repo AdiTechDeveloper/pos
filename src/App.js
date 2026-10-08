@@ -414,6 +414,7 @@ import {
   Route,
   RouterProvider,
   Navigate,
+  Router,
 } from "react-router-dom";
 
 import Login from "./components/login";
@@ -956,6 +957,16 @@ const router = createBrowserRouter(
         }
       />
 
+        <Route
+        path="/supplier-tracking"
+        element={
+          <Protected
+            Component={SupplierTracking}
+            requiredFeature="reports_suplier"
+          />
+        }
+      />
+
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </>,
@@ -981,6 +992,7 @@ function App() {
           fontSize: "14px",
         }}
       />
+
       <RouterProvider router={router} />
     </AppDataProvider>
   );

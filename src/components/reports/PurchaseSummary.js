@@ -7,9 +7,6 @@ import autoTable from "jspdf-autotable";
 import Layout from "../layout";
 import { useAppData } from "../../context/AppDataContext";
 import { RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
-// import { Check, RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
-
-
 
 const PurchaseSummary = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -46,7 +43,6 @@ const PurchaseSummary = () => {
       alert("No data available to export");
       return;
     }
-
     const doc = new jsPDF();
     doc.text("Purchase Summary Report", 14, 15);
     const tableRows = reportData.map((row) => [
@@ -251,7 +247,6 @@ const PurchaseSummary = () => {
     },
   ];
 
-
   return (
     <Layout>
       <div className="main-content-inner">
@@ -308,8 +303,7 @@ const PurchaseSummary = () => {
             </ul>
           </div>
 
-          {/* TOP SUMMARY CARDS */}
-             <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
         <StatCard label="Total Units" value={totals.qty} variant="quantity" />
         <StatCard
           label="Taxable Value"
@@ -328,22 +322,8 @@ const PurchaseSummary = () => {
         />
       </div>
 
-          {/* FILTERS PANEL */}
+          
           <div className="wg-box mb-6 shadow-lg rounded-2xl p-6 border border-slate-200">
-            {/* <div className="flex justify-between mb-4 pb-3 border-b border-slate-200">
-            
-              <label className="flex items-center gap-2 text-2xl font-bold text-slate-700">
-                <input
-                  type="checkbox"
-                  name="include_bills"
-                  checked={filters.include_bills}
-                  onChange={handleFilterChange}
-                  className="w-5 h-5"
-                />
-                Include Bills
-              </label>
-            </div> */}
-
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <FilterField label="Group By">
                 <select
@@ -476,7 +456,7 @@ const PurchaseSummary = () => {
             </div>
           </div>
 
-          {/* MAIN DATA TABLE */}
+         
           <div className="wg-box shadow-xl rounded-2xl overflow-hidden border border-slate-200">
             <DataTable
               columns={columns}
@@ -488,7 +468,6 @@ const PurchaseSummary = () => {
             />
           </div>
 
-          {/* TAX SLABS */}
           {taxSlabs.length > 0 && (
             <div className="flex flex-wrap gap-8 mb-10 mt-5">
               {taxSlabs.map((slab, i) => (
@@ -507,7 +486,7 @@ const PurchaseSummary = () => {
             </div>
           )}
 
-          {/* BILLS TABLE */}
+          
           {filters.include_bills && bills.length > 0 && (
             <table className="table font-medium text-2xl">
               <thead className="bg-slate-100">

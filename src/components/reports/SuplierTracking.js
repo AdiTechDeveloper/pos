@@ -103,7 +103,7 @@ export default function SupplierTracking() {
     const fetchRanking = async () => {
       setRankingLoading(true);
       try {
-        const res = await axios.get(`${BASE_URL}/api/reports/supplier-tracking`, {
+        const res = await axios.get(`${BASE_URL}/api/supplier-tracking`, {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${user_data?.token}`,
@@ -130,7 +130,7 @@ export default function SupplierTracking() {
       setDetailLoading(true);
       try {
         const res = await axios.get(
-          `${BASE_URL}/api/reports/supplier-tracking/${selectedSupplier.id}`,
+          `${BASE_URL}/api/supplier-tracking/${selectedSupplier.id}`,
           {
             headers: {
               Accept: "application/json",
@@ -168,14 +168,14 @@ export default function SupplierTracking() {
       name: "Date",
       selector: (row) => row.bill_date,
       sortable: true,
-      cell: (row) => <span className="text-sm text-gray-700">{row.bill_date}</span>,
+      cell: (row) => <span className="text-xl text-gray-700">{row.bill_date}</span>,
     },
     {
       name: "Bill No",
       selector: (row) => row.bill_no,
       sortable: true,
       cell: (row) => (
-        <span className="text-sm font-semibold text-gray-800">{row.bill_no}</span>
+        <span className="text-xl font-semibold text-gray-800">{row.bill_no}</span>
       ),
     },
     {
@@ -183,14 +183,14 @@ export default function SupplierTracking() {
       selector: (row) => row.taxable_value,
       sortable: true,
       right: true,
-      cell: (row) => <span className="text-sm text-gray-700">{rupee(row.taxable_value)}</span>,
+      cell: (row) => <span className="text-xl text-gray-700">{rupee(row.taxable_value)}</span>,
     },
     {
       name: "Tax",
       selector: (row) => row.total_tax,
       sortable: true,
       right: true,
-      cell: (row) => <span className="text-sm text-gray-700">{rupee(row.total_tax)}</span>,
+      cell: (row) => <span className="text-xl text-gray-700">{rupee(row.total_tax)}</span>,
     },
     {
       name: "Total",
@@ -198,7 +198,7 @@ export default function SupplierTracking() {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="text-sm font-semibold text-gray-900">{rupee(row.total_amount)}</span>
+        <span className="text-xl font-semibold text-gray-900">{rupee(row.total_amount)}</span>
       ),
     },
     {
@@ -206,7 +206,7 @@ export default function SupplierTracking() {
       center: true,
       cell: (row) => (
         <span
-          className={`px-3 py-1 rounded-full text-xs font-medium border ${
+          className={`px-3 py-1 rounded-full text-xl font-medium border ${
             row.received
               ? "bg-emerald-50 text-emerald-700 border-emerald-200"
               : "bg-rose-50 text-rose-700 border-rose-200"
@@ -241,7 +241,8 @@ export default function SupplierTracking() {
               <select
                 value={selectedBranch}
                 onChange={(e) => setSelectedBranch(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                className="border border-black-800 rounded-lg px-3 py-2 text-xl" 
+                style={{ width:200}}
               >
                 <option value="">All Branches</option>
                 {branches.map((b) => (
@@ -256,11 +257,11 @@ export default function SupplierTracking() {
           <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
             {/* LEFT: supplier ranking */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-1">
-                <Building2 size={18} className="text-blue-600" />
+              <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2 mb-1">
+                <Building2 size={20} className="text-blue-600" />
                 Top Suppliers
               </h3>
-              <p className="text-xs text-gray-400 mb-4">By total purchase amount</p>
+              <p className="text-xl text-gray-400 mb-4">By total purchase amount</p>
 
               {rankingLoading ? (
                 <div className="space-y-3">
@@ -269,7 +270,7 @@ export default function SupplierTracking() {
                   ))}
                 </div>
               ) : ranking.length === 0 ? (
-                <p className="text-sm text-gray-400 py-6 text-center">No purchase data yet.</p>
+                <p className="text-xl text-gray-400 py-6 text-center">No purchase data yet.</p>
               ) : (
                 <div className="divide-y divide-gray-50">
                   {ranking.map((s) => {
@@ -286,10 +287,10 @@ export default function SupplierTracking() {
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-gray-800 truncate">
+                          <span className="text-2xl font-medium text-gray-800 truncate">
                             {s.supplier_name}
                           </span>
-                          <span className="text-sm font-bold text-gray-800 shrink-0 ml-2">
+                          <span className="text-xl font-bold text-gray-800 shrink-0 ml-2">
                             {rupee(s.total_amount)}
                           </span>
                         </div>
@@ -299,7 +300,7 @@ export default function SupplierTracking() {
                             style={{ width: `${(s.total_amount / maxAmt) * 100}%` }}
                           />
                         </div>
-                        <div className="text-xs text-gray-400 mt-1">
+                        <div className="text-xl text-gray-400 mt-1">
                           {s.bill_count} bills · {s.share_pct}% of total
                         </div>
                       </button>
@@ -312,7 +313,7 @@ export default function SupplierTracking() {
             {/* RIGHT: selected supplier detail */}
             <div className="flex flex-col gap-6">
               {!selectedSupplier ? (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-gray-400">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-xl text-center text-gray-400">
                   Select a supplier on the left to see their monthly totals and bills.
                 </div>
               ) : (
@@ -320,16 +321,16 @@ export default function SupplierTracking() {
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                     <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                       <div>
-                        <h3 className="text-lg font-bold text-gray-800">
+                        <h3 className="text-xl font-bold text-gray-800">
                           {selectedSupplier.name}
                         </h3>
-                        <p className="text-xs text-gray-400">Monthly purchase total</p>
+                        <p className="text-xl text-gray-400">Monthly purchase total</p>
                       </div>
                       <div className="flex items-center gap-3">
                         <select
                           value={year}
                           onChange={(e) => setYear(Number(e.target.value))}
-                          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                          className="border border-gray-300 rounded-lg px-3 py-1.5 text-xl"
                         >
                           {Array.from({ length: 5 }).map((_, i) => {
                             const y = new Date().getFullYear() - i;
@@ -340,7 +341,7 @@ export default function SupplierTracking() {
                             );
                           })}
                         </select>
-                        <span className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="flex items-center gap-1.5 text-xl font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <TrendingUp size={14} />
                           {year} Total: {rupee(yearlyTotal)}
                         </span>
@@ -379,7 +380,7 @@ export default function SupplierTracking() {
                   </div>
 
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">
+                    <h3 className="text-xl font-bold text-gray-800 mb-4">
                       All Bills — {year}
                     </h3>
                     <DataTable
@@ -390,7 +391,7 @@ export default function SupplierTracking() {
                       responsive
                       progressPending={detailLoading}
                       noDataComponent={
-                        <p className="text-sm text-gray-400 py-8">
+                        <p className="text-xl text-gray-400 py-8">
                           No bills from this supplier in {year}.
                         </p>
                       }
