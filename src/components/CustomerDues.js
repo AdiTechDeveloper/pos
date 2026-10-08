@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-
 const BASE_URL = process.env.REACT_APP_API_BASE_URL || "";
 
 export default function CustomerDues() {
@@ -136,7 +135,6 @@ export default function CustomerDues() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto bg-slate-50/50 min-h-screen">
-      {/* Header Section */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button
@@ -165,7 +163,6 @@ export default function CustomerDues() {
         </div>
       </div>
 
-      {/* Search Bar with Icon */}
       <div className="relative mb-6">
         <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">
           <svg
@@ -192,7 +189,6 @@ export default function CustomerDues() {
         />
       </div>
 
-      {/* Loading State */}
       {loading && (
         <div className="flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -202,7 +198,6 @@ export default function CustomerDues() {
         </div>
       )}
 
-      {/* Customer List Cards */}
       {!loading && (
         <div className="space-y-4">
           {filtered.length === 0 && (
@@ -228,7 +223,6 @@ export default function CustomerDues() {
                 key={item.customer_id}
                 className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
               >
-                {/* Customer Info */}
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 font-bold flex items-center justify-center text-xl shrink-0">
                     {initials}
@@ -254,7 +248,6 @@ export default function CustomerDues() {
                   </div>
                 </div>
 
-                {/* Due Amount & Action */}
                 <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-6 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
                   <div className="text-left sm:text-right">
                     <span className="block text-2xl text-bold-700">
@@ -292,7 +285,6 @@ export default function CustomerDues() {
         </div>
       )}
 
-      {/* Payment Modal */}
       {showModal && selectedCustomer && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl overflow-hidden border border-slate-100 flex flex-col state-layer">
@@ -307,9 +299,7 @@ export default function CustomerDues() {
               </h2>
             </div>
 
-            {/* Body Content */}
             <div className="p-6 space-y-5 flex-1">
-              {/* Total Due Card */}
               <div className="bg-blue-50/50 border border-blue-100/70 rounded-xl p-4 flex justify-between items-center">
                 <span className="text-2xl font-medium text-blue-700 uppercase tracking-wider">
                   Total Amount Due
@@ -319,7 +309,6 @@ export default function CustomerDues() {
                 </strong>
               </div>
 
-              {/* Input Field */}
               <div className="space-y-2">
                 <label
                   htmlFor="payment-amount"
@@ -342,7 +331,6 @@ export default function CustomerDues() {
                 </div>
               </div>
 
-              {/* Payment Method Selection */}
               <div className="space-y-2">
                 <label className="block text-2xl font-semibold text-slate-700">
                   Select Payment Method
@@ -383,7 +371,6 @@ export default function CustomerDues() {
                 </div>
               </div>
 
-              {/* Error Message */}
               {errorMsg && (
                 <div className="flex items-center gap-2 p-3 text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl">
                   <svg
@@ -404,7 +391,6 @@ export default function CustomerDues() {
               )}
             </div>
 
-            {/* Footer Actions */}
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
               <button
                 type="button"

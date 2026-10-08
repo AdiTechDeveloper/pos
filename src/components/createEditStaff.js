@@ -9,7 +9,7 @@ import { useAppData } from "../context/AppDataContext";
 
 const CreateEditStaff = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-  const { id } = useParams(); // if id exists -> Edit Mode
+  const { id } = useParams(); 
   const navigate = useNavigate();
   const [featureCatalog, setFeatureCatalog] = useState({});
   const featureKeys = Object.keys(featureCatalog);
@@ -33,7 +33,6 @@ const CreateEditStaff = () => {
   const cleanedBranchIds =
     incomingStaff?.branches?.map((b) => b.pivot.branch_id) || [];
 
-  // If editing → set initial values
   const loadStaffData = () => {
     if (incomingStaff) {
       setInitialValues({
@@ -78,11 +77,11 @@ const CreateEditStaff = () => {
   const validationSchema = Yup.object({
     name: Yup.string()
       .required("Name is required")
-      .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
+      .min(3, "Name must be at least 3 characters") 
       .max(30, "Name cannot exceed 30 characters"),
     username: Yup.string()
       .required("Username is required")
-      .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
+      .min(3, "Name must be at least 3 characters") 
       .max(30, "Name cannot exceed 30 characters"),
 
     role: Yup.string().required("Role is required"),
@@ -93,17 +92,14 @@ const CreateEditStaff = () => {
 
 
 
-  // Submit (Create + Update)
   const handleSubmit = async (values, actions) => {
     try {
       let url = "";
       let method = "";
       if (isEdit) {
-        // UPDATE PRODUCT
         url = `${BASE_URL}/api/staff/${id}`;
         method = "put";
       } else {
-        // CREATE PRODUCT
         url = `${BASE_URL}/api/staff`;
         method = "post";
       }
@@ -117,7 +113,6 @@ const CreateEditStaff = () => {
           Authorization: `Bearer ${user_data.token}`,
         },
       });
-      // Staff data changed
       appData?.invalidate("staff");
       await appData?.loadStaff();
       toast.success(
@@ -156,9 +151,7 @@ const CreateEditStaff = () => {
             >
               {({ values, setFieldValue }) => (
                 <Form className="wg-form">
-                  {/* Single Row Container for All Fields */}
                   <div className="row mb-15 align-items-start">
-                    {/* Name */}
                     <fieldset
                       className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-2" : "col-md-3"}`}
                     >
@@ -169,7 +162,6 @@ const CreateEditStaff = () => {
                       </div>
                     </fieldset>
 
-                    {/* Username */}
                     <fieldset
                       className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-2" : "col-md-3"}`}
                     >
@@ -180,7 +172,6 @@ const CreateEditStaff = () => {
                       </div>
                     </fieldset>
 
-                    {/* Branch IDs */}
                     <fieldset
                       className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-2" : "col-md-3"}`}
                     >
@@ -224,7 +215,6 @@ const CreateEditStaff = () => {
                       </div>
                     </fieldset>
 
-                    {/* Role */}
                     <fieldset
                       className={`col-12 ${values.role === "cashier" && !isEdit ? "col-md-3" : "col-md-3"}`}
                     >
@@ -243,7 +233,6 @@ const CreateEditStaff = () => {
                       </div>
                     </fieldset>
 
-                    {/* Pin (Conditionally rendered in the same row) */}
                     {values.role === "cashier" && !isEdit && (
                       <fieldset className="col-12 col-md-3">
                         <div className="body-title">Pin *</div>
@@ -421,8 +410,6 @@ const CreateEditStaff = () => {
                       </fieldset>
                     </div>
                   )}
-
-                  {/* SUBMIT BUTTON */}
                   <div className="flex">
                     <button className="tf-button w208" type="submit">
                       {isEdit ? "Update Satff" : "Create Staff"}

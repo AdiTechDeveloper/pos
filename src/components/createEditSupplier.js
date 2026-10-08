@@ -10,7 +10,7 @@ import { useAppData } from "../context/AppDataContext";
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const CreateEditSupplier = () => {
-  const { id } = useParams(); // if id exists -> Edit Mode
+  const { id } = useParams();
   const navigate = useNavigate();
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_supplier = localStorage.getItem("supplier_detail");
@@ -27,7 +27,6 @@ const CreateEditSupplier = () => {
     state: "",
   });
 
-  // If editing → set initial values
   const loadSupplierData = () => {
     if (incomingSupplier) {
       setInitialValues({
@@ -45,11 +44,10 @@ const CreateEditSupplier = () => {
     loadSupplierData();
   }, []);
 
-  // Validation Schema
   const validationSchema = Yup.object({
     name: Yup.string()
       .required("Name is required")
-      .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
+      .min(3, "Name must be at least 3 characters")
       .max(30, "Name cannot exceed 30 characters"),
 
     gstin: Yup.string()
@@ -72,36 +70,6 @@ const CreateEditSupplier = () => {
       .required("State is required"),
   });
 
-  // Submit (Create + Update)
-  // const handleSubmit = async (values) => {
-  //   try {
-  //     let url = "";
-  //     let method = "";
-
-  //     if (isEdit) {
-  //       // UPDATE PRODUCT
-  //       url = `${BASE_URL}/api/suppliers/${id}`;
-  //       method = "put";
-  //     } else {
-  //       // CREATE PRODUCT
-  //       url = `${BASE_URL}/api/suppliers`;
-  //       method = "post";
-  //     }
-  //     const response = await axios({
-  //       method,
-  //       url,
-  //       data: values,
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     toast.success(isEdit ? "Suppliers Updated!" : "Suppliers Created!");
-  //     navigate("/suppliers");
-  //   } catch (error) {
-  //     console.error("Error saving product:", error);
-  //   }
-  // };
 
   const handleSubmit = async (values) => {
   try {
@@ -169,7 +137,7 @@ const CreateEditSupplier = () => {
                           name="name"
                           className="mb-5"
                           placeholder="Enter supplier name"
-                          maxLength={30}  //Prevents typing past 30 characters
+                          maxLength={30}  
                         />
                         <ErrorMessage
                           name="name"
@@ -186,7 +154,7 @@ const CreateEditSupplier = () => {
                           name="gstin"
                           className="mb-5"
                           placeholder="Enter GST no."
-                          maxLength={15} // Prevents typing past 50 characters
+                          maxLength={15} 
                         />
                         <ErrorMessage
                           name="gstin"
@@ -240,8 +208,6 @@ const CreateEditSupplier = () => {
                       <div className="body-content">
                         <Field as="select" name="state" className="mb-5">
                           <option value="">Select state</option>
-
-                          {/* States */}
                           <option value="Andhra Pradesh">Andhra Pradesh</option>
                           <option value="Arunachal Pradesh">
                             Arunachal Pradesh
@@ -274,8 +240,6 @@ const CreateEditSupplier = () => {
                           <option value="Uttar Pradesh">Uttar Pradesh</option>
                           <option value="Uttarakhand">Uttarakhand</option>
                           <option value="West Bengal">West Bengal</option>
-
-                          {/* Union Territories (optional) */}
                           <option value="Andaman and Nicobar Islands">
                             Andaman and Nicobar Islands
                           </option>
@@ -291,7 +255,6 @@ const CreateEditSupplier = () => {
                           <option value="Lakshadweep">Lakshadweep</option>
                           <option value="Puducherry">Puducherry</option>
                         </Field>
-
                         <ErrorMessage
                           name="state"
                           className="error-text"
@@ -302,7 +265,6 @@ const CreateEditSupplier = () => {
                   </div>
 
                   <div className="flex col">
-                    {/* SUBMIT BUTTON */}
                     <button className="tf-button w208" type="submit">
                       {isEdit ? "Update Supplier" : "Create Supplier"}
                     </button>

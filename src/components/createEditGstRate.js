@@ -23,7 +23,6 @@ const CreateEditGstRates = () => {
     rate: "",
     description: "",
   });
-  // If editing → set initial values
   const loadGstData = () => {
     if (incomingGstRateDetail) {
       setInitialValues({
@@ -36,7 +35,6 @@ const CreateEditGstRates = () => {
     loadGstData();
   }, []);
 
-  // Validation Schema
   const validationSchema = Yup.object({
     rate: Yup.string()
       .required("Rate is required")
@@ -54,39 +52,6 @@ const CreateEditGstRates = () => {
       ),
   });
 
-
-  // Submit (Create + Update)
-  // const handleSubmit = async (values) => {
-  //   try {
-  //     let url = "";
-  //     let method = "";
-
-  //     if (isEdit) {
-  //       // UPDATE PRODUCT
-  //       url = `${BASE_URL}/api/gst-rates/${id}`;
-  //       method = "put";
-  //     } else {
-  //       // CREATE PRODUCT
-  //       url = `${BASE_URL}/api/gst-rates`;
-  //       method = "post";
-  //     }
-
-  //     const response = await axios({
-  //       method,
-  //       url,
-  //       data: values,
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     toast.success(isEdit ? "Gst Rate Updated!" : "Gst Rate Created!");
-  //     navigate("/gst-rates");
-  //   } catch (error) {
-  //     console.error("Error saving product:", error);
-  //   }
-  // };
-  
   const handleSubmit = async (values) => {
   try {
     let url = "";
@@ -144,7 +109,6 @@ const CreateEditGstRates = () => {
             >
               {() => (
                 <Form className="wg-form">
-                  {/* Name */}
                   <div className="row mb-15">
                     <fieldset className="col-md-2 mb-15">
                       <div className="body-title">Rate *</div>
@@ -159,7 +123,6 @@ const CreateEditGstRates = () => {
 
                             const parts = value.split(".");
 
-                            // Maximum 2 digits before decimal
                             if (parts[0].length > 2) {
                               value = parts[0].slice(0, 2);
 
@@ -168,7 +131,6 @@ const CreateEditGstRates = () => {
                               }
                             }
 
-                            // Only one decimal point
                             const decimalParts = value.split(".");
                             if (decimalParts.length > 2) {
                               value = decimalParts[0] + "." + decimalParts.slice(1).join("");
@@ -219,7 +181,6 @@ const CreateEditGstRates = () => {
                   </div>
 
                   <div className="flex col">
-                    {/* SUBMIT BUTTON */}
                     <button className="tf-button w208" type="submit">
                       {isEdit ? "Update Gst Rates" : "Create Gst Rates"}
                     </button>

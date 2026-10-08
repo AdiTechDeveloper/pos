@@ -124,19 +124,11 @@ const Navbar = () => {
     (item) => location.pathname === item.path,
   );
 
-  /* =========================================================
-      STORE
-  ========================================================= */
-
   useEffect(() => {
     if (store_id) {
       appData?.loadStore(store_id);
     }
   }, [store_id, appData]);
-
-  /* =========================================================
-      AUTO OPEN REPORTS
-  ========================================================= */
 
   useEffect(() => {
     if (isReportPath) {
@@ -157,10 +149,6 @@ const Navbar = () => {
     return () => clearTimeout(timer);
   }, [location.pathname, reportsOpen]);
 
-  /* =========================================================
-      LOGO
-  ========================================================= */
-
   const DEFAULT_LOGO = "/assets/images/logo/vakaro-full.png";
 
   const logoUrl =
@@ -168,19 +156,12 @@ const Navbar = () => {
       ? DEFAULT_LOGO
       : `${BASE_URL}/storage/${store.logo}`;
 
-  /* =========================================================
-      MOBILE
-  ========================================================= */
 
   const closeSidebar = () => {
     if (window.innerWidth <= 768) {
       setIsOpen(false);
     }
   };
-
-  /* =========================================================
-      LOGOUT
-  ========================================================= */
 
   const handleLogout = async () => {
     try {
@@ -198,7 +179,6 @@ const Navbar = () => {
       console.error("Logout API error:", error);
     }
 
-    // removeItem accepts only ONE key
     localStorage.removeItem("user_detail");
     localStorage.removeItem("cart_detail");
     localStorage.removeItem("cart_total");
@@ -286,10 +266,7 @@ const Navbar = () => {
     },
   ];
 
-  /* =========================================================
-      ROLE MENUS
-  ========================================================= */
-
+  
   const superadminMenus = [
     {
       name: "Stores",
@@ -361,10 +338,7 @@ const Navbar = () => {
   const isBackOffice = role === "admin" || role === "manager";
   const showReports = isBackOffice && visibleReportLinks.length > 0;
 
-  /* =========================================================
-      RENDER
-  ========================================================= */
-
+ 
   const renderMenuItem = (item) => (
     <li key={`${item.path}-${item.name}`} className="app-sidebar-menu-item">
       <Link
@@ -382,7 +356,6 @@ const Navbar = () => {
 
   return (
     <>
-      {/* MOBILE MENU BUTTON */}
       <button
         className="app-sidebar-mobile-btn"
         onClick={() => setIsOpen(!isOpen)}
@@ -390,7 +363,6 @@ const Navbar = () => {
         <span className="icon-menu-left"></span>
       </button>
 
-      {/* SIDEBAR CSS */}
       <style>{`
         /* ---------- MAIN SIDEBAR ---------- */
         .app-sidebar {
@@ -853,13 +825,11 @@ const Navbar = () => {
         }
       `}</style>
 
-      {/* SIDEBAR */}
       <aside
         className={`app-sidebar ${isOpen ? "open" : ""} ${
           isCollapsed ? "collapsed" : ""
         }`}
       >
-        {/* HEADER */}
         <div className="app-sidebar-header">
           <div className="app-sidebar-logo">
             <Link to="/dashboard" onClick={closeSidebar}>
@@ -868,7 +838,6 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* BODY */}
         <div className="app-sidebar-body">
           <div className="app-sidebar-section-title">Main Home</div>
           <ul className="app-sidebar-menu">
@@ -891,7 +860,6 @@ const Navbar = () => {
 
           <div className="app-sidebar-section-title">All Page</div>
           <ul className="app-sidebar-menu">
-            {/* feature-filtered menu items (POS ko chhodkar) */}
             {mainItems.map(renderMenuItem)}
 
             {showReports && (
@@ -960,7 +928,6 @@ const Navbar = () => {
             )}
           </ul>
 
-          {/* SUPPORT SECTION */}
           <div className="app-sidebar-support">
             {!isCollapsed && (
               <div className="app-sidebar-support">
@@ -1009,10 +976,8 @@ const Navbar = () => {
                     />
                   </div>
 
-                  {/* TITLE */}
                   <h3>Hi, how can we help?</h3>
 
-                  {/* DESCRIPTION */}
                   <p>
                     Contact us if you have any
                     <br />
@@ -1021,7 +986,6 @@ const Navbar = () => {
                     soon as possible
                   </p>
 
-                  {/* BUTTON */}
                   <a
                     style={{ color: "white", textDecoration: "none" }}
                     href="https://vakaro.in/contact"

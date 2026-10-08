@@ -24,7 +24,6 @@ const CreateEditCategory = () => {
     parent_id: "",
   });
 
-  // const [categories, setCategories] = useState([]);
   const appData = useAppData();
   const categories = appData?.categories || [];
 
@@ -38,7 +37,6 @@ const CreateEditCategory = () => {
     }
   };
 
-  // Validation Schema
   const validationSchema = Yup.object({
     name: Yup.string()
       .required("Name is required")
@@ -50,25 +48,6 @@ const CreateEditCategory = () => {
       .min(10, "Description must be at least 10 characters long")
       .max(255, "Description cannot exceed 255 characters"),
   });
-
-  // const fetchCategory = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/categories`, {
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     setCategories(response.data.categories);
-  //   } catch (error) {
-  //     console.error("Error fetching categories:", error);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   loadCategoryData();
-  //   fetchCategory();
-  // }, []);
 
   useEffect(() => {
     loadCategoryData();
@@ -82,11 +61,9 @@ const CreateEditCategory = () => {
       let method = "";
 
       if (isEdit) {
-        // UPDATE PRODUCT
         url = `${BASE_URL}/api/categories/${id}`;
         method = "put";
       } else {
-        // CREATE PRODUCT
         url = `${BASE_URL}/api/categories`;
         method = "post";
       }
@@ -134,7 +111,7 @@ const CreateEditCategory = () => {
                         <Field
                           type="text"
                           name="name"
-                          maxLength={50} // Prevents typing past 50 characters
+                          maxLength={50} 
                           placeholder="Enter category name"
                           className="mb-5"
                         />
@@ -156,11 +133,7 @@ const CreateEditCategory = () => {
                             </option>
                           ))}
                         </Field>
-                        {/* <ErrorMessage
-                        name="parent_id"
-                        className="error-text"
-                        component="div"
-                      /> */}
+                      
                       </div>
                     </fieldset>
                     <fieldset className="col-md-4 mb-15">
@@ -170,7 +143,7 @@ const CreateEditCategory = () => {
                           as="textarea"
                           rows={1}
                           name="description"
-                          maxLength={255} // Prevents typing past 255 characters
+                          maxLength={255} 
                           className="mb-5 form-control small-textarea"
                           placeholder="Enter description"
 
@@ -186,7 +159,6 @@ const CreateEditCategory = () => {
 
 
                   <div className="flex col">
-                    {/* SUBMIT BUTTON */}
                     <button className="tf-button w208" type="submit">
                       {isEdit ? "Update Category" : "Create Category"}
                     </button>

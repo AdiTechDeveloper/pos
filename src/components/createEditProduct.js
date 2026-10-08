@@ -19,14 +19,9 @@ const CreateEditProduct = () => {
   const incomingProduct = store_product && JSON.parse(store_product);
   const isEdit = Boolean(id);
 
-  // const [brands, setBrands] = useState([]);
-  // const [categories, setCategories] = useState([]);
-  // const [gstRates, setGstRates] = useState([]);
-
   const brands = appData?.brands || [];
   const categories = appData?.categories || [];
   const gstRates = appData?.gstRates || [];
-
 
   const [barcode, setBarcode] = useState([]);
   const [categoryId, setCategoryId] = useState("");
@@ -54,43 +49,6 @@ const CreateEditProduct = () => {
     gst_inclusive: false,
     is_price_override: 0,
   });
-
-  // Fetch brands
-  // const fetchBrands = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/brands`, {
-  //       headers: { Authorization: `Bearer ${user_data.token}` },
-  //     });
-  //     setBrands(response.data.brands);
-  //   } catch (error) {
-  //     console.error("Error fetching brands:", error);
-  //   }
-  // };
-  // const fetchGstRates = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/gst-rates`, {
-  //       headers: { Authorization: `Bearer ${user_data.token}` },
-  //     });
-  //     setGstRates(response.data.gstRates);
-  //   } catch (error) {
-  //     console.error("Error fetching GST rates:", error);
-  //   }
-  // };
-
-  // // Fetch categories
-  // const fetchCategories = async () => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/categories`, {
-  //       headers: {
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-
-  //     setCategories(response.data.categories);
-  //   } catch (error) {
-  //     console.error("Error fetching categories:", error);
-  //   }
-  // };
 
   const fetchProduct = async () => {
     if (!id) return;
@@ -134,16 +92,6 @@ const CreateEditProduct = () => {
     }
   };
 
-  // useEffect(() => {
-  //   fetchBrands();
-  //   fetchCategories();
-  //   fetchGstRates();
-
-  //   if (isEdit) {
-  //     fetchProduct();
-  //   }
-  // }, [id]);
-
   useEffect(() => {
     appData?.loadBrands();
     appData?.loadCategories();
@@ -154,7 +102,6 @@ const CreateEditProduct = () => {
     }
   }, [id]);
 
-  // Validation Schema
   const validationSchema = Yup.object({
     name: Yup.string()
       .required("Name is required")
@@ -168,39 +115,6 @@ const CreateEditProduct = () => {
     category_id: Yup.string().required("Category  is required"),
 
   });
-
-
-  // Submit (Create + Update)
-  // const handleSubmit = async (values) => {
-  //   try {
-  //     let url = "";
-  //     let method = "";
-
-  //     if (isEdit) {
-  //       // UPDATE PRODUCT
-  //       url = `${BASE_URL}/api/products/${id}`;
-  //       method = "put";
-  //     } else {
-  //       // CREATE PRODUCT
-  //       url = `${BASE_URL}/api/products`;
-  //       method = "post";
-  //     }
-
-  //     const response = await axios({
-  //       method,
-  //       url,
-  //       data: values,
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data.token}`,
-  //       },
-  //     });
-  //     toast.success(isEdit ? "Product Updated!" : "Product Created!");
-  //     navigate("/product");
-  //   } catch (error) {
-  //     console.error("Error saving product:", error);
-  //   }
-  // };
 
   const handleSubmit = async (values) => {
     try {
@@ -323,7 +237,6 @@ const CreateEditProduct = () => {
                 {() => (
                   <Form className="wg-form">
                     <div className="row mb-20 col-12">
-                      {/* Name */}
                       <fieldset className="col-md-3">
                         <div className="body-title">Name *</div>
                         <div className="body-content">
@@ -341,7 +254,7 @@ const CreateEditProduct = () => {
                         </div>
                       </fieldset>
 
-                      {/* SKU */}
+
                       <fieldset className="col-md-3">
                         <div className="body-title">SKU</div>
                         <div className="body-content mb-15">
@@ -694,7 +607,6 @@ const CreateEditProduct = () => {
                     </div>
 
                     <div className="flex col">
-                      {/* SUBMIT BUTTON */}
                       <button className="tf-button w208" type="submit">
                         {isEdit ? "Update Product" : "Create Product"}
                       </button>

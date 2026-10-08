@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import Layout from "./layout";
-// import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import axios from "axios";
@@ -10,7 +9,6 @@ import { useAppData } from "../context/AppDataContext";
 const Branch = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-  // const navigate = useNavigate();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const appData = useAppData();
@@ -19,7 +17,6 @@ const Branch = () => {
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
   useEffect(() => {
-    // appData?.invalidate("branches");
     appData?.loadBranches();
   }, []);
 

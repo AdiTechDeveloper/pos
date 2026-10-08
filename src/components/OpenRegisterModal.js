@@ -32,7 +32,7 @@ const OpenRegisterModal = ({ isOpen, branchId, onRegisterOpened }) => {
         },
       );
       toast.success("Shift started successfully!");
-      onRegisterOpened(); // Closes the modal
+      onRegisterOpened(); 
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Error starting shift. Please try again.",
@@ -41,10 +41,7 @@ const OpenRegisterModal = ({ isOpen, branchId, onRegisterOpened }) => {
       setSubmitting(false);
     }
   };
-
-  
    return (
-  /* ── Backdrop ── */
   <div style={{
     position: "fixed", inset: 0,
     background: "rgba(0,0,0,0.55)",
@@ -53,7 +50,6 @@ const OpenRegisterModal = ({ isOpen, branchId, onRegisterOpened }) => {
     zIndex: 9999,
     padding: "16px",
   }}>
-    {/* ── Dialog ── */}
     <div style={{
       background: "#fff",
       borderRadius: "16px",
@@ -64,13 +60,11 @@ const OpenRegisterModal = ({ isOpen, branchId, onRegisterOpened }) => {
       fontFamily: "'Poppins', sans-serif",
     }}>
 
-      {/* Header */}
       <div style={{
         background: "linear-gradient(135deg, rgb(208 105 183), rgb(43 206 156))",
         padding: "12px",
         textAlign: "center",
       }}>
-        {/* <div style={{ fontSize: "36px" }}>🏪</div> */}
         <h2 style={{ color: "#fff", margin: 0, padding:0 , fontSize: "20px", fontWeight: 700 }}>
           Start New Shift
         </h2>
@@ -78,11 +72,13 @@ const OpenRegisterModal = ({ isOpen, branchId, onRegisterOpened }) => {
           Enter your opening cash balance to activate the register
         </p>
       </div>
-
-      {/* Body */}
       <div style={{ padding: "28px 24px" }}>
 
-        {/* Info box */}
+
+
+
+
+
         <div style={{
           background: "#f0fdf4",
           border: "1px solid #bbf7d0",

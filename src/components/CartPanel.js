@@ -323,7 +323,6 @@ export default function CartPanel({
         },
       );
     } catch (error) {
-      // Ignore logout API errors
     }
 
     localStorage.removeItem("user_detail", "cart_detail", "cart_detail");
@@ -388,7 +387,7 @@ export default function CartPanel({
     itemBorder: "#2a2e3a",
     text: "#f4f5f7",
     textMuted: "#8b92a3",
-    accent: "#f0a04b", // Pay button amber, matching screenshot
+    accent: "#f0a04b",
   };
 
   return (
@@ -401,7 +400,6 @@ export default function CartPanel({
         borderRadius: "16px",
       }}
     >
-      {/* Header */}
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <ShoppingBag size={22} />
@@ -496,7 +494,6 @@ export default function CartPanel({
         {itemCount} {itemCount === 1 ? "item" : "items"} · {totalQty} qty
       </p>
 
-      {/* Bill date */}
       <div
         className="relative flex items-center justify-between mb-5"
         style={{
@@ -531,7 +528,6 @@ export default function CartPanel({
         </div>
       </div>
 
-      {/* Cart Items */}
       <div className="flex-1 overflow-y-auto">
         {cart.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center py-20">
@@ -835,7 +831,6 @@ export default function CartPanel({
         )}
       </div>
 
-      {/* Footer: Subtotal / GST / Total / Actions */}
       <div style={{ borderTop: `1px solid ${colors.panelBorder}`, paddingTop: "16px", marginTop: "12px" }}>
         <div className="flex justify-between" style={{ fontSize: "16px", color: colors.textMuted, marginBottom: "6px" }}>
           <span>Subtotal</span>

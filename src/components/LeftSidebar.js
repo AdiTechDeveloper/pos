@@ -46,9 +46,6 @@ export default function LeftSidebar({
     const controller = new AbortController();
     const { signal } = controller;
 
-    // Agar api.js ke functions { signal } accept karte hain to StrictMode ki
-    // pehli request cancel ho jayegi. Agar nahi karte to ye argument ignore
-    // ho jata hai (koi nuksan nahi).
     getCategories({ signal })
       .then((res) => {
         if (!signal.aborted) setCategories(res.data.categories || []);
@@ -67,13 +64,12 @@ export default function LeftSidebar({
         console.error("Brands fetch error", err);
       });
 
-    // cleanup: StrictMode ke pehle run ko cancel / ignore karo
     return () => controller.abort();
   }, []);
 
   return (
     <div className="pos-sidebar">
-      {/* HEADER */}
+
       {role !== "cashier" && (
         <div className="pos-sidebar-header">
           <a
@@ -107,9 +103,9 @@ export default function LeftSidebar({
         <p className="text-2xl text-gray-500 mt-1">Categories & Brands</p>
       </div>
 
-      {/* SCROLL AREA */}
+
       <div className="flex-1 overflow-y-auto p-6 space-y-8">
-        {/* CATEGORIES */}
+
         <div>
           <h3 className="text-3xl font-semibold text-gray-700 mb-20">
             Categories
@@ -120,10 +116,9 @@ export default function LeftSidebar({
                 key={c.id}
                 onClick={() => handleCategory(c.id)}
                 className={`w-full text-left px-6 py-4 rounded-2xl font-bold text-2xl transition-all duration-200
-                  ${
-                    activeCategory === c.id
-                      ? "bg-blue-600 text-white shadow-xl transform scale-105"
-                      : "bg-gray-100 hover:bg-blue-100 text-gray-700"
+                  ${activeCategory === c.id
+                    ? "bg-blue-600 text-white shadow-xl transform scale-105"
+                    : "bg-gray-100 hover:bg-blue-100 text-gray-700"
                   }
                 `}
               >
@@ -132,8 +127,6 @@ export default function LeftSidebar({
             ))}
           </div>
         </div>
-
-        {/* BRANDS */}
         <div style={{ marginTop: "35px" }}>
           <h3 className="text-3xl font-semibold text-gray-700 mb-20">Brands</h3>
           <div className="space-y-4">
@@ -142,10 +135,9 @@ export default function LeftSidebar({
                 key={b.id}
                 onClick={() => handleBrand(b.id)}
                 className={`w-full text-left px-6 py-4 rounded-2xl font-bold text-2xl transition-all duration-200
-                  ${
-                    activeBrand === b.id
-                      ? "bg-green-600 text-white shadow-xl transform scale-105"
-                      : "bg-gray-100 hover:bg-green-100 text-gray-800"
+                  ${activeBrand === b.id
+                    ? "bg-green-600 text-white shadow-xl transform scale-105"
+                    : "bg-gray-100 hover:bg-green-100 text-gray-800"
                   }
                 `}
               >
