@@ -274,6 +274,7 @@ const LowStockAlert = ({
             },
             cells: {
               style: {
+                // width:"fit-content",
                 padding: "10px 16px",
               },
             },
