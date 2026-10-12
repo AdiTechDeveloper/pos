@@ -93,7 +93,9 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <>
       {/* Customer Portal */}
-      <Route path="/customer-portal" element={<CustomerPortalLogin />} />
+   <Route
+  path="/customer-portal"
+  element={<Public Component={CustomerPortalLogin} />} />
 
       {/* Public Routes */}
       <Route path="/" element={<Public Component={Login} />} />

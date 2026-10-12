@@ -494,6 +494,8 @@ const CreateEditPurchaseBill = () => {
   // const [suppliers, setSupplierBill] = useState([]);
   // const [products, setProducts] = useState([]);
   // const [gstRates, setGstRates] = useState([]);
+  const [billImage, setBillImage] = useState(null);
+  const [isScanningBill, setIsScanningBill] = useState(false);
   const branches = appData?.branches || [];
   const suppliers = appData?.suppliers || [];
   const products = appData?.purchaseProducts || [];
@@ -787,16 +789,16 @@ const CreateEditPurchaseBill = () => {
         toast.success("Purchase bill saved successfully!");
       }
 
-    appData?.invalidate("purchaseBills");
-await appData?.loadPurchaseBills();
+      appData?.invalidate("purchaseBills");
+      await appData?.loadPurchaseBills();
 
-appData?.invalidate("products");
-appData?.invalidate("purchaseProducts");
+      appData?.invalidate("products");
+      appData?.invalidate("purchaseProducts");
 
-await appData?.loadProducts({ force: true });
-await appData?.loadPurchaseProducts({ force: true });
+      await appData?.loadProducts({ force: true });
+      await appData?.loadPurchaseProducts({ force: true });
 
-navigate("/purchase-bill");
+      navigate("/purchase-bill");
 
     } catch (error) {
       console.log(error.response?.data);
@@ -839,7 +841,148 @@ navigate("/purchase-bill");
     appData?.invalidate("suppliers");
     await appData?.loadSuppliers();
   };
+  const handlePurchaseBillImageScan = async (setFieldValue) => {
+    if (!billImage) {
+      toast.error("Please select a bill image first.");
+      return;
+    }
 
+    setIsScanningBill(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("bill_image", billImage);
+
+      const response = await axios.post(
+        `${BASE_URL}/api/purchase-bill/scan`,
+        formData,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${user_data.token}`,
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 90000,
+        }
+      );
+
+      const bill = response?.data?.data;
+
+      if (!response?.data?.status || !Array.isArray(bill?.lines)) {
+        throw new Error("Invalid bill data received from AI.");
+      }
+
+      // Match supplier against existing database records.
+      const normalizeName = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "");
+
+      const supplierMatch = suppliers.find(
+        (supplier) =>
+          normalizeName(supplier.name) === normalizeName(bill.supplier_name),
+      );
+
+      setFieldValue("supplier_id", supplierMatch?.id?.toString() || "");
+      setFieldValue("bill_no", bill.bill_no || "");
+      setFieldValue("bill_date", bill.bill_date || "");
+
+      if (["inclusive", "exclusive"].includes(bill.tax_type)) {
+        setFieldValue("tax_type", bill.tax_type);
+      }
+
+      // Map AI product names to existing products and GST rates.
+      const mappedLines = bill.lines.map((item) => {
+        const productMatch = products.find(
+          (product) =>
+            normalizeName(product.name) === normalizeName(item.product_name),
+        );
+
+        const gstMatch = gstRates.find(
+          (gst) =>
+            Number(gst.rate) === Number(item.gst_rate_percent),
+        );
+
+        return {
+          product_id: productMatch?.id?.toString() || "",
+          qty: item.qty ?? "",
+          free_qty: item.free_qty ?? 0,
+          purchase_rate: item.purchase_rate ?? "",
+          mrp: item.mrp ?? "",
+          selling_price: item.selling_price ?? "",
+          discount_type:
+            item.discount_type === "percent"
+              ? "percent"
+              : item.discount_type === "amount"
+                ? "fixed"
+                : "",
+          discount: item.discount ?? 0,
+          hsn_code: item.hsn_code || productMatch?.hsn_code || "",
+          gst_rate_id: gstMatch?.id?.toString() || "",
+          batch_no: item.batch_no || "",
+          // Avoid saving a potentially hallucinated expiry day.
+          // Verify the original invoice and enter expiry manually.
+          expiry_date: "",
+          is_opening: false,
+        };
+      });
+
+      setFieldValue(
+        "lines",
+        mappedLines.length
+          ? mappedLines
+          : [
+            {
+              product_id: "",
+              qty: "",
+              free_qty: "",
+              purchase_rate: "",
+              mrp: "",
+              selling_price: "",
+              discount_type: "",
+              discount: "",
+              hsn_code: "",
+              gst_rate_id: "",
+              batch_no: "",
+              expiry_date: "",
+              is_opening: false,
+            },
+          ],
+      );
+
+      // Do not set settlement_amount: it is the adjusted paid amount,
+      // not the invoice's grand total.
+      const unmatchedProducts = mappedLines.filter(
+        (line) => !line.product_id,
+      ).length;
+
+      const unmatchedGst = mappedLines.filter(
+        (line) => !line.gst_rate_id,
+      ).length;
+
+      if (!supplierMatch) {
+        toast.warning(
+          "Bill scanned, but supplier was not matched. Please select it manually.",
+        );
+      } else if (unmatchedProducts || unmatchedGst) {
+        toast.warning(
+          `${unmatchedProducts} product(s) and ${unmatchedGst} GST rate(s) need manual matching.`,
+        );
+      } else {
+        toast.success("Bill scanned! Please verify the details before saving.");
+      }
+    } catch (error) {
+      console.error("Purchase bill scan error:", error.response?.data || error);
+
+      toast.error(
+        error.response?.data?.message ||
+        error.message ||
+        "Could not scan the bill. Please try again.",
+      );
+    } finally {
+      setIsScanningBill(false);
+    }
+  };
   const handleBarcodeScan = async (barcode, values, push, setFieldValue) => {
     if (!barcode) return;
     try {
@@ -1037,6 +1180,34 @@ navigate("/purchase-bill");
                       }
                     }}
                   >
+                    {!isEdit && (
+                      <div className="pb-card">
+                        <p className="pb-section-label">AI Bill Scanner</p>
+
+                        <div className="flex flex-col gap-3">
+                          {/* YAHAN IMAGE SELECT KARNE WALA INPUT HAI */}
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={(e) => setBillImage(e.target.files?.[0] || null)}
+                            className="block w-full rounded-lg border border-gray-300 p-3"
+                          />
+
+                          <button
+                            type="button"
+                            disabled={!billImage || isScanningBill}
+                            onClick={() => handlePurchaseBillImageScan(setFieldValue)}
+                            className="w-full rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white disabled:opacity-50"
+                          >
+                            {isScanningBill ? "Scanning Bill..." : "Scan Bill with AI"}
+                          </button>
+                        </div>
+
+                        <p className="mt-2 text-sm text-gray-500">
+                          Pehle bill ki image select karo, phir Scan Bill dabao.
+                        </p>
+                      </div>
+                    )}
                     <div className="pb-card">
                       <p className="pb-section-label">Bill Details</p>
                       <div className="row mb-0">
@@ -1732,7 +1903,7 @@ navigate("/purchase-bill");
                   <h5>Create Product</h5>
                 </div>
                 <div className="pb-modal-body">
-                 
+
                   <ProductForm
                     onSuccess={async (product) => {
                       appData?.invalidate("purchaseProducts");

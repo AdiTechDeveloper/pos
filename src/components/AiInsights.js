@@ -37,9 +37,8 @@ const getUserData = () => {
 
 const userData = getUserData();
 
-const STORAGE_KEY = `pos_ai_chats_${
-  userData.id || userData.user?.id || userData.email || "user"
-}`;
+const STORAGE_KEY = `pos_ai_chats_${userData.id || userData.user?.id || userData.email || "user"
+  }`;
 
 const countWords = (text) => (text.trim().match(/\S+/g) || []).length;
 
@@ -276,7 +275,7 @@ function MessageRow({ message }) {
   return (
     <div className="aic-ai">
       <div className="aic-spark">
-         <img src="./avatar.png" alt="AI Assistant" />
+        <img src="./avatar.png" alt="AI Assistant" />
       </div>
       <div className="aic-aibody">
         {message.isError ? (
@@ -305,7 +304,7 @@ function TypingRow() {
   return (
     <div className="aic-ai">
       <div className="aic-spark">
-         <img src="./avatar.png" alt="AI Assistant" />
+        <img src="./avatar.png" alt="AI Assistant" />
       </div>
       <div className="aic-typing">
         <span />
@@ -487,6 +486,8 @@ const CSS = `
   .aic-panel .aic-scroll { padding: 4px 12px 14px; }
   .aic-panel .aic-composer { padding: 6px 12px 8px; }
   .aic-panel .aic-select { max-width: 130px; }
+  aic-btn-label{
+  font-size:10px}
   .aic-panel .aic-btn-label, .aic-panel .aic-title { display: none; }
   .aic-panel .aic-ubub { max-width: 90%; }
 }
@@ -602,8 +603,8 @@ function ChatPanel() {
           current && list.some((b) => String(b.id) === String(current))
             ? current
             : list.length > 0
-            ? String(list[0].id)
-            : ""
+              ? String(list[0].id)
+              : ""
         );
       } catch {
         if (mounted) toast.error("Could not load branches.");
@@ -756,7 +757,20 @@ function ChatPanel() {
       setChats((prev) => [fresh, ...prev]);
       setActiveChatId(chatId);
     }
+    const activeChat = chats.find((chat) => chat.id === chatId);
 
+    const history = (activeChat?.messages || [])
+      .filter(
+        (message) =>
+          ["user", "assistant"].includes(message.role) &&
+          typeof message.content === "string" &&
+          message.content.trim()
+      )
+      .slice(-10)
+      .map((message) => ({
+        role: message.role,
+        content: message.content,
+      }));
     updateChat(chatId, (chat) => ({
       ...chat,
       branchId: selectedBranch,
@@ -778,7 +792,11 @@ function ChatPanel() {
     try {
       const response = await axios.post(
         "/api/ai/chat",
-        { message: messageText, branch_id: Number(selectedBranch) },
+        {
+          message: messageText,
+          branch_id: Number(selectedBranch),
+          history,
+        },
         {
           headers: {
             Accept: "application/json",
@@ -939,17 +957,17 @@ function ChatPanel() {
         <header className="aic-top">
           <div className="aic-top-left">
             <div className="aic-logo">
-             <img width={45} height={45} src="./avatar.png" alt="AI Assistant" />
+              <img width={45} height={45} src="./avatar.png" alt="AI Assistant" />
             </div>
             <span className="aic-title">AI Assistant</span>
-            
+
           </div>
 
           <div className="aic-top-right">
             {/* <button type="button" className="aic-btn" onClick={handleNewChat}>
               <PlusIcon size={15} />
               <span className="aic-btn-label">New chat</span>
-            </button>
+            </button> */}
             <button
               type="button"
               className={`aic-btn ${historyOpen ? "on" : ""}`}
@@ -959,7 +977,7 @@ function ChatPanel() {
             >
               <HistoryIcon />
               <span className="aic-btn-label ">History</span>
-            </button> */}
+            </button>
             <select
               aria-label="Branch"
               className="aic-select"
@@ -982,7 +1000,7 @@ function ChatPanel() {
             {!hasMessages ? (
               <div className="aic-welcome">
                 <div className="aic-hero">
-                   <img src="./avatar.png" alt="AI Assistant" />
+                  <img src="./avatar.png" alt="AI Assistant" />
                 </div>
                 <div className="aic-h1">How can I help your business today?</div>
                 <div className="aic-sub">
@@ -1077,9 +1095,8 @@ function ChatPanel() {
                     : "Enter to send · Shift+Enter for new line")}
               </span>
               <span
-                className={`aic-count ${
-                  atLimit ? "max" : nearLimit ? "warn" : ""
-                }`}
+                className={`aic-count ${atLimit ? "max" : nearLimit ? "warn" : ""
+                  }`}
               >
                 {wordCount}/{MAX_WORDS} words
               </span>
@@ -1133,9 +1150,8 @@ function ChatPanel() {
                     key={chat.id}
                     role="button"
                     tabIndex={0}
-                    className={`aic-item ${
-                      activeChatId === chat.id ? "active" : ""
-                    }`}
+                    className={`aic-item ${activeChatId === chat.id ? "active" : ""
+                      }`}
                     onClick={() => handleSelectChat(chat.id)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
