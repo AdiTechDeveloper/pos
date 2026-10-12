@@ -945,9 +945,72 @@ const PaymentTable = ({ data }) => (
   </div>
 );
 
+
+const BillsModal = ({ method, bills, onClose }) => {
+  const [search, setSearch] = useState("");
+  const filtered = bills.filter((b) =>
+    String(b).toLowerCase().includes(search.toLowerCase()),
+  );
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h3 className="text-2xl font-bold text-gray-800">
+            {formatPaymentMethod(method)} — {bills.length} bills
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-700 text-4xl leading-none"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div className="px-6 py-3 border-b border-gray-100">
+          <input
+            type="text"
+            placeholder="Search bill number..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xl focus:ring-2 focus:ring-blue-400 outline-none"
+          />
+        </div>
+
+        <div className="p-3 overflow-y-auto flex-1">
+          {filtered.length === 0 ? (
+            <p className="text-xl text-gray-600 text-center py-6">
+              No matching bills.
+            </p>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-3 gap-8">
+              {filtered.map((billNo, idx) => (
+                <span
+                  key={idx}
+                  className="inline-block px-3 py-3 text-xl font-mono font-semibold rounded-lg bg-gray-300 text-gray-700 text-center"
+                >
+                  {billNo}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // SAFE PAYMENT SUMMARY TABLE COMPONENT
 
 const PaymentSummaryTable = ({ summary }) => {
+    const [viewBills, setViewBills] = useState(null);
+
   const summaryEntries = Object.entries(summary || {});
 
   const rows = summaryEntries.map(([method, item]) => ({
@@ -1008,24 +1071,20 @@ const PaymentSummaryTable = ({ summary }) => {
         <span className="font-semibold text-gray-800">{row.count ?? 0}</span>
       ),
     },
-    {
+      {
       name: "Associated Bills",
-      grow: 2,
+      center: true,
       cell: (row) => {
         const hasBills = Array.isArray(row.bills) && row.bills.length > 0;
         return hasBills ? (
-          <div className="flex flex-wrap gap-2 py-2">
-            {row.bills.map((billNo, idx) => (
-              <span
-                key={idx}
-                className="inline-block px-3 py-1 text-2xl font-mono font-semibold rounded-lg bg-gray-100 text-gray-700"
-              >
-                {billNo}
-              </span>
-            ))}
-          </div>
+          <button
+            onClick={() => setViewBills(row)}
+            className="text-xl font-semibold text-blue-600 hover:text-blue-700"
+          >
+            View {row.bills.length} bills
+          </button>
         ) : (
-          <span className="text-gray-500 text-sm">-</span>
+          <span className="text-gray-500 text-xl">-</span>
         );
       },
     },
@@ -1039,7 +1098,7 @@ const PaymentSummaryTable = ({ summary }) => {
         highlightOnHover
         responsive
         noDataComponent={
-          <p className="text-base text-gray-500 font-semibold py-8">
+          <p className="text-xl text-gray-500 font-semibold py-8">
             No payment summary available.
           </p>
         }
@@ -1060,17 +1119,28 @@ const PaymentSummaryTable = ({ summary }) => {
           },
         }}
       />
-
+    
       {summaryEntries.length > 0 && (
-        <div className="grid grid-cols-4 gap-2 bg-gray-100 text-2xl border-t-2 border-gray-200 px-4 py-4 font-bold text-gray-900">
-          <div>Total</div>
-          <div className="text-right text-green-600">
-            ₹{totalAmount.toFixed(2)}
+          <div className="grid grid-cols-4 gap-2 bg-gray-100 text-2xl border-t-2 border-gray-200 px-4 py-4 font-bold text-gray-900">
+            <div>Total</div>
+            <div className="text-right text-green-600">
+              ₹{totalAmount.toFixed(2)}
+            </div>
+            <div className="text-center">{totalCount}</div>
+            <div></div>
           </div>
-          <div className="text-center">{totalCount}</div>
-          <div></div>
-        </div>
+        )}
+    
+
+      {viewBills && (
+        <BillsModal
+          method={viewBills.method}
+          bills={viewBills.bills}
+          onClose={() => setViewBills(null)}
+        />
       )}
+       
+ 
     </div>
   );
 };
@@ -1174,3 +1244,23 @@ const StatusBadge = ({ status }) => {
     </span>
   );
 };
+
+
+<style>{`
+    .layout-wrap .section-content-right .main-content .bottom-page{
+          display: flex;
+    position: absolute;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 8px 24px 24px;
+    gap: 10px;
+    background: var(--White);
+    /* box-shadow: 0px 4px 24px 2px rgba(20, 25, 38, 0.05); */
+    bottom: 12px;
+    /* margin-bottom: 27px; */
+    /* flex-direction: column; */
+    width: 100%;
+    margin-top : 70px;
+    }
+ ` }
+</style>

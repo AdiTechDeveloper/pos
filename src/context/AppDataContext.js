@@ -1,9 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-} from "react";
+import React, { createContext, useContext, useState, useCallback } from "react";
 
 import axios from "axios";
 import { hasFeature } from "../utils/hasFeature";
@@ -38,11 +33,7 @@ function fetchExpiredProducts(filters, { force = false } = {}) {
 
   const cached = expiredProductsCache[cacheKey];
 
-  if (
-    !force &&
-    cached &&
-    now - cached.timestamp < CACHE_TTL
-  ) {
+  if (!force && cached && now - cached.timestamp < CACHE_TTL) {
     return Promise.resolve(cached.data);
   }
 
@@ -115,31 +106,18 @@ const toArray = (d) => {
 };
 
 const RESPONSE_PATH = {
-  branches: (res) =>
-    toArray(
-      res.data?.branches ??
-        res.data?.data ??
-        res.data
-    ),
+  branches: (res) => toArray(res.data?.branches ?? res.data?.data ?? res.data),
 
   managerBranches: (res) =>
-    toArray(
-      res.data?.branches ??
-        res.data?.data ??
-        res.data
-    ),
+    toArray(res.data?.branches ?? res.data?.data ?? res.data),
 
-  categories: (res) =>
-    res.data?.categories ?? [],
+  categories: (res) => res.data?.categories ?? [],
 
-  brands: (res) =>
-    res.data?.brands ?? [],
+  brands: (res) => res.data?.brands ?? [],
 
-  gstRates: (res) =>
-    res.data?.gstRates ?? [],
+  gstRates: (res) => res.data?.gstRates ?? [],
 
-  suppliers: (res) =>
-    res.data?.suppliers ?? [],
+  suppliers: (res) => res.data?.suppliers ?? [],
 
   products: (res) => {
     const products = res.data?.products ?? [];
@@ -160,23 +138,16 @@ const RESPONSE_PATH = {
       inventories.forEach((inv) => {
         const qty =
           Number(
-            inv.qty ??
-              inv.qty_available ??
-              0
+            inv.qty_available ??
+              Number(inv.qty || 0) - Number(inv.sold_qty || 0),
           ) || 0;
 
-        const free =
-          Number(
-            inv.free_qty ??
-              inv.free ??
-              0
-          ) || 0;
+        const free = Number(inv.free_qty ?? inv.free ?? 0) || 0;
 
         totalQty += qty;
         totalFree += free;
 
-        costTotal +=
-          Number(inv.cost_price || 0) * qty;
+        costTotal += Number(inv.cost_price || 0) * qty;
 
         if (inv.id) {
           inventoryIds.push(inv.id);
@@ -189,14 +160,11 @@ const RESPONSE_PATH = {
 
       const hasInventory = inventories.length > 0;
 
-      const avgCostPrice = totalQty
-        ? (
-            costTotal / totalQty
-          ).toFixed(2)
-        : 0;
+      const avgCostPrice = totalQty ? (costTotal / totalQty).toFixed(2) : 0;
 
-      const showBarcode =
-        barcodeSet.size === 1;
+      const showBarcode = barcodeSet.size === 1;
+
+      const stock = Number(product.total_stock ?? totalQty) || 0;
 
       rows.push({
         row_id: `prod-${product.id}`,
@@ -217,45 +185,32 @@ const RESPONSE_PATH = {
 
         gst_rate: product.gst_rate,
 
-        gst_inclusive:
-          product.gst_inclusive,
+        gst_inclusive: product.gst_inclusive,
 
-        is_price_override:
-          product.is_price_override,
+        is_price_override: product.is_price_override,
 
         batch_no: "-",
 
-        barcode: showBarcode
-          ? [...barcodeSet][0]
-          : product.barcode ?? null,
+        barcode: showBarcode ? [...barcodeSet][0] : (product.barcode ?? null),
 
-        mrp:
-          Number(product.min_price) ||
-          Number(product.mrp) ||
-          0,
+        mrp: Number(product.min_price) || Number(product.mrp) || 0,
 
         selling_price:
-          Number(product.min_price) ||
-          Number(product.selling_price) ||
-          0,
+          Number(product.min_price) || Number(product.selling_price) || 0,
 
-        cost_price: hasInventory
-          ? avgCostPrice
-          : product.cost_price ?? 0,
+        cost_price: hasInventory ? avgCostPrice : (product.cost_price ?? 0),
 
-        qty: totalQty,
+        qty: stock,
+
+        total_stock: stock,
 
         free: totalFree,
 
-        total_qty:
-          totalQty + totalFree,
+        total_qty: totalQty + totalFree,
 
-        batch_count:
-          inventories.length,
+        batch_count: inventories.length,
 
-        show_barcode:
-          showBarcode ||
-          !!product.barcode,
+        show_barcode: showBarcode || !!product.barcode,
       });
     });
 
@@ -263,45 +218,27 @@ const RESPONSE_PATH = {
   },
 
   purchaseProducts: (res) =>
-    (res.data?.products || []).sort(
-      (a, b) =>
-        (a.name || "").localeCompare(
-          b.name || "",
-          undefined,
-          {
-            sensitivity: "base",
-          }
-        )
+    (res.data?.products || []).sort((a, b) =>
+      (a.name || "").localeCompare(b.name || "", undefined, {
+        sensitivity: "base",
+      }),
     ),
 
-  purchaseBills: (res) =>
-    res.data?.data ?? [],
+  purchaseBills: (res) => res.data?.data ?? [],
 
-  saleProducts: (res) =>
-    res.data?.products || [],
+  saleProducts: (res) => res.data?.products || [],
 
-  saleBills: (res) =>
-    res.data?.data ?? [],
+  saleBills: (res) => res.data?.data ?? [],
 
-  purchaseLines: (res) =>
-    res.data?.data ?? [],
+  purchaseLines: (res) => res.data?.data ?? [],
 
-  purchaseReturns: (res) =>
-    res.data?.data ?? [],
+  purchaseReturns: (res) => res.data?.data ?? [],
 
-  saleReturns: (res) =>
-    res.data?.data?.data ??
-    res.data?.data ??
-    [],
+  saleReturns: (res) => res.data?.data?.data ?? res.data?.data ?? [],
 
-  customers: (res) =>
-    res.data?.data ??
-    res.data?.customers ??
-    res.data ??
-    [],
+  customers: (res) => res.data?.data ?? res.data?.customers ?? res.data ?? [],
 
-  advancePayments: (res) =>
-    res.data?.data ?? [],
+  advancePayments: (res) => res.data?.data ?? [],
 };
 
 const lastFetched = {};
@@ -310,11 +247,7 @@ const listeners = new Set();
 
 function getUser() {
   try {
-    return (
-      JSON.parse(
-        localStorage.getItem("user_detail")
-      )?.user || null
-    );
+    return JSON.parse(localStorage.getItem("user_detail"))?.user || null;
   } catch (err) {
     return null;
   }
@@ -322,11 +255,7 @@ function getUser() {
 
 function getToken() {
   try {
-    return (
-      JSON.parse(
-        localStorage.getItem("user_detail")
-      )?.token || null
-    );
+    return JSON.parse(localStorage.getItem("user_detail"))?.token || null;
   } catch (err) {
     return null;
   }
@@ -337,9 +266,7 @@ function getRole() {
 }
 
 function notifyListeners(key, value) {
-  listeners.forEach((fn) =>
-    fn(key, value)
-  );
+  listeners.forEach((fn) => fn(key, value));
 }
 
 let cacheOwner = null;
@@ -351,28 +278,18 @@ function ensureCacheOwner() {
     return;
   }
 
-  Object.keys(lastFetched).forEach(
-    (k) => delete lastFetched[k]
-  );
+  Object.keys(lastFetched).forEach((k) => delete lastFetched[k]);
 
-  Object.keys(inFlight).forEach(
-    (k) => delete inFlight[k]
-  );
+  Object.keys(inFlight).forEach((k) => delete inFlight[k]);
 
-  Object.keys(dashboardCache).forEach(
-    (k) => delete dashboardCache[k]
-  );
+  Object.keys(dashboardCache).forEach((k) => delete dashboardCache[k]);
 
-  Object.keys(dashboardInFlight).forEach(
-    (k) => delete dashboardInFlight[k]
-  );
+  Object.keys(dashboardInFlight).forEach((k) => delete dashboardInFlight[k]);
 
-  Object.keys(monthlySalesCache).forEach(
-    (k) => delete monthlySalesCache[k]
-  );
+  Object.keys(monthlySalesCache).forEach((k) => delete monthlySalesCache[k]);
 
   Object.keys(monthlySalesInFlight).forEach(
-    (k) => delete monthlySalesInFlight[k]
+    (k) => delete monthlySalesInFlight[k],
   );
 
   if (cacheOwner !== null) {
@@ -394,24 +311,16 @@ function ensureCacheOwner() {
       "saleReturns",
       "customers",
       "advancePayments",
-    ].forEach((k) =>
-      notifyListeners(k, [])
-    );
+    ].forEach((k) => notifyListeners(k, []));
 
     notifyListeners("store", null);
 
-    notifyListeners(
-      "stockExpiryAlerts",
-      {
-        list: [],
-        total: 0,
-      }
-    );
+    notifyListeners("stockExpiryAlerts", {
+      list: [],
+      total: 0,
+    });
 
-    notifyListeners(
-      "dashboard",
-      null
-    );
+    notifyListeners("dashboard", null);
   }
 
   cacheOwner = uid;
@@ -432,21 +341,14 @@ function getDashboardCacheKey() {
       user?.branch_ids?.[0] ??
       null,
 
-    storeId:
-      user?.store_id ??
-      user?.user?.store_id ??
-      null,
+    storeId: user?.store_id ?? user?.user?.store_id ?? null,
   });
 }
 
-function fetchProducts(
-  branchId = null,
-  { force = false } = {}
-) {
+function fetchProducts(branchId = null, { force = false } = {}) {
   ensureCacheOwner();
 
-  const cacheKey =
-    `products_${branchId || "all"}`;
+  const cacheKey = `products_${branchId || "all"}`;
 
   const now = Date.now();
 
@@ -473,25 +375,16 @@ function fetchProducts(
       params,
     })
     .then((res) => {
-      const value = RESPONSE_PATH.products
-        ? RESPONSE_PATH.products(res)
-        : [];
+      const value = RESPONSE_PATH.products ? RESPONSE_PATH.products(res) : [];
 
-      lastFetched[cacheKey] =
-        Date.now();
+      lastFetched[cacheKey] = Date.now();
 
-      notifyListeners(
-        "products",
-        value
-      );
+      notifyListeners("products", value);
 
       return value;
     })
     .catch((err) => {
-      console.error(
-        "Failed to load products",
-        err
-      );
+      console.error("Failed to load products", err);
 
       throw err;
     })
@@ -502,19 +395,12 @@ function fetchProducts(
   return inFlight[cacheKey];
 }
 
-function fetchKey(
-  key,
-  { force = false, storeId } = {}
-) {
+function fetchKey(key, { force = false, storeId } = {}) {
   ensureCacheOwner();
 
   const now = Date.now();
 
-  if (
-    !force &&
-    lastFetched[key] &&
-    now - lastFetched[key] < CACHE_TTL
-  ) {
+  if (!force && lastFetched[key] && now - lastFetched[key] < CACHE_TTL) {
     return Promise.resolve();
   }
 
@@ -522,10 +408,7 @@ function fetchKey(
     return inFlight[key];
   }
 
-  const url =
-    key === "store"
-      ? `/api/stores/${storeId}`
-      : ENDPOINTS[key];
+  const url = key === "store" ? `/api/stores/${storeId}` : ENDPOINTS[key];
 
   if (!url) {
     return Promise.resolve();
@@ -536,23 +419,14 @@ function fetchKey(
     .then((res) => {
       const value = RESPONSE_PATH[key]
         ? RESPONSE_PATH[key](res)
-        : res.data?.data ??
-          res.data ??
-          [];
+        : (res.data?.data ?? res.data ?? []);
 
-      lastFetched[key] =
-        Date.now();
+      lastFetched[key] = Date.now();
 
-      notifyListeners(
-        key,
-        value
-      );
+      notifyListeners(key, value);
     })
     .catch((err) => {
-      console.error(
-        `Failed to load ${key}`,
-        err
-      );
+      console.error(`Failed to load ${key}`, err);
     })
     .finally(() => {
       inFlight[key] = null;
@@ -561,21 +435,14 @@ function fetchKey(
   return inFlight[key];
 }
 
-function fetchStockExpiryAlerts({
-  force = false,
-} = {}) {
+function fetchStockExpiryAlerts({ force = false } = {}) {
   ensureCacheOwner();
 
-  const key =
-    "stockExpiryAlerts";
+  const key = "stockExpiryAlerts";
 
   const now = Date.now();
 
-  if (
-    !force &&
-    lastFetched[key] &&
-    now - lastFetched[key] < CACHE_TTL
-  ) {
+  if (!force && lastFetched[key] && now - lastFetched[key] < CACHE_TTL) {
     return Promise.resolve();
   }
 
@@ -586,24 +453,15 @@ function fetchStockExpiryAlerts({
   inFlight[key] = axios
     .get("/api/stock-expiry-alerts")
     .then((res) => {
-      lastFetched[key] =
-        Date.now();
+      lastFetched[key] = Date.now();
 
-      notifyListeners(
-        key,
-        {
-          list:
-            res.data.alerts || [],
-          total:
-            res.data.total || 0,
-        }
-      );
+      notifyListeners(key, {
+        list: res.data.alerts || [],
+        total: res.data.total || 0,
+      });
     })
     .catch((err) => {
-      console.error(
-        "Expiry alert fetch failed",
-        err
-      );
+      console.error("Expiry alert fetch failed", err);
     })
     .finally(() => {
       inFlight[key] = null;
@@ -614,11 +472,7 @@ function fetchStockExpiryAlerts({
 
 function fetchMonthlySales(
   branchId = null,
-  {
-    storeId = null,
-    year = new Date().getFullYear(),
-    force = false,
-  } = {}
+  { storeId = null, year = new Date().getFullYear(), force = false } = {},
 ) {
   ensureCacheOwner();
 
@@ -637,31 +491,19 @@ function fetchMonthlySales(
   });
 
   const now = Date.now();
-  const cached =
-    monthlySalesCache[cacheKey];
+  const cached = monthlySalesCache[cacheKey];
 
-  if (
-    !force &&
-    cached &&
-    now - cached.timestamp < CACHE_TTL
-  ) {
-    return Promise.resolve(
-      cached.data
-    );
+  if (!force && cached && now - cached.timestamp < CACHE_TTL) {
+    return Promise.resolve(cached.data);
   }
 
-  if (
-    monthlySalesInFlight[cacheKey]
-  ) {
-    return monthlySalesInFlight[
-      cacheKey
-    ];
+  if (monthlySalesInFlight[cacheKey]) {
+    return monthlySalesInFlight[cacheKey];
   }
 
   const authHeaders = {
     Accept: "application/json",
-    Authorization:
-      `Bearer ${token}`,
+    Authorization: `Bearer ${token}`,
   };
 
   const params = {
@@ -671,82 +513,50 @@ function fetchMonthlySales(
     branch_id: branchId || null,
   };
 
-  monthlySalesInFlight[cacheKey] =
-    axios
-      .get(
-        "/api/reports/monthly-sales",
-        {
-          headers: authHeaders,
-          params,
-        }
-      )
-      .then((res) => {
-        const data =
-          res.data?.monthly_sales ||
-          {};
+  monthlySalesInFlight[cacheKey] = axios
+    .get("/api/reports/monthly-sales", {
+      headers: authHeaders,
+      params,
+    })
+    .then((res) => {
+      const data = res.data?.monthly_sales || {};
 
-        monthlySalesCache[
-          cacheKey
-        ] = {
-          data,
-          timestamp: Date.now(),
-        };
+      monthlySalesCache[cacheKey] = {
+        data,
+        timestamp: Date.now(),
+      };
 
-        return data;
-      })
-      .catch((err) => {
-        console.error(
-          "Failed to load monthly sales",
-          err
-        );
+      return data;
+    })
+    .catch((err) => {
+      console.error("Failed to load monthly sales", err);
 
-        throw err;
-      })
-      .finally(() => {
-        monthlySalesInFlight[
-          cacheKey
-        ] = null;
-      });
+      throw err;
+    })
+    .finally(() => {
+      monthlySalesInFlight[cacheKey] = null;
+    });
 
-  return monthlySalesInFlight[
-    cacheKey
-  ];
+  return monthlySalesInFlight[cacheKey];
 }
 
-function fetchDashboard({
-  force = false,
-} = {}) {
+function fetchDashboard({ force = false } = {}) {
   ensureCacheOwner();
 
-  const cacheKey =
-    getDashboardCacheKey();
+  const cacheKey = getDashboardCacheKey();
 
   const now = Date.now();
 
-  const cached =
-    dashboardCache[cacheKey];
+  const cached = dashboardCache[cacheKey];
 
-  if (
-    !force &&
-    cached &&
-    now - cached.timestamp < CACHE_TTL
-  ) {
-    notifyListeners(
-      "dashboard",
-      cached.data
-    );
+  if (!force && cached && now - cached.timestamp < CACHE_TTL) {
+    notifyListeners("dashboard", cached.data);
 
-    return Promise.resolve(
-      cached.data
-    );
+    return Promise.resolve(cached.data);
   }
 
-  if (
-    dashboardInFlight[cacheKey]
-  ) {
-    return dashboardInFlight[
-      cacheKey
-    ];
+  if (dashboardInFlight[cacheKey]) {
+    return dashboardInFlight[cacheKey];
   }
 
   const user = getUser();
@@ -758,51 +568,38 @@ function fetchDashboard({
 
   const managerBranchId =
     role === "manager"
-      ? user?.branch_id ??
+      ? (user?.branch_id ??
         user?.user?.branch_id ??
         user?.user?.branch_ids?.[0] ??
         user?.branch_ids?.[0] ??
-        null
+        null)
       : null;
 
   const adminStoreId =
-    role === "admin"
-      ? user?.store_id ??
-        user?.user?.store_id ??
-        null
-      : null;
+    role === "admin" ? (user?.store_id ?? user?.user?.store_id ?? null) : null;
 
   const authHeaders = {
-    Accept:
-      "application/json",
+    Accept: "application/json",
 
-    Authorization:
-      `Bearer ${user?.token}`,
+    Authorization: `Bearer ${user?.token}`,
   };
 
-  const get = (
-    path,
-    params
-  ) =>
+  const get = (path, params) =>
     axios.get(path, {
       headers: authHeaders,
       params,
     });
 
-  dashboardInFlight[
-    cacheKey
-  ] = (async () => {
+  dashboardInFlight[cacheKey] = (async () => {
     try {
       // SUPERADMIN
       if (role === "superadmin") {
-        const res =
-          await get("/api/stores");
+        const res = await get("/api/stores");
 
         const data = {
           role,
 
-          stores:
-            res.data.data || [],
+          stores: res.data.data || [],
 
           todaySales: null,
 
@@ -821,18 +618,12 @@ function fetchDashboard({
           lowStockProducts: [],
         };
 
-        dashboardCache[
-          cacheKey
-        ] = {
+        dashboardCache[cacheKey] = {
           data,
-          timestamp:
-            Date.now(),
+          timestamp: Date.now(),
         };
 
-        notifyListeners(
-          "dashboard",
-          data
-        );
+        notifyListeners("dashboard", data);
 
         return data;
       }
@@ -840,77 +631,45 @@ function fetchDashboard({
       // ADMIN / MANAGER
       const jobs = [];
 
-      const canSales =
-        hasFeature(
-          "reports_sales"
-        );
+      const canSales = hasFeature("reports_sales");
 
-      const canPurchase =
-        hasFeature(
-          "reports_purchase"
-        );
+      const canPurchase = hasFeature("reports_purchase");
 
-      const canFinancial =
-        hasFeature(
-          "reports_financial"
-        );
+      const canFinancial = hasFeature("reports_financial");
 
-      const canStock =
-        hasFeature(
-          "stock_alerts"
-        );
+      const canStock = hasFeature("stock_alerts");
 
-      const canCustomers =
-        hasFeature(
-          "customers"
-        );
+      const canCustomers = hasFeature("customers");
 
-      const canBills =
-        hasFeature(
-          "sales_bills"
-        );
+      const canBills = hasFeature("sales_bills");
 
       if (canSales) {
         jobs.push([
           "salesToday",
 
-          get(
-            "/api/reports/sales-report",
-            {
-              date_range:
-                "today",
+          get("/api/reports/sales-report", {
+            date_range: "today",
 
-              bill_status:
-                "all",
+            bill_status: "all",
 
-              branch_id:
-                managerBranchId,
+            branch_id: managerBranchId,
 
-              store_id:
-                adminStoreId,
-            }
-          ),
+            store_id: adminStoreId,
+          }),
         ]);
 
         jobs.push([
           "salesMonth",
 
-          get(
-            "/api/reports/sales-report",
-            {
-              date_range:
-                "this_month",
+          get("/api/reports/sales-report", {
+            date_range: "this_month",
 
-              bill_status:
-                "all",
+            bill_status: "all",
 
-              branch_id:
-                managerBranchId,
+            branch_id: managerBranchId,
 
-              store_id:
-                adminStoreId,
-            }
-          ),
+            store_id: adminStoreId,
+          }),
         ]);
 
         // if (canSales) {
@@ -947,28 +706,20 @@ function fetchDashboard({
       }
 
       if (canFinancial) {
-        const today =
-          new Date()
-            .toISOString()
-            .slice(0, 10);
+        const today = new Date().toISOString().slice(0, 10);
 
         jobs.push([
           "profitLossToday",
 
-          get(
-            "/api/reports/profit-loss",
-            {
-              from_date: today,
+          get("/api/reports/profit-loss", {
+            from_date: today,
 
-              to_date: today,
+            to_date: today,
 
-              branch_id:
-                managerBranchId,
+            branch_id: managerBranchId,
 
-              store_id:
-                adminStoreId,
-            }
-          ),
+            store_id: adminStoreId,
+          }),
         ]);
       }
 
@@ -976,16 +727,11 @@ function fetchDashboard({
         jobs.push([
           "purchaseToday",
 
-          get(
-            "/api/reports/purchase-report",
-            {
-              date_range:
-                "today",
+          get("/api/reports/purchase-report", {
+            date_range: "today",
 
-              store_id:
-                adminStoreId,
-            }
-          ),
+            store_id: adminStoreId,
+          }),
         ]);
       }
 
@@ -993,49 +739,31 @@ function fetchDashboard({
         jobs.push([
           "lowStock",
 
-          get(
-            "/api/stock-alerts",
-            {
-              branch_id:
-                managerBranchId,
+          get("/api/stock-alerts", {
+            branch_id: managerBranchId,
 
-              store_id:
-                adminStoreId,
-            }
-          ),
+            store_id: adminStoreId,
+          }),
         ]);
       }
 
       if (canCustomers) {
-        jobs.push([
-          "dues",
-
-          get(
-            "/api/customer/due"
-          ),
-        ]);
+        jobs.push(["dues", get("/api/customer/due")]);
       }
 
       if (canBills) {
         jobs.push([
           "bills",
 
-          get(
-            "/api/sales-bills",
-            {
-              limit: 5,
-            }
-          ),
+          get("/api/sales-bills", {
+            limit: 5,
+          }),
         ]);
       }
 
-      const results =
-        await Promise.allSettled(
-          jobs.map(
-            ([, promise]) =>
-              promise
-          )
-        );
+      const results = await Promise.allSettled(
+        jobs.map(([, promise]) => promise),
+      );
 
       const data = {
         role,
@@ -1054,197 +782,136 @@ function fetchDashboard({
 
         recentInvoices: [],
 
-        profitLossToday:
-          null,
+        profitLossToday: null,
 
         lowStockProducts: [],
       };
 
-      results.forEach(
-        (result, index) => {
-          const key =
-            jobs[index][0];
+      results.forEach((result, index) => {
+        const key = jobs[index][0];
 
-          if (
-            result.status !==
-            "fulfilled"
-          ) {
-            console.warn(
-              `Dashboard: "${key}" load nahi hua`,
-              result.reason
-                ?.message
-            );
+        if (result.status !== "fulfilled") {
+          console.warn(
+            `Dashboard: "${key}" load nahi hua`,
+            result.reason?.message,
+          );
 
-            return;
-          }
-
-          const response =
-            result.value.data;
-
-          if (
-            key ===
-            "salesToday"
-          ) {
-            data.todaySales =
-              response;
-          }
-
-          if (
-            key ===
-            "salesMonth"
-          ) {
-            data.monthProducts =
-              response?.products
-                ?.rows || [];
-
-            data.recentInvoices =
-              response?.invoices
-                ?.rows || [];
-          }
-
-          // if (key === "monthlySales") {
-          //   data.monthlySales =
-          //     response?.monthly_sales || {};
-          // }
-
-          if (
-            key ===
-            "purchaseToday"
-          ) {
-            data.todayPurchase =
-              response;
-          }
-
-          if (
-            key === "dues"
-          ) {
-            data.customerDues =
-              response?.data || [];
-          }
-
-          if (
-            key === "bills"
-          ) {
-            data.saleBills =
-              response?.data || [];
-          }
-
-          if (
-            key ===
-            "profitLossToday"
-          ) {
-            data.profitLossToday =
-              response;
-          }
-
-          if (
-            key === "lowStock"
-          ) {
-            data.lowStockProducts =
-              response?.alerts ||
-              [];
-          }
+          return;
         }
-      );
 
-      dashboardCache[
-        cacheKey
-      ] = {
+        const response = result.value.data;
+
+        if (key === "salesToday") {
+          data.todaySales = response;
+        }
+
+        if (key === "salesMonth") {
+          data.monthProducts = response?.products?.rows || [];
+
+          data.recentInvoices = response?.invoices?.rows || [];
+        }
+
+        // if (key === "monthlySales") {
+        //   data.monthlySales =
+        //     response?.monthly_sales || {};
+        // }
+
+        if (key === "purchaseToday") {
+          data.todayPurchase = response;
+        }
+
+        if (key === "dues") {
+          data.customerDues = response?.data || [];
+        }
+
+        if (key === "bills") {
+          data.saleBills = response?.data || [];
+        }
+
+        if (key === "profitLossToday") {
+          data.profitLossToday = response;
+        }
+
+        if (key === "lowStock") {
+          data.lowStockProducts = response?.alerts || [];
+        }
+      });
+
+      dashboardCache[cacheKey] = {
         data,
 
-        timestamp:
-          Date.now(),
+        timestamp: Date.now(),
       };
 
-      notifyListeners(
-        "dashboard",
-        data
-      );
+      notifyListeners("dashboard", data);
 
       return data;
     } finally {
-      dashboardInFlight[
-        cacheKey
-      ] = null;
+      dashboardInFlight[cacheKey] = null;
     }
   })();
 
-  return dashboardInFlight[
-    cacheKey
-  ];
+  return dashboardInFlight[cacheKey];
 }
 
-export function AppDataProvider({
-  children,
-}) {
-  const [data, setData] =
-    useState({
-      branches: [],
+export function AppDataProvider({ children }) {
+  const [data, setData] = useState({
+    branches: [],
 
-      managerBranches: [],
+    managerBranches: [],
 
-      categories: [],
+    categories: [],
 
-      brands: [],
+    brands: [],
 
-      gstRates: [],
+    gstRates: [],
 
-      suppliers: [],
+    suppliers: [],
 
-      staff: [],
+    staff: [],
 
-      products: [],
+    products: [],
 
-      purchaseProducts: [],
+    purchaseProducts: [],
 
-      purchaseBills: [],
+    purchaseBills: [],
 
-      saleProducts: [],
+    saleProducts: [],
 
-      saleBills: [],
+    saleBills: [],
 
-      purchaseLines: [],
+    purchaseLines: [],
 
-      purchaseReturns: [],
+    purchaseReturns: [],
 
-      saleReturns: [],
+    saleReturns: [],
 
-      customers: [],
+    customers: [],
 
-      advancePayments: [],
+    advancePayments: [],
 
-      monthlySales: {
-        "1": 85000,
-        "2": 92000,
-        "3": 0,
-        "4": 110000,
-      },
+    monthlySales: {
+      1: 85000,
+      2: 92000,
+      3: 0,
+      4: 110000,
+    },
 
-      store: null,
-    });
+    store: null,
+  });
 
-  const [alerts, setAlerts] =
-    useState({
-      list: [],
-      total: 0,
-    });
+  const [alerts, setAlerts] = useState({
+    list: [],
+    total: 0,
+  });
 
-  const [dashboard, setDashboard] =
-    useState(null);
+  const [dashboard, setDashboard] = useState(null);
 
   React.useEffect(() => {
-    const listener = (
-      key,
-      value
-    ) => {
-      if (
-        key ===
-        "stockExpiryAlerts"
-      ) {
+    const listener = (key, value) => {
+      if (key === "stockExpiryAlerts") {
         setAlerts(value);
-      } else if (
-        key === "dashboard"
-      ) {
+      } else if (key === "dashboard") {
         setDashboard(value);
       } else {
         setData((prev) => ({
@@ -1256,171 +923,83 @@ export function AppDataProvider({
 
     listeners.add(listener);
 
-    return () =>
-      listeners.delete(
-        listener
-      );
+    return () => listeners.delete(listener);
   }, []);
 
-  const load = useCallback(
-    (key, opts) =>
-      fetchKey(key, opts),
-    []
+  const load = useCallback((key, opts) => fetchKey(key, opts), []);
+
+  const loadStore = useCallback((storeId, opts) => {
+    return fetchKey("store", {
+      ...opts,
+      storeId,
+    });
+  }, []);
+
+  const loadStockExpiryAlerts = useCallback(
+    (opts) => fetchStockExpiryAlerts(opts),
+    [],
   );
 
-  const loadStore =
-    useCallback(
-      (storeId, opts) => {
-        return fetchKey(
-          "store",
-          {
-            ...opts,
-            storeId,
-          }
-        );
-      },
-      []
-    );
+  const loadAdvancePayments = useCallback(
+    (opts) => load("advancePayments", opts),
+    [load],
+  );
 
-  const loadStockExpiryAlerts =
-    useCallback(
-      (opts) =>
-        fetchStockExpiryAlerts(
-          opts
-        ),
-      []
-    );
+  const loadDashboard = useCallback((opts) => fetchDashboard(opts), []);
 
-  const loadAdvancePayments =
-    useCallback(
-      (opts) =>
-        load(
-          "advancePayments",
-          opts
-        ),
-      [load]
-    );
+  const loadMonthlySales = useCallback(
+    (branchId = null, opts = {}) => fetchMonthlySales(branchId, opts),
+    [],
+  );
 
-  const loadDashboard =
-    useCallback(
-      (opts) =>
-        fetchDashboard(opts),
-      []
-    );
+  const invalidate = useCallback((key) => {
+    if (key === "dashboard") {
+      Object.keys(dashboardCache).forEach(
+        (cacheKey) => delete dashboardCache[cacheKey],
+      );
 
-  const loadMonthlySales =
-    useCallback(
-      (
-        branchId = null,
-        opts = {}
-      ) =>
-        fetchMonthlySales(
-          branchId,
-          opts
-        ),
-      []
-    );
+      Object.keys(dashboardInFlight).forEach(
+        (cacheKey) => delete dashboardInFlight[cacheKey],
+      );
 
-  const invalidate =
-    useCallback(
-      (key) => {
-        if (
-          key === "dashboard"
-        ) {
-          Object.keys(
-            dashboardCache
-          ).forEach(
-            (cacheKey) =>
-              delete dashboardCache[
-                cacheKey
-              ]
-          );
+      setDashboard(null);
 
-          Object.keys(
-            dashboardInFlight
-          ).forEach(
-            (cacheKey) =>
-              delete dashboardInFlight[
-                cacheKey
-              ]
-          );
+      return;
+    }
 
-          setDashboard(null);
+    if (key === "expiredProducts") {
+      Object.keys(expiredProductsCache).forEach(
+        (cacheKey) => delete expiredProductsCache[cacheKey],
+      );
 
-          return;
+      Object.keys(expiredProductsInFlight).forEach(
+        (cacheKey) => delete expiredProductsInFlight[cacheKey],
+      );
+
+      return;
+    }
+
+    // Products now have branch-specific cache keys.
+    if (key === "products") {
+      Object.keys(lastFetched).forEach((cacheKey) => {
+        if (cacheKey === "products" || cacheKey.startsWith("products_")) {
+          delete lastFetched[cacheKey];
         }
+      });
 
-        if (
-          key ===
-          "expiredProducts"
-        ) {
-          Object.keys(
-            expiredProductsCache
-          ).forEach(
-            (cacheKey) =>
-              delete expiredProductsCache[
-                cacheKey
-              ]
-          );
-
-          Object.keys(
-            expiredProductsInFlight
-          ).forEach(
-            (cacheKey) =>
-              delete expiredProductsInFlight[
-                cacheKey
-              ]
-          );
-
-          return;
+      Object.keys(inFlight).forEach((cacheKey) => {
+        if (cacheKey === "products" || cacheKey.startsWith("products_")) {
+          delete inFlight[cacheKey];
         }
+      });
 
-        // Products now have branch-specific cache keys.
-        if (key === "products") {
-          Object.keys(
-            lastFetched
-          ).forEach(
-            (cacheKey) => {
-              if (
-                cacheKey === "products" ||
-                cacheKey.startsWith(
-                  "products_"
-                )
-              ) {
-                delete lastFetched[
-                  cacheKey
-                ];
-              }
-            }
-          );
+      return;
+    }
 
-          Object.keys(
-            inFlight
-          ).forEach(
-            (cacheKey) => {
-              if (
-                cacheKey === "products" ||
-                cacheKey.startsWith(
-                  "products_"
-                )
-              ) {
-                delete inFlight[
-                  cacheKey
-                ];
-              }
-            }
-          );
+    lastFetched[key] = 0;
+  }, []);
 
-          return;
-        }
-
-        lastFetched[key] = 0;
-      },
-      []
-    );
-
-  const isManager =
-    getRole() === "manager";
+  const isManager = getRole() === "manager";
 
   const value = {
     ...data,
@@ -1431,116 +1010,51 @@ export function AppDataProvider({
 
     loadMonthlySales,
 
-    branches: isManager
-      ? data.managerBranches
-      : data.branches,
+    branches: isManager ? data.managerBranches : data.branches,
 
-    stockExpiryAlerts:
-      alerts.list,
+    stockExpiryAlerts: alerts.list,
 
-    stockExpiryTotal:
-      alerts.total,
+    stockExpiryTotal: alerts.total,
 
     loadBranches: (opts) =>
-      load(
-        getRole() ===
-          "manager"
-          ? "managerBranches"
-          : "branches",
-        opts
-      ),
+      load(getRole() === "manager" ? "managerBranches" : "branches", opts),
 
-    loadManagerBranches: (
-      opts
-    ) =>
-      load(
-        "managerBranches",
-        opts
-      ),
+    loadManagerBranches: (opts) => load("managerBranches", opts),
 
-    loadCategories: () =>
-      load("categories"),
+    loadCategories: () => load("categories"),
 
-    loadBrands: () =>
-      load("brands"),
+    loadBrands: () => load("brands"),
 
-    loadGstRates: () =>
-      load("gstRates"),
+    loadGstRates: () => load("gstRates"),
 
-    loadSuppliers: () =>
-      load("suppliers"),
+    loadSuppliers: () => load("suppliers"),
 
-    loadStaff: () =>
-      load("staff"),
+    loadStaff: () => load("staff"),
 
-    loadProducts: (opts = {}) =>
-      fetchProducts(
-        opts.branch_id || null,
-        opts
-      ),
+    loadProducts: (opts = {}) => fetchProducts(opts.branch_id || null, opts),
 
-    loadPurchaseProducts: (
-      opts
-    ) =>
-      load(
-        "purchaseProducts",
-        opts
-      ),
+    loadPurchaseProducts: (opts) => load("purchaseProducts", opts),
 
-    loadExpiredProducts: (
-      filters,
-      opts
-    ) =>
-      fetchExpiredProducts(
-        filters,
-        opts
-      ),
+    loadExpiredProducts: (filters, opts) => fetchExpiredProducts(filters, opts),
 
-    loadPurchaseBills: (
-      opts
-    ) =>
-      load(
-        "purchaseBills",
-        opts
-      ),
+    loadPurchaseBills: (opts) => load("purchaseBills", opts),
 
     // loadPurchaseProducts: () =>
     //   load(
     //     "purchaseProducts"
     //   ),
 
-    loadSaleProducts: () =>
-      load("saleProducts"),
+    loadSaleProducts: () => load("saleProducts"),
 
-    loadSaleBills: (opts) =>
-      load(
-        "saleBills",
-        opts
-      ),
+    loadSaleBills: (opts) => load("saleBills", opts),
 
-    loadPurchaseLines: () =>
-      load(
-        "purchaseLines"
-      ),
+    loadPurchaseLines: () => load("purchaseLines"),
 
-    loadPurchaseReturns: (
-      opts
-    ) =>
-      load(
-        "purchaseReturns",
-        opts
-      ),
+    loadPurchaseReturns: (opts) => load("purchaseReturns", opts),
 
-    loadSaleReturns: (
-      opts
-    ) =>
-      load(
-        "saleReturns",
-        opts
-      ),
+    loadSaleReturns: (opts) => load("saleReturns", opts),
 
-    loadCustomers: () =>
-      load("customers"),
+    loadCustomers: () => load("customers"),
 
     loadAdvancePayments,
 
@@ -1552,16 +1066,8 @@ export function AppDataProvider({
   };
 
   return (
-    <AppDataContext.Provider
-      value={value}
-    >
-      {children}
-    </AppDataContext.Provider>
+    <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>
   );
 }
 
-export const useAppData =
-  () =>
-    useContext(
-      AppDataContext
-    );
+export const useAppData = () => useContext(AppDataContext);
