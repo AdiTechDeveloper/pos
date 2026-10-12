@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -17,6 +17,8 @@ const Login = () => {
     username: "",
     password: "",
   });
+  const submittingRef = useRef(false);
+  const [loading, setLoading] = useState(false);
 
   const [errors, setErrors] = useState({});
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -51,6 +53,10 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current) return;
+
+    submittingRef.current = true;
+    setLoading(true);
 
     if (!validate()) return;
 
@@ -89,7 +95,11 @@ const Login = () => {
       );
 
       console.error("LOGIN ERROR:", err);
+    } finally {
+      submittingRef.current = false;
+      setLoading(false);
     }
+
   };
 
   return (
@@ -193,9 +203,10 @@ const Login = () => {
 
             <button
               type="submit"
+              disabled={loading}
               className="vakaro-submit"
             >
-              Login to POS{" "}
+              {loading ? "Logging in..." : "Login to Pos"}
               <span aria-hidden="true">→</span>
             </button>
 
