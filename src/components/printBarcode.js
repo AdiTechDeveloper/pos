@@ -13,7 +13,7 @@ const PrintBarcode = () => {
   const navigate = useNavigate();
   // const [products, setProducts] = useState([]);
   const appData = useAppData();
-const products = appData?.products || [];
+  const products = appData?.products || [];
   const [search, setSearch] = useState("");
   const [filteredData, setFilteredData] = useState(products);
   const [currentPage, setCurrentPage] = useState(1);
@@ -131,8 +131,8 @@ const products = appData?.products || [];
   //   fetchProduct();
   // }, []);
   useEffect(() => {
-  appData?.loadProducts();
-}, []);
+    appData?.loadProducts();
+  }, []);
 
   useEffect(() => {
     const text = search.toLowerCase();
@@ -232,32 +232,32 @@ const products = appData?.products || [];
       wrap: true,
     },
 
-    {
-      name: "MRP",
-      selector: (row) => row.mrp,
-      sortable: true,
-      width: "80px",
-      wrap: true,
-    },
+    // {
+    //   name: "MRP",
+    //   selector: (row) => row.mrp,
+    //   sortable: true,
+    //   width: "80px",
+    //   wrap: true,
+    // },
 
-    {
-      name: (
-        <div
-          style={{
-            whiteSpace: "normal",
-            wordBreak: "break-word",
-            textAlign: "center",
-            lineHeight: "1.2",
-          }}
-        >
-          Selling Price
-        </div>
-      ),
-      selector: (row) => row.selling_price,
-      sortable: true,
-      width: "100px",
-      wrap: true,
-    },
+    // {
+    //   name: (
+    //     <div
+    //       style={{
+    //         whiteSpace: "normal",
+    //         wordBreak: "break-word",
+    //         textAlign: "center",
+    //         lineHeight: "1.2",
+    //       }}
+    //     >
+    //       Selling Price
+    //     </div>
+    //   ),
+    //   selector: (row) => row.selling_price,
+    //   sortable: true,
+    //   width: "100px",
+    //   wrap: true,
+    // },
 
     {
       name: (
@@ -310,7 +310,9 @@ const products = appData?.products || [];
         <div className="main-content-wrap">
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
             <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+              >
                 <span
                   style={{
                     width: "5px",
@@ -330,7 +332,7 @@ const products = appData?.products || [];
                       lineHeight: 1.2,
                     }}
                   >
-                  Print Barcode
+                    Print Barcode
                   </h3>
                   <p
                     style={{
@@ -339,11 +341,10 @@ const products = appData?.products || [];
                       margin: "2px 0 0 0",
                     }}
                   >
-                   Generate and print barcodes for your products
+                    Generate and print barcodes for your products
                   </p>
                 </div>
               </div>
-
             </div>
             <ul className="breadcrumbs flex items-center flex-wrap justify-start gap10">
               <li>
