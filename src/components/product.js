@@ -1,19 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-
 import DataTable from "react-data-table-component";
-
 import { Link, useNavigate } from "react-router-dom";
-
 import axios from "axios";
-
 import Layout from "./layout";
-
 import { toast } from "react-toastify";
-
 import BarcodePrintModal from "./BarcodePrintModal";
-
 import Barcode from "react-barcode";
-
 import { useAppData } from "../context/AppDataContext";
 
 const Product = () => {
@@ -30,9 +22,7 @@ const Product = () => {
   // Filters
 
   const [stockFilter, setStockFilter] = useState("all");
-
   const [categoryFilter, setCategoryFilter] = useState("all");
-
   const [brandFilter, setBrandFilter] = useState("all");
 
   const [filteredData, setFilteredData] = useState(products);
@@ -42,17 +32,11 @@ const Product = () => {
   const perPage = 10;
 
   const [selectedProduct, setSelectedProduct] = useState(null);
-
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
-
   const userRole = user_data?.user?.role || user_data?.role;
-
   const isAdmin = userRole === "admin";
-
   const isManager = userRole === "manager";
-
   const branches = appData?.branches || [];
-
   const [selectedBranch, setSelectedBranch] = useState("");
 
   const getStock = (row) => Number(row?.total_stock ?? 0);
@@ -75,13 +59,11 @@ const Product = () => {
 
   const brands = useMemo(() => {
     const map = new Map();
-
     products.forEach((product) => {
       if (product?.brand?.id) {
         map.set(product.brand.id, product.brand);
       }
     });
-
     return Array.from(map.values());
   }, [products]);
 
