@@ -1,131 +1,55 @@
 import React, { useEffect, useMemo, useState } from "react";
-
 import DataTable from "react-data-table-component";
-
 import { Link, useNavigate } from "react-router-dom";
-
 import axios from "axios";
-
 import Layout from "./layout";
-
 import { toast } from "react-toastify";
-
 import BarcodePrintModal from "./BarcodePrintModal";
-
 import Barcode from "react-barcode";
-
 import { useAppData } from "../context/AppDataContext";
 
-
-
 const Product = () => {
-
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
-
-
   const navigate = useNavigate();
-
-
-
   const appData = useAppData();
-
-
-
   const products = appData?.products || [];
-
-
-
   const [search, setSearch] = useState("");
-
-
-
-  // Filters
-
   const [stockFilter, setStockFilter] = useState("all");
-
   const [categoryFilter, setCategoryFilter] = useState("all");
-
   const [brandFilter, setBrandFilter] = useState("all");
-
-
-
   const [filteredData, setFilteredData] = useState(products);
-
-
-
   const [currentPage, setCurrentPage] = useState(1);
-
-
 
   const perPage = 10;
 
-
-
   const [selectedProduct, setSelectedProduct] = useState(null);
-
-
-
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
-
   const userRole = user_data?.user?.role || user_data?.role;
-
   const isAdmin = userRole === "admin";
-
   const isManager = userRole === "manager";
-
   const branches = appData?.branches || [];
-
   const [selectedBranch, setSelectedBranch] = useState("");
-
-
-
-  // Unique categories from loaded products
-
   const categories = useMemo(() => {
-
     const map = new Map();
-
-
-
     products.forEach((product) => {
-
       if (product?.category?.id) {
-
         map.set(product.category.id, product.category);
-
       }
-
     });
-
-
 
     return Array.from(map.values());
 
   }, [products]);
 
-
-
-  // Unique brands from loaded products
-
   const brands = useMemo(() => {
 
     const map = new Map();
-
-
-
     products.forEach((product) => {
 
       if (product?.brand?.id) {
-
         map.set(product.brand.id, product.brand);
-
       }
-
     });
-
-
-
     return Array.from(map.values());
 
   }, [products]);
