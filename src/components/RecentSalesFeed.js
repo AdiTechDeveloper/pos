@@ -203,7 +203,7 @@ const RecentSalesFeed = ({
           )}
 
           <Link
-            to="/sale-bills"
+            to="/sale-bill"
             className="text-xl font-semibold text-blue-600 hover:text-blue-700"
           >
             View All
