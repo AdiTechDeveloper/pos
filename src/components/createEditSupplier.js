@@ -6,6 +6,7 @@ import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
 import { useAppData } from "../context/AppDataContext";
+import SupplierImport from "./SupplierImport";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -72,44 +73,44 @@ const CreateEditSupplier = () => {
 
 
   const handleSubmit = async (values) => {
-  try {
-    let url = "";
-    let method = "";
+    try {
+      let url = "";
+      let method = "";
 
-    if (isEdit) {
-      url = `${BASE_URL}/api/suppliers/${id}`;
-      method = "put";
-    } else {
-      url = `${BASE_URL}/api/suppliers`;
-      method = "post";
+      if (isEdit) {
+        url = `${BASE_URL}/api/suppliers/${id}`;
+        method = "put";
+      } else {
+        url = `${BASE_URL}/api/suppliers`;
+        method = "post";
+      }
+
+      await axios({
+        method,
+        url,
+        data: values,
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${user_data.token}`,
+        },
+      });
+
+      appData?.invalidate("suppliers");
+      await appData?.loadSuppliers();
+
+      toast.success(
+        isEdit ? "Suppliers Updated!" : "Suppliers Created!"
+      );
+
+      navigate("/suppliers");
+    } catch (error) {
+      console.error("Error saving supplier:", error);
+
+      toast.error(
+        error.response?.data?.message || "Failed to save supplier"
+      );
     }
-
-    await axios({
-      method,
-      url,
-      data: values,
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${user_data.token}`,
-      },
-    });
-
-    appData?.invalidate("suppliers");
-    await appData?.loadSuppliers();
-
-    toast.success(
-      isEdit ? "Suppliers Updated!" : "Suppliers Created!"
-    );
-
-    navigate("/suppliers");
-  } catch (error) {
-    console.error("Error saving supplier:", error);
-
-    toast.error(
-      error.response?.data?.message || "Failed to save supplier"
-    );
-  }
-};
+  };
 
   return (
     <Layout>
@@ -118,7 +119,14 @@ const CreateEditSupplier = () => {
           <h3 className="mb-20">
             {isEdit ? "Edit Supplier" : "Create Supplier"}
           </h3>
-
+          {!isEdit && (
+            <SupplierImport
+              onImported={async () => {
+                appData?.invalidate("suppliers");
+                await appData?.loadSuppliers();
+              }}
+            />
+          )}
           <div className="wg-box wg-content">
             <Formik
               enableReinitialize
@@ -137,7 +145,7 @@ const CreateEditSupplier = () => {
                           name="name"
                           className="mb-5"
                           placeholder="Enter supplier name"
-                          maxLength={30}  
+                          maxLength={30}
                         />
                         <ErrorMessage
                           name="name"
@@ -154,7 +162,7 @@ const CreateEditSupplier = () => {
                           name="gstin"
                           className="mb-5"
                           placeholder="Enter GST no."
-                          maxLength={15} 
+                          maxLength={15}
                         />
                         <ErrorMessage
                           name="gstin"
@@ -184,7 +192,7 @@ const CreateEditSupplier = () => {
                         />
                       </div>
                     </fieldset>
-                       <fieldset className="col-md-3">
+                    <fieldset className="col-md-3">
                       <div className="body-title">Address *</div>
                       <div className="body-content">
                         <Field
@@ -202,7 +210,7 @@ const CreateEditSupplier = () => {
                     </fieldset>
                   </div>
                   <div className="row mb-12">
-                  
+
                     <fieldset className="col-md-2 mb-12">
                       <div className="body-title">State *</div>
                       <div className="body-content">

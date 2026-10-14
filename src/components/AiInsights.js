@@ -6,6 +6,7 @@ import { getAiInsightBranches } from "../utils/api";
 import { toast } from "react-toastify";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { getAiChatCache, setAiChatCache } from "../utils/aiChatCache";
 
 /* ───────────── Constants ───────────── */
 const MAX_WORDS = 100;
@@ -13,7 +14,6 @@ const MIN_CHARS = 2;
 const MAX_CHARS = 1500;
 const SEND_COOLDOWN_MS = 1500;
 const DUPLICATE_WINDOW_MS = 15000;
-const MAX_SAVED_CHATS = 50;
 const TA_MIN = 26;
 const TA_MAX = 160;
 const AVATAR = "./avatar.png";
@@ -26,7 +26,7 @@ const FALLBACK_REPLY =
   "Abhi main aapke sawal ka jawab nahi de paa raha. Kripya thodi der baad dobara try karein.";
 
 /* Sales report ka apna endpoint hai, baaki sab reports generic endpoint se download hoti hain.
-   Backend `download.report_type` bhejega (AiReportDownloadController ke values). */
+   Backend `download.report_type` bhejta hai. */
 const SALES_ENDPOINT = "/api/reports/ai-sales-download";
 const GENERIC_ENDPOINT = "/api/reports/ai-report-download";
 
@@ -46,12 +46,13 @@ const REPORT_LABELS = {
 // report_type na ho (ya purani saved chats) toh "sales" maana jayega.
 const getReportMeta = (download = {}) => {
   const type = download.report_type || download.type;
+  const customLabel = download.label || download.title;
   if (!type || type === "sales") {
-    return { type: "sales", label: download.label || REPORT_LABELS.sales, endpoint: SALES_ENDPOINT, isGeneric: false };
+    return { type: "sales", label: customLabel || REPORT_LABELS.sales, endpoint: SALES_ENDPOINT, isGeneric: false };
   }
   return {
     type,
-    label: download.label || REPORT_LABELS[type] || "Report",
+    label: customLabel || REPORT_LABELS[type] || "Report",
     endpoint: GENERIC_ENDPOINT,
     isGeneric: true,
   };
@@ -66,9 +67,6 @@ const getUserData = () => {
   }
 };
 
-const getStorageKey = (user) =>
-  `pos_ai_chats_${user.id || user.user?.id || user.email || "user"}`;
-
 const countWords = (text) => (text.trim().match(/\S+/g) || []).length;
 
 const truncateWords = (text, max) => {
@@ -82,25 +80,42 @@ const truncateWords = (text, max) => {
   return text;
 };
 
-const loadChats = (key) => {
-  try {
-    const saved = JSON.parse(localStorage.getItem(key) || "[]");
-    return Array.isArray(saved) ? saved : [];
-  } catch {
-    return [];
-  }
-};
+const formatTime = (date) =>
+  new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+const mapConversation = (conversation) => ({
+  id: Number(conversation.id),
+  title: conversation.title || "New chat",
+  branchId: conversation.branch_id == null ? null : String(conversation.branch_id),
+  messages: [],
+  updatedAt:
+    conversation.last_message_at ||
+    conversation.updated_at ||
+    conversation.created_at ||
+    new Date().toISOString(),
+});
+
+const mapConversationMessages = (conversation) => ({
+  ...mapConversation(conversation),
+  loaded: true, // messages are fully loaded, no need to fetch this chat again
+  messages: (conversation.messages || []).map((message) => ({
+    id: message.id,
+    role: message.role,
+    content: message.content || "",
+    time: formatTime(message.created_at || new Date()),
+    ...(message.metadata?.download ? { download: message.metadata.download } : {}),
+    ...(message.metadata?.data ? { data: message.metadata.data } : {}),
+  })),
+});
 
 const createChat = (branchId = null) => ({
-  id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+  id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   title: "New chat",
   branchId,
   messages: [],
+  loaded: true,
   updatedAt: new Date().toISOString(),
 });
-
-const formatTime = (date) =>
-  new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 const isTouchDevice = () =>
   typeof window !== "undefined" &&
@@ -268,6 +283,9 @@ function MessageRow({ message, onDownload }) {
     );
   }
 
+  const download = message.download;
+  const showCopy = !message.isError && !message.isNotice;
+
   return (
     <div className="aic-ai">
       <div className="aic-spark">
@@ -282,19 +300,19 @@ function MessageRow({ message, onDownload }) {
           </div>
         )}
 
-        {!message.isError && message.download && (
+        {!message.isError && download?.date_from && download?.date_to && (
           <button
             type="button"
             className="aic-download-btn"
-            onClick={() => onDownload(message.download)}
+            onClick={() => onDownload(download)}
           >
-            ↓ Download {getReportMeta(message.download).label} (
-            {message.download.format === "excel" ? "Excel" : "PDF"})
+            ↓ Download {getReportMeta(download).label} (
+            {download.format === "excel" ? "Excel" : "PDF"})
           </button>
         )}
 
         <div className="aic-actions">
-          {!message.isError && (
+          {showCopy && (
             <button type="button" onClick={handleCopy} className="aic-copy">
               <CopyIcon />
               {copied ? "Copied" : "Copy"}
@@ -396,12 +414,6 @@ const CSS = `
 .aic-panel .aic-download-btn { display: inline-flex; margin: 10px 0; padding: 9px 14px; border: 1px solid #c7d2fe; border-radius: 9px; background: #eef2ff; color: #3730a3; font-size: 13px; font-weight: 600; }
 .aic-panel .aic-download-btn:hover { background: #e0e7ff; }
 
-.aic-panel .aic-report-download-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 18px 44px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fafafa; }
-.aic-panel .aic-report-download-title { width: 100%; color: #374151; font-weight: 600; font-size: 14px; }
-.aic-panel .aic-report-download-options button { border: 1px solid #d1d5db; border-radius: 8px; background: #fff; color: #3730a3; padding: 8px 12px; font-size: 13px; font-weight: 600; }
-.aic-panel .aic-report-download-options button:hover:not(:disabled) { background: #eef2ff; border-color: #a5b4fc; }
-.aic-panel .aic-report-download-options button:disabled { opacity: .55; cursor: not-allowed; }
-
 .aic-panel .aic-typing { display: flex; align-items: center; gap: 5px; height: 34px; }
 .aic-panel .aic-typing span { width: 7px; height: 7px; border-radius: 50%; background: #a5a8f0; animation: aic-bounce 1s infinite ease-in-out; }
 .aic-panel .aic-typing span:nth-child(2) { animation-delay: .15s; }
@@ -451,10 +463,10 @@ const CSS = `
 .aic-panel .aic-backdrop { display: none; }
 
 .aic-panel .aic-table-wrap { display: block; width: 100%; max-width: 100%; max-height: 520px; overflow: auto; margin: 14px 0 16px; border: 0; border-radius: 0; background: transparent; scrollbar-width: thin; scrollbar-color: #d4d4dc transparent; -webkit-overflow-scrolling: touch; }
-.aic-panel .aic-table { width: 100%; border-collapse: collapse; border-spacing: 0; table-layout: auto; font-size: 14px; line-height: 1.45; color: #0d0d0d; border:none;}
+.aic-panel .aic-table { width: 100%; border-collapse: collapse; border-spacing: 0; table-layout: auto; font-size: 14px; line-height: 1.45; color: #0d0d0d; border: none; }
 .aic-panel .aic-table-head th { position: sticky; top: 0; z-index: 2; background: #fff; }
 .aic-panel .aic-table-th { padding: 10px 14px; text-align: left; font-weight: 600; white-space: nowrap; color: #0d0d0d; border: 0; border-bottom: 1px solid #e3e3e3; }
-.aic-panel .aic-table-td { font-size:13px;padding: 10px 10px; text-align: left; vertical-align: top; white-space: normal; overflow-wrap: break-word; word-break: normal; color: #0d0d0d; border: 0; border-bottom: 1px solid #efefef; }
+.aic-panel .aic-table-td { font-size: 13px; padding: 10px 10px; text-align: left; vertical-align: top; white-space: normal; overflow-wrap: break-word; word-break: normal; color: #0d0d0d; border: 0; border-bottom: 1px solid #efefef; }
 .aic-panel .aic-table-th:first-child, .aic-panel .aic-table-td:first-child { padding-left: 8px; }
 .aic-panel .aic-table-th:last-child, .aic-panel .aic-table-td:last-child { padding-right: 8px; }
 .aic-panel .aic-table-row:last-child .aic-table-td { border-bottom: 0; }
@@ -472,7 +484,6 @@ const CSS = `
   .aic-panel .aic-select { max-width: 150px; }
   .aic-panel .aic-btn-label, .aic-panel .aic-title { display: none; }
   .aic-panel .aic-ubub { max-width: 90%; }
-  .aic-panel .aic-report-download-options { margin-left: 0; }
   .aic-panel .aic-table { font-size: 13px; }
   .aic-panel .aic-table-th, .aic-panel .aic-table-td { padding: 10px 10px; }
   .aic-panel .aic-table-td { min-width: 90px; }
@@ -486,19 +497,32 @@ const CSS = `
 
 /* ───────────── Main panel ───────────── */
 function ChatPanel() {
-  // Read at render time (not module load) so a new login is picked up correctly.
   const userData = useMemo(getUserData, []);
   const token = userData.token;
-  const storageKey = useMemo(() => getStorageKey(userData), [userData]);
 
   const [rect, setRect] = useState(null);
   const [branches, setBranches] = useState([]);
-  const [selectedBranch, setSelectedBranch] = useState("");
-  const [chats, setChats] = useState(() => loadChats(storageKey));
-  const [activeChatId, setActiveChatId] = useState(() => {
-    const list = loadChats(storageKey);
-    return [...list].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0]?.id || null;
+  // Chats cached from an earlier visit to this page (null on first visit / expired / other user).
+  const [initial] = useState(() => {
+    const cached = getAiChatCache();
+    if (!cached) return null;
+    return {
+      ...cached,
+      // If the user left while a reply was still pending, the reply was saved on the
+      // server but not here, so that chat is fetched again.
+      chats: cached.chats.map((chat) => {
+        const last = chat.messages[chat.messages.length - 1];
+        return last?.role === "user" && !String(chat.id).startsWith("draft-")
+          ? { ...chat, loaded: false }
+          : chat;
+      }),
+    };
   });
+
+  const [selectedBranch, setSelectedBranch] = useState(initial?.selectedBranch ?? "");
+  const [chats, setChats] = useState(initial?.chats ?? []);
+  const [activeChatId, setActiveChatId] = useState(initial?.activeChatId ?? null);
+  const [loadingChats, setLoadingChats] = useState(!initial);
   const [input, setInput] = useState("");
   const [inputError, setInputError] = useState("");
   const [loadingBranches, setLoadingBranches] = useState(true);
@@ -508,6 +532,7 @@ function ChatPanel() {
   const scrollRef = useRef(null);
   const textareaRef = useRef(null);
   const sendingRef = useRef(false);
+  const cacheReadyRef = useRef(false); // true only after chats were loaded successfully
   const lastSendRef = useRef({ time: 0, text: "" });
 
   const activeChat = chats.find((chat) => chat.id === activeChatId);
@@ -525,6 +550,8 @@ function ChatPanel() {
     wordCount <= MAX_WORDS;
 
   const LIMIT_MSG = `Word limit reached (${MAX_WORDS}/${MAX_WORDS}). Delete some words to type more.`;
+
+  const authHeaders = { Accept: "application/json", Authorization: `Bearer ${token}` };
 
   /* Fit the panel inside the app layout */
   useLayoutEffect(() => {
@@ -567,14 +594,78 @@ function ChatPanel() {
     };
   }, []);
 
-  /* Persist chats */
+  /* Load saved conversations: from the cache if we have it, otherwise from the server */
   useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(chats.slice(0, MAX_SAVED_CHATS)));
-    } catch {
-      /* storage full / unavailable */
+    let mounted = true;
+
+    const loadDetail = async (id) => {
+      try {
+        const detail = await axios.get(`/api/ai/conversations/${id}`, { headers: authHeaders });
+        if (!mounted || !detail.data?.data) return;
+        const full = mapConversationMessages(detail.data.data);
+        setChats((current) =>
+          current.map((chat) => (String(chat.id) === String(id) ? full : chat))
+        );
+        if (full.branchId) setSelectedBranch((current) => current || full.branchId);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Could not load conversation messages:", error);
+      }
+    };
+
+    const loadConversations = async () => {
+      if (!token) {
+        setChats([]);
+        setActiveChatId(null);
+        setLoadingChats(false);
+        return;
+      }
+
+      setLoadingChats(true);
+      try {
+        const response = await axios.get("/api/ai/conversations", { headers: authHeaders });
+        const payload = response.data?.data;
+        const list = Array.isArray(payload) ? payload : payload?.data || [];
+        const mapped = list.map(mapConversation);
+        if (!mounted) return;
+
+        cacheReadyRef.current = true;
+        setChats(mapped);
+        const firstId = mapped[0]?.id ?? null;
+        setActiveChatId(firstId);
+
+        if (firstId != null) await loadDetail(firstId);
+      } catch (error) {
+        // Silent: history khali dikhegi, koi red error nahi. Cache nahi banega, agli baar dobara try hoga.
+        // eslint-disable-next-line no-console
+        console.error("Could not load chat history:", error);
+      } finally {
+        if (mounted) setLoadingChats(false);
+      }
+    };
+
+    if (initial) {
+      // Cache hit: no list request. Only re-fetch the open chat if it is incomplete.
+      cacheReadyRef.current = true;
+      const active = initial.chats.find((chat) => String(chat.id) === String(initial.activeChatId));
+      if (active && !active.loaded && !String(active.id).startsWith("draft-")) {
+        loadDetail(active.id);
+      }
+    } else {
+      loadConversations();
     }
-  }, [chats, storageKey]);
+
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  /* Keep the cache in sync, so coming back to this page does not hit the database again */
+  useEffect(() => {
+    if (loadingChats || !cacheReadyRef.current) return;
+    setAiChatCache({ chats, activeChatId, selectedBranch });
+  }, [chats, activeChatId, selectedBranch, loadingChats]);
 
   /* Load branches */
   useEffect(() => {
@@ -651,31 +742,70 @@ function ChatPanel() {
     focusInput();
   };
 
-  const handleSelectChat = (chatId) => {
-    const chat = chats.find((item) => item.id === chatId);
+  const handleSelectChat = async (chatId) => {
+    const chat = chats.find((item) => String(item.id) === String(chatId));
     setActiveChatId(chatId);
     setInput("");
     setInputError("");
     if (chat?.branchId) setSelectedBranch(String(chat.branchId));
     closeHistoryOnMobile();
+
+    if (String(chatId).startsWith("draft-") || !token || chat?.loaded) return;
+
+    try {
+      const response = await axios.get(`/api/ai/conversations/${chatId}`, { headers: authHeaders });
+      if (response.data?.data) {
+        const full = mapConversationMessages(response.data.data);
+        setChats((current) =>
+          current.map((item) => (String(item.id) === String(chatId) ? full : item))
+        );
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Could not load conversation:", error);
+      toast.info("Yeh conversation abhi load nahi ho paayi. Kripya dobara try karein.");
+    }
   };
 
-  const handleDeleteChat = (event, chatId) => {
+  const handleDeleteChat = async (event, chatId) => {
     event.stopPropagation();
     if (!window.confirm("Delete this conversation?")) return;
-    const remaining = chats.filter((chat) => chat.id !== chatId);
-    setChats(remaining);
-    if (activeChatId === chatId) {
-      const next = [...remaining].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0];
-      setActiveChatId(next?.id || null);
+
+    try {
+      if (!String(chatId).startsWith("draft-")) {
+        await axios.delete(`/api/ai/conversations/${chatId}`, { headers: authHeaders });
+      }
+
+      const remaining = chats.filter((chat) => String(chat.id) !== String(chatId));
+      setChats(remaining);
+
+      if (String(activeChatId) === String(chatId)) {
+        setActiveChatId(remaining[0]?.id ?? null);
+        if (remaining[0]) handleSelectChat(remaining[0].id);
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Could not delete conversation:", error);
+      toast.info("Conversation abhi delete nahi ho paayi. Kripya dobara try karein.");
     }
   };
 
   const selectBranch = (branchId) => {
-    setSelectedBranch(String(branchId));
-    if (activeChatId) {
-      updateChat(activeChatId, (chat) => ({ ...chat, branchId: String(branchId) }));
+    const nextBranch = String(branchId);
+    setSelectedBranch(nextBranch);
+    if (!activeChat) return;
+
+    if (activeChat.messages.length > 0 && String(activeChat.branchId || "") !== nextBranch) {
+      const fresh = createChat(nextBranch);
+      setChats((prev) => [fresh, ...prev]);
+      setActiveChatId(fresh.id);
+      setInput("");
+      setInputError("");
+      toast.info("Branch changed. A new conversation has been started for this branch.");
+      return;
     }
+
+    updateChat(activeChat.id, (chat) => ({ ...chat, branchId: nextBranch }));
   };
 
   const validateMessage = (text) => {
@@ -703,12 +833,7 @@ function ChatPanel() {
           : chat.title,
       messages: [
         ...chat.messages,
-        {
-          role,
-          content,
-          time: formatTime(new Date()),
-          ...extra,
-        },
+        { role, content, time: formatTime(new Date()), ...extra },
       ],
       updatedAt: new Date().toISOString(),
     }));
@@ -717,7 +842,6 @@ function ChatPanel() {
   /* ───── Report download (sales / stock / profit ...) ───── */
   const fetchReport = async (request, format, chatId) => {
     const meta = getReportMeta(request);
-    const label = meta.label;
     const typeSlug = meta.type.replace(/_/g, "-");
 
     try {
@@ -751,7 +875,7 @@ function ChatPanel() {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Report download failed:", err);
-      let message = `${label} abhi download nahi ho pa rahi. Kripya thodi der baad dobara try karein.`;
+      let message = `${meta.label} abhi download nahi ho pa rahi. Kripya thodi der baad dobara try karein.`;
       const status = err.response?.status;
       if ((status === 403 || status === 422) && err.response?.data instanceof Blob) {
         try {
@@ -763,6 +887,7 @@ function ChatPanel() {
           /* keep default message */
         }
       }
+      // Normal (non-red) notice; yeh history mein AI ko nahi bheja jaata.
       addLocalMessage(chatId, "assistant", message, { isNotice: true });
     }
   };
@@ -796,9 +921,9 @@ function ChatPanel() {
     if (sendingRef.current || sending) return;
 
     const messageText = input.trim();
-    const error = validateMessage(messageText);
-    if (error) {
-      setInputError(error);
+    const validationError = validateMessage(messageText);
+    if (validationError) {
+      setInputError(validationError);
       return;
     }
     if (Date.now() - lastSendRef.current.time < SEND_COOLDOWN_MS) return;
@@ -812,30 +937,50 @@ function ChatPanel() {
       return;
     }
 
+    sendingRef.current = true;
     lastSendRef.current = { time: Date.now(), text: messageText };
 
-    sendingRef.current = true;
-
     let chatId = activeChatId;
-    if (!chats.some((chat) => chat.id === chatId)) {
-      const fresh = createChat(selectedBranch);
-      chatId = fresh.id;
-      setChats((prev) => [fresh, ...prev]);
+    let currentChat = chats.find((chat) => String(chat.id) === String(chatId));
+
+    if (!currentChat) {
+      currentChat = createChat(selectedBranch);
+      chatId = currentChat.id;
+      const draft = currentChat;
+      setChats((prev) => [draft, ...prev]);
       setActiveChatId(chatId);
     }
 
-    const currentChat = chats.find((chat) => chat.id === chatId);
-    const history = (currentChat?.messages || [])
-      .filter(
-        (message) =>
-          ["user", "assistant"].includes(message.role) &&
-          typeof message.content === "string" &&
-          message.content.trim() &&
-          !message.isError &&
-          !message.isNotice
-      )
-      .slice(-10)
-      .map((message) => ({ role: message.role, content: message.content }));
+    // Create the database conversation on first send, not just in browser memory.
+    if (String(chatId).startsWith("draft-")) {
+      try {
+        const created = await axios.post(
+          "/api/ai/conversations",
+          { title: "New chat", branch_id: Number(selectedBranch) },
+          { headers: authHeaders }
+        );
+
+        const conversation = created.data?.data;
+        if (!conversation?.id) throw new Error("Conversation could not be created.");
+
+        const draftId = chatId;
+        chatId = Number(conversation.id);
+        const saved = {
+          ...currentChat,
+          id: chatId,
+          title: conversation.title || "New chat",
+          branchId: String(selectedBranch),
+        };
+        setChats((prev) => [saved, ...prev.filter((chat) => String(chat.id) !== String(draftId))]);
+        setActiveChatId(chatId);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Could not create conversation:", error);
+        toast.info(FALLBACK_REPLY);
+        sendingRef.current = false;
+        return;
+      }
+    }
 
     updateChat(chatId, (chat) => ({
       ...chat,
@@ -855,8 +1000,12 @@ function ChatPanel() {
     try {
       const response = await axios.post(
         "/api/ai/chat",
-        { message: messageText, branch_id: Number(selectedBranch), history },
-        { headers: { Accept: "application/json", Authorization: `Bearer ${token}` } }
+        {
+          message: messageText,
+          conversation_id: Number(chatId),
+          branch_id: Number(selectedBranch),
+        },
+        { headers: authHeaders }
       );
 
       if (response.data?.status === false) {
@@ -886,6 +1035,7 @@ function ChatPanel() {
         updatedAt: new Date().toISOString(),
       }));
     } catch (err) {
+      // Koi bhi error ho: red box/toast nahi, sirf normal friendly jawab.
       // eslint-disable-next-line no-console
       console.error("AI chat failed:", err);
       updateChat(chatId, (chat) => ({
@@ -1152,7 +1302,9 @@ function ChatPanel() {
         </button>
 
         <div className="aic-list">
-          {chats.length === 0 ? (
+          {loadingChats ? (
+            <p className="aic-empty">Loading chat history...</p>
+          ) : chats.length === 0 ? (
             <p className="aic-empty">Your conversations will appear here.</p>
           ) : (
             grouped.map(([label, list]) => (
@@ -1188,7 +1340,7 @@ function ChatPanel() {
           )}
         </div>
 
-        <div className="aic-hist-foot">Saved in this browser.</div>
+        <div className="aic-hist-foot">Saved to your account.</div>
       </aside>
     </div>
   );

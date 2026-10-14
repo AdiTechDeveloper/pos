@@ -6,6 +6,7 @@ import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
 import { useAppData } from "../context/AppDataContext";
+import ProductImport from "./ProductImport";
 
 const CreateEditProduct = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -223,7 +224,14 @@ const CreateEditProduct = () => {
           <h3 className="mb-20">
             {isEdit ? "Edit Product" : "Create Product"}
           </h3>
-
+          {!isEdit && (
+            <ProductImport
+              onImported={async () => {
+                appData?.invalidate("products");
+                await appData?.loadProducts({ force: true });
+              }}
+            />
+          )}
           <div className="wg-box">
             {loadingProduct ? (
               <div className="text-center p-20">Loading product...</div>
