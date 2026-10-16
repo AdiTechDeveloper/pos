@@ -92,6 +92,7 @@ const ENDPOINTS = {
   saleReturns: "/api/sales-return",
   customers: "/api/customers",
   advancePayments: "/api/reports/advance-payments",
+  expenseCategories: "/api/expense-categories",
   store: "STORE",
 };
 
@@ -118,6 +119,7 @@ const RESPONSE_PATH = {
   gstRates: (res) => res.data?.gstRates ?? [],
 
   suppliers: (res) => res.data?.suppliers ?? [],
+  expenseCategories: (res) => res.data?.categories ?? res.data?.data ?? [],
 
   products: (res) => {
     const products = res.data?.products ?? [];
@@ -311,6 +313,7 @@ function ensureCacheOwner() {
       "saleReturns",
       "customers",
       "advancePayments",
+      "expenseCategories",
     ].forEach((k) => notifyListeners(k, []));
 
     notifyListeners("store", null);
@@ -889,6 +892,7 @@ export function AppDataProvider({ children }) {
     customers: [],
 
     advancePayments: [],
+    expenseCategories: [],
 
     monthlySales: {
       1: 85000,
@@ -1015,6 +1019,7 @@ export function AppDataProvider({ children }) {
     stockExpiryAlerts: alerts.list,
 
     stockExpiryTotal: alerts.total,
+    loadExpenseCategories: (opts) => load("expenseCategories", opts),
 
     loadBranches: (opts) =>
       load(getRole() === "manager" ? "managerBranches" : "branches", opts),

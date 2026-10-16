@@ -78,6 +78,7 @@ import AiInsights from "./components/AiInsights";
 import SupplierTracking from "./components/reports/SuplierTracking";
 
 import CustomerPortalLogin from "./components/CustomerPortalLogin";
+import Expenses from "./components/Expenses";
 
 const Protected = ({ Component, requiredFeature }) => {
   return (
@@ -127,6 +128,10 @@ const router = createBrowserRouter(
       <Route
         path="/product"
         element={<Protected Component={Product} requiredFeature="products" />}
+      />
+       <Route
+        path="/expenses"
+        element={<Protected Component={Expenses} />}
       />
 
       <Route

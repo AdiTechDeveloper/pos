@@ -23,6 +23,7 @@ import {
   IoPrintOutline,
   IoExitOutline,
   IoPeopleOutline,
+  IoCashOutline,
 } from "react-icons/io5";
 import { FaFacebookF, FaLinkedinIn, FaInstagram } from "react-icons/fa";
 
@@ -218,6 +219,11 @@ const Navbar = () => {
       feature: "products",
     },
     {
+      name: "Expenses",
+      path: "/expenses",
+      icon: <IoCashOutline size={20} />,
+    },
+    {
       name: "Print Barcode",
       path: "/print-barcode",
       icon: <IoPrintOutline size={20} />,
@@ -266,7 +272,7 @@ const Navbar = () => {
     },
   ];
 
-  
+
   const superadminMenus = [
     {
       name: "Stores",
@@ -338,7 +344,7 @@ const Navbar = () => {
   const isBackOffice = role === "admin" || role === "manager";
   const showReports = isBackOffice && visibleReportLinks.length > 0;
 
- 
+
   const renderMenuItem = (item) => (
     <li key={`${item.path}-${item.name}`} className="app-sidebar-menu-item">
       <Link
@@ -826,9 +832,8 @@ const Navbar = () => {
       `}</style>
 
       <aside
-        className={`app-sidebar ${isOpen ? "open" : ""} ${
-          isCollapsed ? "collapsed" : ""
-        }`}
+        className={`app-sidebar ${isOpen ? "open" : ""} ${isCollapsed ? "collapsed" : ""
+          }`}
       >
         <div className="app-sidebar-header">
           <div className="app-sidebar-logo">
@@ -844,9 +849,8 @@ const Navbar = () => {
             <li className="app-sidebar-menu-item">
               <Link
                 to="/dashboard"
-                className={`app-sidebar-link ${
-                  isActive("/dashboard") ? "active" : ""
-                }`}
+                className={`app-sidebar-link ${isActive("/dashboard") ? "active" : ""
+                  }`}
                 onClick={closeSidebar}
                 title={isCollapsed ? "Dashboard" : undefined}
               >
@@ -894,9 +898,8 @@ const Navbar = () => {
                         <Link
                           ref={isActive(item.path) ? activeMenuRef : null}
                           to={item.path}
-                          className={`app-sidebar-submenu-link ${
-                            isActive(item.path) ? "active" : ""
-                          }`}
+                          className={`app-sidebar-submenu-link ${isActive(item.path) ? "active" : ""
+                            }`}
                           onClick={closeSidebar}
                         >
                           {item.name}
