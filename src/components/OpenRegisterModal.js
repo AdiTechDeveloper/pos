@@ -73,12 +73,6 @@ const OpenRegisterModal = ({ isOpen, branchId, onRegisterOpened }) => {
         </p>
       </div>
       <div style={{ padding: "28px 24px" }}>
-
-
-
-
-
-
         <div style={{
           background: "#f0fdf4",
           border: "1px solid #bbf7d0",

@@ -573,37 +573,37 @@ const CreateEditPurchaseBill = () => {
       is_lost: bill.is_lost ?? 0,
       lines: bill.lines?.length
         ? bill.lines.map((line) => ({
-          ...line,
-          inventory: line.inventory,
-          product_id: line.product_id?.toString() || "",
-          qty: line.qty || "",
-          free_qty: line.free_qty || "",
-          purchase_rate:
-            line.purchase_rate ??
-            line.inventory?.cost_price ??
-            line.inventory?.rate ??
-            "",
-          mrp: line.mrp ?? line.inventory?.mrp ?? "",
-          selling_price:
-            line.selling_price ?? line.inventory?.selling_price ?? "",
-          discount_type: line.discount_type || "",
-          discount: line.discount || "",
-          hsn_code: line.hsn_code || "",
-          gst_rate_id: line.gst_rate_id?.toString() || "",
-          batch_no: line.batch_no ?? line.inventory?.batch_no ?? "",
-          expiry_date: normalizeDate(
-            line.expiry_date ?? line.inventory?.expiry_date,
-          ),
-          is_opening: line.is_opening || false,
-        }))
+            ...line,
+            inventory: line.inventory,
+            product_id: line.product_id?.toString() || "",
+            qty: line.qty || "",
+            free_qty: line.free_qty || "",
+            purchase_rate:
+              line.purchase_rate ??
+              line.inventory?.cost_price ??
+              line.inventory?.rate ??
+              "",
+            mrp: line.mrp ?? line.inventory?.mrp ?? "",
+            selling_price:
+              line.selling_price ?? line.inventory?.selling_price ?? "",
+            discount_type: line.discount_type || "",
+            discount: line.discount || "",
+            hsn_code: line.hsn_code || "",
+            gst_rate_id: line.gst_rate_id?.toString() || "",
+            batch_no: line.batch_no ?? line.inventory?.batch_no ?? "",
+            expiry_date: normalizeDate(
+              line.expiry_date ?? line.inventory?.expiry_date,
+            ),
+            is_opening: line.is_opening || false,
+          }))
         : initialValues.lines,
       payments: bill.payments?.length
         ? bill.payments.map((p) => ({
-          amount: p.amount || "",
-          method: p.method ?? p.payment_method ?? "cash",
-          reference: p.reference || "",
-          payment_date: normalizeDate(p.payment_date),
-        }))
+            amount: p.amount || "",
+            method: p.method ?? p.payment_method ?? "cash",
+            reference: p.reference || "",
+            payment_date: normalizeDate(p.payment_date),
+          }))
         : [],
     });
   };
@@ -799,12 +799,11 @@ const CreateEditPurchaseBill = () => {
       await appData?.loadPurchaseProducts({ force: true });
 
       navigate("/purchase-bill");
-
     } catch (error) {
       console.log(error.response?.data);
       toast.error(
         error.response?.data?.message ||
-        "Failed to save purchase bill. Please check the form.",
+          "Failed to save purchase bill. Please check the form.",
       );
     } finally {
       actions.setSubmitting(false);
@@ -863,7 +862,7 @@ const CreateEditPurchaseBill = () => {
             "Content-Type": "multipart/form-data",
           },
           timeout: 90000,
-        }
+        },
       );
 
       const bill = response?.data?.data;
@@ -899,8 +898,7 @@ const CreateEditPurchaseBill = () => {
         );
 
         const gstMatch = gstRates.find(
-          (gst) =>
-            Number(gst.rate) === Number(item.gst_rate_percent),
+          (gst) => Number(gst.rate) === Number(item.gst_rate_percent),
         );
 
         return {
@@ -932,22 +930,22 @@ const CreateEditPurchaseBill = () => {
         mappedLines.length
           ? mappedLines
           : [
-            {
-              product_id: "",
-              qty: "",
-              free_qty: "",
-              purchase_rate: "",
-              mrp: "",
-              selling_price: "",
-              discount_type: "",
-              discount: "",
-              hsn_code: "",
-              gst_rate_id: "",
-              batch_no: "",
-              expiry_date: "",
-              is_opening: false,
-            },
-          ],
+              {
+                product_id: "",
+                qty: "",
+                free_qty: "",
+                purchase_rate: "",
+                mrp: "",
+                selling_price: "",
+                discount_type: "",
+                discount: "",
+                hsn_code: "",
+                gst_rate_id: "",
+                batch_no: "",
+                expiry_date: "",
+                is_opening: false,
+              },
+            ],
       );
 
       // Do not set settlement_amount: it is the adjusted paid amount,
@@ -976,8 +974,8 @@ const CreateEditPurchaseBill = () => {
 
       toast.error(
         error.response?.data?.message ||
-        error.message ||
-        "Could not scan the bill. Please try again.",
+          error.message ||
+          "Could not scan the bill. Please try again.",
       );
     } finally {
       setIsScanningBill(false);
@@ -1097,8 +1095,8 @@ const CreateEditPurchaseBill = () => {
 
               const effectiveTotal =
                 values.settlement_amount !== "" &&
-                  values.settlement_amount != null &&
-                  !isNaN(Number(values.settlement_amount))
+                values.settlement_amount != null &&
+                !isNaN(Number(values.settlement_amount))
                   ? Number(values.settlement_amount)
                   : incomingBill?.total_amount
                     ? Number(incomingBill.total_amount)
@@ -1189,17 +1187,23 @@ const CreateEditPurchaseBill = () => {
                           <input
                             type="file"
                             accept="image/jpeg,image/png,image/webp"
-                            onChange={(e) => setBillImage(e.target.files?.[0] || null)}
+                            onChange={(e) =>
+                              setBillImage(e.target.files?.[0] || null)
+                            }
                             className="block w-full rounded-lg border border-gray-300 p-3"
                           />
 
                           <button
                             type="button"
                             disabled={!billImage || isScanningBill}
-                            onClick={() => handlePurchaseBillImageScan(setFieldValue)}
+                            onClick={() =>
+                              handlePurchaseBillImageScan(setFieldValue)
+                            }
                             className="w-full rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white disabled:opacity-50"
                           >
-                            {isScanningBill ? "Scanning Bill..." : "Scan Bill with AI"}
+                            {isScanningBill
+                              ? "Scanning Bill..."
+                              : "Scan Bill with AI"}
                           </button>
                         </div>
 
@@ -1393,6 +1397,23 @@ const CreateEditPurchaseBill = () => {
                                               field.name,
                                               value,
                                             );
+
+                                            const selectedProduct =
+                                              products.find(
+                                                (p) =>
+                                                  p.id.toString() === value,
+                                              );
+                                            if (
+                                              selectedProduct &&
+                                              selectedProduct.sale_type ===
+                                                "weight" &&
+                                              selectedProduct.price_per_kg
+                                            ) {
+                                              form.setFieldValue(
+                                                `lines.${index}.selling_price`,
+                                                selectedProduct.price_per_kg,
+                                              );
+                                            }
                                           }}
                                         >
                                           <option value="">Select</option>
@@ -1468,10 +1489,26 @@ const CreateEditPurchaseBill = () => {
 
                                   <div className="field-col">
                                     <small className="field-label">SP</small>
-                                    <Field
-                                      type="number"
-                                      name={`lines.${index}.selling_price`}
-                                    />
+                                    {(() => {
+                                      const selectedProduct = products.find(
+                                        (p) =>
+                                          p.id.toString() === line.product_id,
+                                      );
+                                      const isWeight =
+                                        selectedProduct?.sale_type === "weight";
+                                      return (
+                                        <Field
+                                          type="number"
+                                          name={`lines.${index}.selling_price`}
+                                          disabled={isWeight}
+                                          title={
+                                            isWeight
+                                              ? "Auto-filled from product's price per kg"
+                                              : undefined
+                                          }
+                                        />
+                                      );
+                                    })()}
                                     <ErrorMessage
                                       name={`lines.${index}.selling_price`}
                                       component="div"
@@ -1665,7 +1702,6 @@ const CreateEditPurchaseBill = () => {
                           <Field
                             as="textarea"
                             name="notes"
-
                             placeholder="Enter settlement remarks or adjustment details..."
                           />
                           <ErrorMessage
@@ -1804,7 +1840,13 @@ const CreateEditPurchaseBill = () => {
                       </button>
 
                       <button type="button" className="ml-5 tf-button style-1">
-                        <a href="/purchase-bill" style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
+                        <a
+                          href="/purchase-bill"
+                          style={{ color: "inherit", textDecoration: "none" }}
+                        >
+                          {" "}
+                          Cancel
+                        </a>
                       </button>
 
                       <div className="pb-total-bar">
@@ -1903,7 +1945,6 @@ const CreateEditPurchaseBill = () => {
                   <h5>Create Product</h5>
                 </div>
                 <div className="pb-modal-body">
-
                   <ProductForm
                     onSuccess={async (product) => {
                       appData?.invalidate("purchaseProducts");

@@ -32,10 +32,7 @@ export default function POSApp() {
 
     return {
       role: userObj.role,
-      branchIds:
-        userObj.branch_ids ||
-        userObj.branches?.map((b) => b.id) ||
-        [],
+      branchIds: userObj.branch_ids || userObj.branches?.map((b) => b.id) || [],
       token: parsed.token || userObj.token,
     };
   };
@@ -83,9 +80,7 @@ export default function POSApp() {
     */
 
     if (!branchIds || branchIds.length === 0) {
-      console.error(
-        "Could not find a valid branch_ids array in user_detail!",
-      );
+      console.error("Could not find a valid branch_ids array in user_detail!");
       return;
     }
 
@@ -97,17 +92,14 @@ export default function POSApp() {
 
     const checkStatus = async () => {
       try {
-        const res = await axios.get(
-          `${BASE_URL}/api/staff/register-status`,
-          {
-            params: {
-              branch_id: branchId,
-            },
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        const res = await axios.get(`${BASE_URL}/api/staff/register-status`, {
+          params: {
+            branch_id: branchId,
           },
-        );
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (res.data.active === false) {
           setShowModal(true);
@@ -126,6 +118,9 @@ export default function POSApp() {
   };
 
   const addToCart = (product) => {
+    const isWeightItem = !!product.is_weight_item;
+    const incomingQty = isWeightItem ? Number(product.qty) : 1;
+
     setCart((prev) => {
       const index = prev.findIndex(
         (item) =>
@@ -135,35 +130,36 @@ export default function POSApp() {
 
       if (index !== -1) {
         const currentQtyInCart = prev[index].qty;
+        const newQty = currentQtyInCart + incomingQty;
 
-        if (currentQtyInCart + 1 > product.total_stock) {
+        if (newQty > product.total_stock) {
           toast.error(
-            `Only ${product.total_stock} units available for this batch`,
+            isWeightItem
+              ? `Only ${product.total_stock} kg available for this item`
+              : `Only ${product.total_stock} units available for this batch`,
           );
           return prev;
         }
 
         const updated = [...prev];
-
-        updated[index] = {
-          ...updated[index],
-          qty: currentQtyInCart + 1,
-        };
-
+        updated[index] = { ...updated[index], qty: newQty };
         return updated;
       }
 
-      if (product.total_stock < 1) {
-        toast.error("Out of stock for this batch");
+      if (product.total_stock < incomingQty) {
+        toast.error(
+          isWeightItem
+            ? "Not enough stock for this weight"
+            : "Out of stock for this batch",
+        );
         return prev;
       }
 
       const cartItem = {
         ...product,
-        qty: 1,
+        qty: incomingQty,
         cart_key: `${product.inventory_id}_${product.selling_price}`,
-        is_pirce_override:
-          Number(product?.is_price_override) === 1 ? 1 : 0,
+        is_pirce_override: Number(product?.is_price_override) === 1 ? 1 : 0,
       };
 
       return [...prev, cartItem];
@@ -171,10 +167,7 @@ export default function POSApp() {
   };
 
   const handleProductSelection = (productOrGroup) => {
-    if (
-      Array.isArray(productOrGroup) &&
-      productOrGroup.length > 1
-    ) {
+    if (Array.isArray(productOrGroup) && productOrGroup.length > 1) {
       setPopupData(productOrGroup);
       setShowPopup(true);
       return;
@@ -197,20 +190,14 @@ export default function POSApp() {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
         <div className="bg-white p-8 rounded-2xl shadow-lg text-center">
-          <h3 className="text-2xl font-bold mb-4">
-            Select a Branch
-          </h3>
+          <h3 className="text-2xl font-bold mb-4">Select a Branch</h3>
 
-          <p className="text-gray-500 mb-6">
-            Choose a branch for POS Screen.
-          </p>
+          <p className="text-gray-500 mb-6">Choose a branch for POS Screen.</p>
 
           <select
             className="border p-3 rounded-lg text-lg"
             defaultValue=""
-            onChange={(e) =>
-              setSelectedBranchId(Number(e.target.value))
-            }
+            onChange={(e) => setSelectedBranchId(Number(e.target.value))}
           >
             <option value="" disabled>
               -- Select Branch --
@@ -227,70 +214,68 @@ export default function POSApp() {
     );
   }
 
- return (
-  <div
-    className="pos-shell"
-    style={{
-      position: "fixed",
-      inset: 0,
-      display: "grid",
-      gridTemplateColumns: "minmax(0, 1fr) 390px",
-      width: "100%",
-      height: "100%",
-      overflow: "hidden",
-      background: "#f6f8fb",
-    }}
-  >
-    <RegisterModal
-      isOpen={showModal}
-      branchId={selectedBranchId}
-      onRegisterOpened={() => setShowModal(false)}
-    />
-
-    {/* PRODUCT SECTION */}
+  return (
     <div
-      className="pos-products-section"
+      className="pos-shell"
       style={{
-        minWidth: 0,
+        position: "fixed",
+        inset: 0,
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr) 390px",
         width: "100%",
         height: "100%",
         overflow: "hidden",
+        background: "#f6f8fb",
       }}
     >
-      <ProductList
-        selectedCategory={selectedCategory}
-        selectedBrand={selectedBrand}
-        setSelectedCategory={setSelectedCategory}
-        setSelectedBrand={setSelectedBrand}
-        refreshProducts={refreshProducts}
-        addToCart={addToCart}
-        handleProductSelection={handleProductSelection}
-        branchId={role === "admin" ? selectedBranchId : undefined}
+      <RegisterModal
+        isOpen={showModal}
+        branchId={selectedBranchId}
+        onRegisterOpened={() => setShowModal(false)}
       />
-    </div>
 
-    {/* CART SECTION */}
-    <div
-      className="pos-cart-section"
-      style={{
-        width: "430px",
-        minWidth: "430px",
-        height: "100%",
-        overflow: "hidden",
-        background: "#fff",
-        borderLeft: "1px solid #e5e7eb",
-      }}
-    >
-      <CartPanel
-        cart={cart}
-        setCart={setCart}
-        triggerRefresh={triggerRefresh}
-        onPriceUpdated={() =>
-          setRefreshProducts((prev) => !prev)
-        }
-        branchId={role === "admin" ? selectedBranchId : undefined}
-      />
+      {/* PRODUCT SECTION */}
+      <div
+        className="pos-products-section"
+        style={{
+          minWidth: 0,
+          width: "100%",
+          height: "100%",
+          overflow: "hidden",
+        }}
+      >
+        <ProductList
+          selectedCategory={selectedCategory}
+          selectedBrand={selectedBrand}
+          setSelectedCategory={setSelectedCategory}
+          setSelectedBrand={setSelectedBrand}
+          refreshProducts={refreshProducts}
+          addToCart={addToCart}
+          handleProductSelection={handleProductSelection}
+          branchId={role === "admin" ? selectedBranchId : undefined}
+        />
+      </div>
+
+      {/* CART SECTION */}
+      <div
+        className="pos-cart-section"
+        style={{
+          width: "430px",
+          minWidth: "430px",
+          height: "100%",
+          overflow: "hidden",
+          background: "#fff",
+          borderLeft: "1px solid #e5e7eb",
+        }}
+      >
+        <CartPanel
+          cart={cart}
+          setCart={setCart}
+          triggerRefresh={triggerRefresh}
+          onPriceUpdated={() => setRefreshProducts((prev) => !prev)}
+          branchId={role === "admin" ? selectedBranchId : undefined}
+        />
+      </div>
     </div>
-  </div>
-);
+  );
 }
