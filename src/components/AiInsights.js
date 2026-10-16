@@ -340,13 +340,19 @@ function TypingRow() {
   );
 }
 
+
+
 const QUICK_PROMPTS = [
   { icon: "📊", title: "Sales performance", prompt: "How much did my business sell today?" },
   { icon: "📦", title: "Stock analysis", prompt: "Which products are running low on stock?" },
   { icon: "💰", title: "Profit analysis", prompt: "Analyze my business profit for this month." },
   { icon: "💡", title: "Business suggestions", prompt: "What should I do to improve my business?" },
+  { icon: "🛒", title: "Purchase Suggestion", prompt: "Purchase suggestion batao, kya reorder karna chahiye" },
+  { icon: "👥", title: "Customer Analysis", prompt: "Customer analysis batao, top customers aur repeat customers" },
+  { icon: "🕐", title: "Time-wise Sales", prompt: "Aaj ka time wise sales analysis batao, kis time sabse zyada sale aur customers aate hain" },
+  { icon: "⏳", title: "Expiry Analysis", prompt: "Expiry analysis batao, kaunsa stock jaldi expire hone wala hai" },
+  { icon: "💳", title: "Customer Wallet", prompt: "Customers ka wallet balance batao" },
 ];
-
 /* ───────────── Styles ───────────── */
 const CSS = `
 .aic-panel, .aic-panel * { box-sizing: border-box; }
@@ -389,12 +395,19 @@ const CSS = `
 .aic-panel .aic-hero { width: 48px; height: 48px; border-radius: 14px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; overflow: hidden; }
 .aic-panel .aic-h1 { font-size: 26px; font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; margin: 0; }
 .aic-panel .aic-sub { font-size: 15px; color: var(--muted); margin: 6px 0 22px; }
-.aic-panel .aic-chips { width: 100%; max-width: 620px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 10px; }
-.aic-panel .aic-chip { text-align: left; padding: 18px 16px; border: 1px solid #e6e6ec; border-radius: 12px; background: #fff; color: var(--ink); transition: background .15s, border-color .15s; }
+.aic-panel .aic-chips {
+  width: 100%;
+  max-width: 760px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 10px;
+}
+.aic-panel .aic-chip { text-align: left; padding: 14px 14px; border: 1px solid #e6e6ec; border-radius: 12px; background: #fff; color: var(--ink); transition: background .15s, border-color .15s; }
 .aic-panel .aic-chip:hover:not(:disabled) { background: #fafafd; border-color: #cfd0f5; }
 .aic-panel .aic-chip:disabled { opacity: .5; cursor: not-allowed; }
-.aic-panel .aic-chip-title { font-size: 16px; font-weight: 600; }
-.aic-panel .aic-chip-text { font-size: 14px; color: var(--muted); margin-top: 4px; line-height: 1.45; }
+.aic-panel .aic-chip-title { font-size: 15px; font-weight: 600; }
+.aic-panel .aic-chip-text { font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 
 .aic-panel .aic-user { display: flex; justify-content: flex-end; margin: 18px 0 8px; }
 .aic-panel .aic-ubub { max-width: 78%; padding: 10px 16px; border-radius: 16px 16px 4px 16px; background: var(--soft); font-size: 15px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -478,7 +491,10 @@ const CSS = `
 }
 @media (max-width: 640px) {
   .aic-panel .aic-top { padding: 0 12px; }
-  .aic-panel .aic-chips { grid-template-columns: 1fr; }
+  .aic-panel .aic-chips { grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 6px 0; }
+  .aic-panel .aic-chip { padding: 12px 8px; text-align: center; }
+  .aic-panel .aic-chip-title { font-size: 12.5px; line-height: 1.3; }
+  .aic-panel .aic-chip-text { display: none; }
   .aic-panel .aic-scroll { padding: 4px 12px 14px; }
   .aic-panel .aic-composer { padding: 6px 12px 8px; }
   .aic-panel .aic-select { max-width: 150px; }

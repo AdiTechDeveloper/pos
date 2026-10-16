@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState } from "react";
 import Layout from "./layout";
 import ProfitLossWidget from "./ProfitLossWidget";
@@ -11,9 +9,10 @@ import TopLowSellingProducts from "./TopLowSellingProducts";
 import CustomerDuesWidget from "./CustomerDuesWidget";
 import RecentSalesFeed from "./RecentSalesFeed";
 import { hasFeature } from "../utils/hasFeature";
-
-
 import { useAppData } from "../context/AppDataContext";
+import axios from "axios";
+
+const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const iconProps = {
   width: 18,
@@ -64,6 +63,22 @@ const IconWallet = () => (
   </svg>
 );
 
+const IconCash = () => (
+  <svg viewBox="0 0 24 24" {...iconProps}>
+    <rect x="2" y="6" width="20" height="12" rx="2" />
+    <circle cx="12" cy="12" r="2" />
+    <path d="M6 12h.01M18 12h.01" />
+  </svg>
+);
+
+const IconBank = () => (
+  <svg viewBox="0 0 24 24" {...iconProps}>
+    <path d="M3 10l9-6 9 6" />
+    <path d="M5 10v8M9 10v8M15 10v8M19 10v8" />
+    <path d="M3 20h18" />
+  </svg>
+);
+
 const Home = () => {
   const user_data = JSON.parse(
     localStorage.getItem("user_detail")
@@ -77,6 +92,7 @@ const Home = () => {
   } = useAppData();
 
   const [loading, setLoading] = useState(true);
+  const [money, setMoney] = useState(null);
 
   const canSales = hasFeature("reports_sales");
   const canPurchase = hasFeature("reports_purchase");
@@ -155,6 +171,43 @@ const Home = () => {
     };
   }, [role, loadDashboard, dashboard]);
 
+// Cash in hand, bank balance, customer dues, supplier dues
+useEffect(() => {
+  if (role !== "admin" && role !== "manager") return;
+
+  let mounted = true;
+
+  const token =
+    user_data?.token ||
+    user_data?.access_token ||
+    user_data?.user?.token;
+
+  const loadMoney = async () => {
+    try {
+      const res = await axios.get(
+        `${BASE_URL}/api/dashboard/money-summary`,
+        {
+          params: { branch_id: managerBranchId || 0 },
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (mounted) setMoney(res.data?.data || null);
+    } catch (err) {
+      console.error("Money summary error:", err?.response || err);
+    }
+  };
+
+  loadMoney();
+
+  return () => {
+    mounted = false;
+  };
+}, [role, managerBranchId]);
+
   const rupee = (v) =>
     `₹${Number(v || 0).toLocaleString("en-IN")}`;
 
@@ -175,6 +228,13 @@ const Home = () => {
 
   const showRightCol =
     canBills || canCustomers || canSales;
+
+  const showMoneyRow =
+    isBackOffice &&
+    (canFinancial ||
+      canCustomers ||
+      canSales ||
+      canPurchase);
 
   return (
     <Layout>
@@ -206,6 +266,60 @@ const Home = () => {
                 menus from the left side menu or kindly
                 contact your Admin.
               </p>
+            </div>
+          )}
+
+          {showMoneyRow && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+
+              {canFinancial && (
+                <StatCard
+                  icon={<IconCash />}
+                  label="Cash in Hand"
+                  value={
+                    money ? rupee(money.cash_in_hand) : "-"
+                  }
+                  color="#22C55E"
+                  loading={!money}
+                />
+              )}
+
+              {canFinancial && (
+                <StatCard
+                  icon={<IconBank />}
+                  label="Bank Balance"
+                  value={
+                    money ? rupee(money.bank_balance) : "-"
+                  }
+                  color="#0EA5E9"
+                  loading={!money}
+                />
+              )}
+
+              {(canCustomers || canSales) && (
+                <StatCard
+                  icon={<IconAlertCircle />}
+                  label="Customer Dues (Total)"
+                  value={
+                    money ? rupee(money.customer_dues) : "-"
+                  }
+                  color="#FC2359"
+                  loading={!money}
+                />
+              )}
+
+              {canPurchase && (
+                <StatCard
+                  icon={<IconInbox />}
+                  label="Supplier Dues (Total)"
+                  value={
+                    money ? rupee(money.supplier_dues) : "-"
+                  }
+                  color="#F59E0B"
+                  loading={!money}
+                />
+              )}
+
             </div>
           )}
 
