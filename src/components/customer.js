@@ -196,7 +196,7 @@ const Customer = () => {
                       margin: "2px 0 0 0",
                     }}
                   >
-                    View your customers (read only)
+                    View your customers
                   </p>
                 </div>
               </div>

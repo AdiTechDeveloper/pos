@@ -203,11 +203,11 @@ export default function SupplierImport({ onImported }) {
       </h3>
 
       <p style={styles.hint}>
-        1) Download the template. 2) Fill in the supplier
-        details. The <b>name</b> and <b>state</b> fields are
+        1) Download the template.<br/> 2) Fill in the supplier
+        details. (The <b>name</b> and <b>state</b> fields are
         required. If a valid GSTIN is provided, the state will
-        be detected automatically. 3) Upload the completed
-        file. You can import up to 2,000 suppliers at a time.
+        be detected automatically)<br/> 3) Upload the complete
+        file , You can import up to <b>2,000</b>  suppliers at a time.
       </p>
 
       <div style={styles.row}>
@@ -217,7 +217,7 @@ export default function SupplierImport({ onImported }) {
           onClick={downloadTemplate}
           disabled={busy}
         >
-          ↓ Download Template
+          ↓ Download Sample Template
         </button>
 
         <input
