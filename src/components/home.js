@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { Clock, Users } from "lucide-react";
 import { useCachedApi, invalidateDashboardCache } from "./Dashboardcache";
 import Layout from "./layout";
 import ProfitLossWidget from "./ProfitLossWidget";
@@ -67,7 +68,6 @@ const selectCss = `
   }
   .dash-select:focus { outline: 2px solid #2f63f6; outline-offset: 1px; }
   .dash-menu-item:hover { background: #f1f5f9 !important; }
-  .dash-select-sm { height: 36px !important; min-width: 150px; line-height: 34px !important; font-size: 14px !important; padding-left: 12px !important; }
   .dash-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: stretch; margin-bottom: 32px; }
   .dash-grid > div { min-width: 0; }
   .dash-grid > div > * { height: 100%; box-sizing: border-box; }
@@ -847,13 +847,18 @@ function SalesTrendCard({ token, branchId }) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Busiest Times / Top Customers (same look as Top/Low selling)       */
+/* ------------------------------------------------------------------ */
+
 function BranchSelect({ value, onChange, branches }) {
   return (
     <select
-      className="dash-select dash-select-sm"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label="Branch"
+      className="border border-gray-300 rounded-lg px-3 py-1.5 text-xl focus:ring-2 focus:ring-blue-400 outline-none"
+      style={{ width: 200 }}
     >
       <option value="">All Branches</option>
       {branches.map((b) => (
@@ -875,6 +880,42 @@ function useSectionBranch(globalBranch) {
   return [branch, setBranch];
 }
 
+const TableCard = ({ icon, iconClass, title, hint, right, children }) => (
+  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 h-full">
+    <div className="flex items-center justify-between mb-1 gap-3 flex-wrap">
+      <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+        {icon && React.createElement(icon, { size: 20, className: iconClass })}
+        {title}
+      </h3>
+      {right}
+    </div>
+    {hint && <p className="text-xl text-gray-400 mb-3">{hint}</p>}
+    {children}
+  </div>
+);
+
+const TableRow = ({ name, pct, barColor, value, sub }) => (
+  <div className="flex items-center gap-3 py-2">
+    <div className="flex-1 min-w-0">
+      <div className="text-xl font-medium text-gray-800 truncate">{name}</div>
+      <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
+        <div
+          className="h-1.5 rounded-full"
+          style={{ width: `${pct}%`, background: barColor }}
+        />
+      </div>
+    </div>
+    <div className="text-right shrink-0">
+      <div className="text-xl font-bold text-gray-800">{value}</div>
+      {sub && <div className="text-xl text-gray-400">{sub}</div>}
+    </div>
+  </div>
+);
+
+const TableSkeleton = () => (
+  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 h-64 animate-pulse" />
+);
+
 function BusiestTimesCard({ token, branches, globalBranch, showSelect }) {
   const [branch, setBranch] = useSectionBranch(globalBranch);
   const { data, loading } = useCachedApi(
@@ -885,8 +926,12 @@ function BusiestTimesCard({ token, branches, globalBranch, showSelect }) {
   const peak = data?.peak;
   const top = Math.max(...(peak?.hours || []).map((h) => h.bills), 1);
 
+  if (loading) return <TableSkeleton />;
+
   return (
-    <Card
+    <TableCard
+      icon={Clock}
+      iconClass="text-blue-600"
       title="Busiest Times"
       hint="Based on bills from the last 30 days"
       right={
@@ -895,51 +940,35 @@ function BusiestTimesCard({ token, branches, globalBranch, showSelect }) {
         ) : null
       }
     >
-      {loading ? (
-        <Empty>Loading...</Empty>
-      ) : !peak || peak.hours.length === 0 ? (
-        <Empty>No data yet.</Empty>
+      {!peak || peak.hours.length === 0 ? (
+        <p className="text-xl text-gray-400 py-6 text-center">No data yet.</p>
       ) : (
         <>
-          {peak.hours.map((h) => (
-            <div
-              key={h.hour}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "110px 1fr auto",
-                alignItems: "center",
-                gap: 12,
-                padding: "10px 0",
-                borderBottom: "1px solid #f1f5f9",
-              }}
-            >
-              <span style={{ fontSize: 15, fontWeight: 600, color: "#111827" }}>
-                {hourLabel(h.hour)}
+          <div className="divide-y divide-gray-50">
+            {peak.hours.map((h) => (
+              <TableRow
+                key={h.hour}
+                name={hourLabel(h.hour)}
+                pct={(h.bills / top) * 100}
+                barColor="#2f63f6"
+                value={billsText(h.bills)}
+              />
+            ))}
+          </div>
+
+          {peak.day && (
+            <div className="flex items-center justify-between pt-3 mt-2 border-t border-gray-100">
+              <span className="text-xl font-medium text-gray-800">
+                Busiest day: {peak.day.name}
               </span>
-              <span
-                style={{ height: 8, borderRadius: 6, background: "#e5e7eb", overflow: "hidden" }}
-              >
-                <span
-                  style={{
-                    display: "block",
-                    height: "100%",
-                    width: `${(h.bills / top) * 100}%`,
-                    background: "#2f63f6",
-                    borderRadius: 6,
-                  }}
-                />
-              </span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>
-                {billsText(h.bills)}
+              <span className="text-xl font-bold text-gray-800">
+                {billsText(peak.day.bills)}
               </span>
             </div>
-          ))}
-          {peak.day && (
-            <Row left={`Busiest day: ${peak.day.name}`} right={billsText(peak.day.bills)} />
           )}
         </>
       )}
-    </Card>
+    </TableCard>
   );
 }
 
@@ -951,9 +980,14 @@ function TopCustomersCard({ token, branches, globalBranch, showSelect }) {
     { token }
   );
   const list = data?.customers || [];
+  const maxTotal = Math.max(...list.map((c) => Number(c.total) || 0), 1);
+
+  if (loading) return <TableSkeleton />;
 
   return (
-    <Card
+    <TableCard
+      icon={Users}
+      iconClass="text-green-600"
       title="Top Customers"
       hint="Highest spenders in the last 30 days"
       right={
@@ -962,16 +996,23 @@ function TopCustomersCard({ token, branches, globalBranch, showSelect }) {
         ) : null
       }
     >
-      {loading ? (
-        <Empty>Loading...</Empty>
-      ) : list.length === 0 ? (
-        <Empty>No data yet.</Empty>
+      {list.length === 0 ? (
+        <p className="text-xl text-gray-400 py-6 text-center">No data yet.</p>
       ) : (
-        list.map((c) => (
-          <Row key={c.name} left={c.name} sub={billsText(c.bills)} right={fmt(c.total)} />
-        ))
+        <div className="divide-y divide-gray-50">
+          {list.map((c) => (
+            <TableRow
+              key={c.name}
+              name={c.name}
+              pct={((Number(c.total) || 0) / maxTotal) * 100}
+              barColor="#23C55E"
+              value={fmt(c.total)}
+              sub={billsText(c.bills)}
+            />
+          ))}
+        </div>
       )}
-    </Card>
+    </TableCard>
   );
 }
 
