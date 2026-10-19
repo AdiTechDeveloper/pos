@@ -47,6 +47,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const ProfitLossReport = ({ role, user }) => {
+  
   const today = new Date().toISOString().slice(0, 10);
 
   const {

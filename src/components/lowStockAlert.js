@@ -208,7 +208,7 @@ const LowStockAlert = ({
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-50">
       <div className="flex items-center mb-4 gap-3">
         <LayersArrowDown
           className="text-red-600"
