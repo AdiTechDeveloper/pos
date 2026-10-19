@@ -211,7 +211,11 @@ export default function CartPanel({
     setCart((prev) =>
       prev.map((i) =>
         i.product_id === item.product_id || i.inventory_id === item.inventory_id
-          ? { ...i, selling_price: i.original_price, is_price_overridden: false }
+          ? {
+              ...i,
+              selling_price: i.original_price,
+              is_price_overridden: false,
+            }
           : i,
       ),
     );
@@ -322,8 +326,7 @@ export default function CartPanel({
           },
         },
       );
-    } catch (error) {
-    }
+    } catch (error) {}
 
     localStorage.removeItem("user_detail", "cart_detail", "cart_detail");
     sessionStorage.clear();
@@ -490,7 +493,13 @@ export default function CartPanel({
         </div>
       </div>
 
-      <p style={{ color: colors.textMuted, fontSize: "13px", marginBottom: "16px" }}>
+      <p
+        style={{
+          color: colors.textMuted,
+          fontSize: "13px",
+          marginBottom: "16px",
+        }}
+      >
         {itemCount} {itemCount === 1 ? "item" : "items"} · {totalQty} qty
       </p>
 
@@ -503,14 +512,19 @@ export default function CartPanel({
           padding: "12px 16px",
         }}
       >
-        <span style={{ color:"#000", fontSize: "14px" }}>Bill date</span>
-        <div className="flex items-center gap-2" style={{ position: "relative" }}>
+        <span style={{ color: "#000", fontSize: "14px" }}>Bill date</span>
+        <div
+          className="flex items-center gap-2"
+          style={{ position: "relative" }}
+        >
           <span style={{ fontWeight: 600, fontSize: "14px" }}>
-            {new Date(selectedDate).toLocaleDateString("en-GB", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            }).replace(/\//g, "-")}
+            {new Date(selectedDate)
+              .toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })
+              .replace(/\//g, "-")}
           </span>
           <Calendar size={18} style={{ color: "#fff" }} />
           <input
@@ -543,8 +557,16 @@ export default function CartPanel({
             >
               <ShoppingBag size={24} />
             </div>
-            <p style={{ fontWeight: 700, fontSize: "18px" }}>Your cart is empty</p>
-            <p style={{ color: colors.textMuted, fontSize: "13px", marginTop: "6px" }}>
+            <p style={{ fontWeight: 700, fontSize: "18px" }}>
+              Your cart is empty
+            </p>
+            <p
+              style={{
+                color: colors.textMuted,
+                fontSize: "13px",
+                marginTop: "6px",
+              }}
+            >
               Scan a barcode or tap Add on a product
             </p>
           </div>
@@ -553,7 +575,8 @@ export default function CartPanel({
             const { gstAmount, finalPrice } = getPriceWithGST(item);
             const override = priceOverrides[item.cart_key];
             const isEditing = override?.editing;
-            const isOverridden = item.is_price_overridden && item.original_price;
+            const isOverridden =
+              item.is_price_overridden && item.original_price;
 
             return (
               <div
@@ -561,13 +584,13 @@ export default function CartPanel({
                 className="rounded-xl mb-3 p-3"
                 style={{
                   background: "#fff",
-                  border: isOverridden
-                    ? "1px solid #f59e0b"
-                    : `1px solid gray`,
+                  border: isOverridden ? "1px solid #f59e0b" : `1px solid gray`,
                 }}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <p style={{ fontWeight: 700, fontSize: "15px" }}>{item.name}</p>
+                  <p style={{ fontWeight: 700, fontSize: "15px" }}>
+                    {item.name}
+                  </p>
                   {isOverridden && (
                     <span
                       className="flex items-center gap-1"
@@ -597,7 +620,7 @@ export default function CartPanel({
                       <span
                         style={{
                           textDecoration: "line-through",
-                          color:  "#000",
+                          color: "#000",
                           fontSize: "13px",
                         }}
                       >
@@ -678,8 +701,16 @@ export default function CartPanel({
                         }}
                       >
                         ₹{Number(item.selling_price).toFixed(2)}{" "}
-                        <span style={{ fontWeight: 400, color: colors.textMuted, fontSize: "11px" }}>
-                          ({Number(item.gst_inclusive) === 1 ? "Incl." : "Excl."} GST)
+                        <span
+                          style={{
+                            fontWeight: 400,
+                            color: colors.textMuted,
+                            fontSize: "11px",
+                          }}
+                        >
+                          (
+                          {Number(item.gst_inclusive) === 1 ? "Incl." : "Excl."}{" "}
+                          GST)
                         </span>
                       </span>
                     )}
@@ -725,78 +756,96 @@ export default function CartPanel({
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      onClick={() => decreaseQty(item)}
-                      title="Decrease"
-                      style={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: "50%",
-                        background: "gray",
-                        border: `1px solid gray`,
-                        color: colors.text,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Minus size={13} />
-                    </button>
+                    {item.is_weight_item ? (
+                      <span
+                        style={{
+                          fontWeight: 700,
+                          fontSize: "14px",
+                          color: "#000",
+                          background: "#f3f4f6",
+                          padding: "4px 10px",
+                          borderRadius: "8px",
+                        }}
+                      >
+                        {Number(item.qty) < 1
+                          ? `${(Number(item.qty) * 1000).toFixed(0)} g`
+                          : `${Number(item.qty).toFixed(3)} kg`}
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => decreaseQty(item)}
+                          title="Decrease"
+                          style={{
+                            width: 26,
+                            height: 26,
+                            borderRadius: "50%",
+                            background: "gray",
+                            border: `1px solid gray`,
+                            color: colors.text,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Minus size={13} />
+                        </button>
 
-                    <input
-                      type="text"
-                      value={item.qty}
-                      onFocus={(e) => e.target.select()}
-                      onChange={(e) => {
-                        let val = e.target.value;
-                        if (val === "") {
-                          setCart((prev) =>
-                            prev.map((i) =>
-                              i.inventory_id === item.inventory_id
-                                ? { ...i, qty: "" }
-                                : i,
-                            ),
-                          );
-                          return;
-                        }
-                        const newQty = Math.max(1, Number(val));
-                        setCart((prev) =>
-                          prev.map((i) =>
-                            i.inventory_id === item.inventory_id
-                              ? { ...i, qty: newQty }
-                              : i,
-                          ),
-                        );
-                      }}
-                      style={{
-                        width: 32,
-                        textAlign: "center",
-                        fontSize: "14px",
-                        fontWeight: 700,
-                        background: "transparent",
-                        color: "#000",
-                      
-                        appearance: "textfield",
-                      }}
-                    />
+                        <input
+                          type="text"
+                          value={item.qty}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => {
+                            let val = e.target.value;
+                            if (val === "") {
+                              setCart((prev) =>
+                                prev.map((i) =>
+                                  i.inventory_id === item.inventory_id
+                                    ? { ...i, qty: "" }
+                                    : i,
+                                ),
+                              );
+                              return;
+                            }
+                            const newQty = Math.max(1, Number(val));
+                            setCart((prev) =>
+                              prev.map((i) =>
+                                i.inventory_id === item.inventory_id
+                                  ? { ...i, qty: newQty }
+                                  : i,
+                              ),
+                            );
+                          }}
+                          style={{
+                            width: 32,
+                            textAlign: "center",
+                            fontSize: "14px",
+                            fontWeight: 700,
+                            background: "transparent",
+                            color: "#000",
+                            appearance: "textfield",
+                          }}
+                        />
 
-                    <button
-                      onClick={() => increaseQty(item)}
-                      title="Increase"
-                      style={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: "50%",
-                        background: "gray",
-                        border: `1px solid gray`,
-                        color: colors.text,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Plus size={13} />
-                    </button>
+                        <button
+                          onClick={() => increaseQty(item)}
+                          title="Increase"
+                          style={{
+                            width: 26,
+                            height: 26,
+                            borderRadius: "50%",
+                            background: "gray",
+                            border: `1px solid gray`,
+                            color: colors.text,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Plus size={13} />
+                        </button>
+                      </>
+                    )}
 
                     <button
                       onClick={() => removeItem(item)}
@@ -817,11 +866,22 @@ export default function CartPanel({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between" style={{ fontSize: "12px", color: colors.textMuted }}>
+                <div
+                  className="flex items-center justify-between"
+                  style={{ fontSize: "12px", color: colors.textMuted }}
+                >
                   <span>
-                    GST ({item.gst_percent}%): ₹{(gstAmount * item.qty).toFixed(2)}
+                    GST ({item.gst_percent}%): ₹
+                    {(gstAmount * item.qty).toFixed(2)}
                   </span>
-                  <span style={{ fontWeight: 700, color: "#4ade80" , marginTop:"10px" , fontSize: "16px"}}>
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      color: "#4ade80",
+                      marginTop: "10px",
+                      fontSize: "16px",
+                    }}
+                  >
                     ₹{(finalPrice * item.qty).toFixed(2)}
                   </span>
                 </div>
@@ -831,12 +891,32 @@ export default function CartPanel({
         )}
       </div>
 
-      <div style={{ borderTop: `1px solid ${colors.panelBorder}`, paddingTop: "16px", marginTop: "12px" }}>
-        <div className="flex justify-between" style={{ fontSize: "16px", color: colors.textMuted, marginBottom: "6px" }}>
+      <div
+        style={{
+          borderTop: `1px solid ${colors.panelBorder}`,
+          paddingTop: "16px",
+          marginTop: "12px",
+        }}
+      >
+        <div
+          className="flex justify-between"
+          style={{
+            fontSize: "16px",
+            color: colors.textMuted,
+            marginBottom: "6px",
+          }}
+        >
           <span>Subtotal</span>
           <span>₹{subtotal.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between" style={{ fontSize: "16px", color: colors.textMuted, marginBottom: "12px" }}>
+        <div
+          className="flex justify-between"
+          style={{
+            fontSize: "16px",
+            color: colors.textMuted,
+            marginBottom: "12px",
+          }}
+        >
           <span>GST</span>
           <span>₹{gstTotal.toFixed(2)}</span>
         </div>
@@ -849,7 +929,9 @@ export default function CartPanel({
           }}
         >
           <span style={{ fontWeight: 700, fontSize: "16px" }}>Total</span>
-          <span style={{ fontWeight: 800, fontSize: "22px" }}>₹{total.toFixed(2)}</span>
+          <span style={{ fontWeight: 800, fontSize: "22px" }}>
+            ₹{total.toFixed(2)}
+          </span>
         </div>
 
         <button
@@ -857,10 +939,10 @@ export default function CartPanel({
           disabled={cart.length === 0}
           className="w-full flex items-center justify-center gap-2"
           style={{
-            background:"#1fb54c",
+            background: "#1fb54c",
             color: "#fff",
             padding: "14px",
-            border: '1px solid #13903f',
+            border: "1px solid #13903f",
             borderRadius: "14px",
             fontSize: "17px",
             fontWeight: 800,
@@ -890,7 +972,7 @@ export default function CartPanel({
           style={{
             background: "#13858b",
             border: `1px solid #1eb1c2`,
-            color:" #fff",
+            color: " #fff",
             padding: "12px",
             borderRadius: "8px",
             fontSize: "14px",
@@ -907,7 +989,7 @@ export default function CartPanel({
           style={{
             background: "#e6414c",
             border: `1px solid #fecdd3`,
-            color:" #fff",
+            color: " #fff",
             padding: "10px",
             borderRadius: "8px",
             fontSize: "13px",
@@ -942,7 +1024,9 @@ export default function CartPanel({
       {showEndShift && (
         <EndShiftModal
           isOpen={showEndShift}
-          branchId={user_data?.user?.branch_ids?.[0] || user_data?.branch_ids?.[0]}
+          branchId={
+            user_data?.user?.branch_ids?.[0] || user_data?.branch_ids?.[0]
+          }
           onClose={() => setShowEndShift(false)}
           onShiftClosed={handleShiftClosed}
         />

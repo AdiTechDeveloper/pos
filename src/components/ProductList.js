@@ -113,6 +113,46 @@ export default function ProductList({
     };
   };
 
+  const buildWeightCartItem = (data) => {
+    const product = data.product || {};
+    const rawInclusive = product.gst_inclusive ?? 0;
+    const isInclusive =
+      rawInclusive === true ||
+      rawInclusive === 1 ||
+      rawInclusive === "1" ||
+      rawInclusive === "true"
+        ? 1
+        : 0;
+
+    const gstRate = Number(product.gst_rate?.rate ?? product.gst_rate ?? 0);
+
+    return {
+      cart_key: `${data.inventory_id}`,
+      inventory_id: data.inventory_id,
+
+      product_id: product.id,
+      name: product.name,
+
+      batch_no: data.batch_no,
+      selling_price: Number(data.selling_price), // price per kg
+      expiry_date: null,
+
+      stock: Number(data.total_stock),
+      total_stock: Number(data.total_stock),
+      free_qty: 0,
+
+      gst_percent: gstRate,
+      gst_inclusive: isInclusive,
+
+      is_price_override: Number(product.is_price_override) === 1 ? 1 : 0,
+
+      qty: Number(data.qty),
+
+      is_weight_item: true,
+      unit_label: "kg",
+    };
+  };
+
   const handleCardClick = (product) => {
     if (!product.total_stock || product.total_stock <= 0) return;
 
@@ -136,11 +176,15 @@ export default function ProductList({
   const handleBarcodeScan = async () => {
     try {
       const res = await scanBarcode(barcode.trim(), branchId);
-
       const data = res.data || res;
 
       if (!data?.status) {
         alert(data?.message || "Product not found");
+        return;
+      }
+
+      if (data.is_weight_item) {
+        addToCart(buildWeightCartItem(data));
         return;
       }
 

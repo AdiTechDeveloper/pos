@@ -49,6 +49,9 @@ const CreateEditProduct = () => {
     barcode: "",
     gst_inclusive: false,
     is_price_override: 0,
+    sale_type: "unit",
+    plu_code: "",
+    price_per_kg: "",
   });
 
   const fetchProduct = async () => {
@@ -83,6 +86,9 @@ const CreateEditProduct = () => {
           barcode: product.barcode || "",
           gst_inclusive: product.gst_inclusive == 1,
           is_price_override: product.is_price_override ? 1 : 0,
+          sale_type: product.sale_type || "unit",
+          plu_code: product.plu_code || "",
+          price_per_kg: product.price_per_kg || "",
         });
       }
     } catch (error) {
@@ -114,7 +120,22 @@ const CreateEditProduct = () => {
       .max(12, "SKU cannot exceed 12 characters"),
     brand_id: Yup.string().required("Brand is required"),
     category_id: Yup.string().required("Category  is required"),
-
+    plu_code: Yup.string().when("sale_type", {
+      is: "weight",
+      then: (schema) =>
+        schema
+          .required("PLU code is required for weight-type products")
+          .matches(/^\d{5}$/, "PLU code must be exactly 5 digits"),
+      otherwise: (schema) => schema.nullable(),
+    }),
+    price_per_kg: Yup.number().when("sale_type", {
+      is: "weight",
+      then: (schema) =>
+        schema
+          .required("Price per kg is required for weight-type products")
+          .min(0.01, "Price per kg must be greater than 0"),
+      otherwise: (schema) => schema.nullable(),
+    }),
   });
 
   const handleSubmit = async (values) => {
@@ -143,17 +164,13 @@ const CreateEditProduct = () => {
       appData?.invalidate("products");
       await appData?.loadProducts();
 
-      toast.success(
-        isEdit ? "Product Updated!" : "Product Created!"
-      );
+      toast.success(isEdit ? "Product Updated!" : "Product Created!");
 
       navigate("/product");
     } catch (error) {
       console.error("Error saving product:", error);
 
-      toast.error(
-        error.response?.data?.message || "Failed to save product"
-      );
+      toast.error(error.response?.data?.message || "Failed to save product");
     }
   };
 
@@ -262,7 +279,6 @@ const CreateEditProduct = () => {
                         </div>
                       </fieldset>
 
-
                       <fieldset className="col-md-3">
                         <div className="body-title">SKU</div>
                         <div className="body-content mb-15">
@@ -319,7 +335,6 @@ const CreateEditProduct = () => {
                             component="div"
                           />
                         </div>
-
                       </fieldset>
                       <fieldset className="col-md-3">
                         <div className="body-title">Category *</div>
@@ -366,9 +381,88 @@ const CreateEditProduct = () => {
                       </fieldset>
                     </div>
 
+                    {/* Sale Type / Weight fields */}
+                    <div className="row mb-20">
+                      <fieldset className="col-md-3">
+                        <div className="body-title">Sale Type</div>
+                        <div className="body-content">
+                          <Field name="sale_type" as="select" className="mb-5">
+                            <option value="unit">Unit (piece/box)</option>
+                            <option value="weight">
+                              Weight (kg - loose item)
+                            </option>
+                          </Field>
+                          <ErrorMessage
+                            name="sale_type"
+                            className="error-text"
+                            component="div"
+                          />
+                        </div>
+                      </fieldset>
+
+                      <Field name="sale_type">
+                        {({ field }) =>
+                          field.value === "weight" && (
+                            <>
+                              <fieldset className="col-md-3">
+                                <div className="body-title">PLU Code *</div>
+                                <div className="body-content">
+                                  <Field name="plu_code">
+                                    {({ field, form }) => (
+                                      <input
+                                        {...field}
+                                        type="text"
+                                        inputMode="numeric"
+                                        placeholder="e.g. 00123"
+                                        maxLength={5}
+                                        className="mb-5"
+                                        onChange={(e) => {
+                                          const onlyDigits = e.target.value
+                                            .replace(/\D/g, "")
+                                            .slice(0, 5);
+                                          form.setFieldValue(
+                                            "plu_code",
+                                            onlyDigits,
+                                          );
+                                        }}
+                                      />
+                                    )}
+                                  </Field>
+                                  <ErrorMessage
+                                    name="plu_code"
+                                    className="error-text"
+                                    component="div"
+                                  />
+                                </div>
+                              </fieldset>
+
+                              <fieldset className="col-md-3">
+                                <div className="body-title">
+                                  Price per Kg (₹) *
+                                </div>
+                                <div className="body-content">
+                                  <Field
+                                    type="number"
+                                    step="0.01"
+                                    name="price_per_kg"
+                                    placeholder="e.g. 40.00"
+                                    className="mb-5"
+                                  />
+                                  <ErrorMessage
+                                    name="price_per_kg"
+                                    className="error-text"
+                                    component="div"
+                                  />
+                                </div>
+                              </fieldset>
+                            </>
+                          )
+                        }
+                      </Field>
+                    </div>
+
                     {/* Category / GST Rate / HSN */}
                     <div className="row mb-20">
-
                       <fieldset className="col-md-1">
                         <div className="body-title">Gst Rate *</div>
                         <div className="body-content mb-15">
@@ -460,7 +554,8 @@ const CreateEditProduct = () => {
 
                         <Field name="gst_inclusive">
                           {({ field, form }) => {
-                            const isIncluded = field.value === true || field.value === 1;
+                            const isIncluded =
+                              field.value === true || field.value === 1;
 
                             return (
                               <div
@@ -483,7 +578,10 @@ const CreateEditProduct = () => {
                                     type="checkbox"
                                     checked={isIncluded}
                                     onChange={() =>
-                                      form.setFieldValue("gst_inclusive", !isIncluded)
+                                      form.setFieldValue(
+                                        "gst_inclusive",
+                                        !isIncluded,
+                                      )
                                     }
                                     style={{
                                       opacity: 0,
@@ -498,7 +596,9 @@ const CreateEditProduct = () => {
                                       left: 0,
                                       right: 0,
                                       bottom: 0,
-                                      background: isIncluded ? "#22c55e" : "#cbd5e1",
+                                      background: isIncluded
+                                        ? "#22c55e"
+                                        : "#cbd5e1",
                                       borderRadius: "999px",
                                       transition: "background-color 0.2s ease",
                                     }}
@@ -535,11 +635,14 @@ const CreateEditProduct = () => {
                       </fieldset>
 
                       <fieldset className="col-md-2">
-                        <div className="body-title mb-5">Allow Change Price</div>
+                        <div className="body-title mb-5">
+                          Allow Change Price
+                        </div>
 
                         <Field name="is_price_override">
                           {({ field, form }) => {
-                            const isOverride = field.value === true || field.value === 1;
+                            const isOverride =
+                              field.value === true || field.value === 1;
 
                             return (
                               <div
@@ -562,7 +665,10 @@ const CreateEditProduct = () => {
                                     type="checkbox"
                                     checked={isOverride}
                                     onChange={() =>
-                                      form.setFieldValue("is_price_override", !isOverride)
+                                      form.setFieldValue(
+                                        "is_price_override",
+                                        !isOverride,
+                                      )
                                     }
                                     style={{
                                       opacity: 0,
@@ -577,7 +683,9 @@ const CreateEditProduct = () => {
                                       left: 0,
                                       right: 0,
                                       bottom: 0,
-                                      background: isOverride ? "#22c55e" : "#cbd5e1",
+                                      background: isOverride
+                                        ? "#22c55e"
+                                        : "#cbd5e1",
                                       borderRadius: "999px",
                                       transition: "background-color 0.2s ease",
                                     }}
@@ -619,7 +727,13 @@ const CreateEditProduct = () => {
                         {isEdit ? "Update Product" : "Create Product"}
                       </button>
                       <button type="button" className="ml-5 tf-button style-1">
-                        <a href="/product" style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
+                        <a
+                          href="/product"
+                          style={{ color: "inherit", textDecoration: "none" }}
+                        >
+                          {" "}
+                          Cancel
+                        </a>
                       </button>
                     </div>
                   </Form>
