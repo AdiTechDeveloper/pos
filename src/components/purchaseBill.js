@@ -12,7 +12,7 @@ const PurchaseBill = () => {
   const [search, setSearch] = useState("");
   // const [purchaseBill, setPurchaseBill] = useState([]);
   const appData = useAppData();
-const purchaseBill = appData?.purchaseBills || [];
+  const purchaseBill = appData?.purchaseBills || [];
   const [filteredData, setFilteredData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 10;
@@ -45,8 +45,8 @@ const purchaseBill = appData?.purchaseBills || [];
       );
       if (response) {
         toast.success("Purchase Bill Deleted!");
-       appData?.invalidate("purchaseBills");
-await appData?.loadPurchaseBills();
+        appData?.invalidate("purchaseBills");
+        await appData?.loadPurchaseBills();
       }
     } catch (error) {
       toast.error(
@@ -74,13 +74,13 @@ await appData?.loadPurchaseBills();
               <i className="icon-edit-3" />
             </Link>
           </span>
-          <span
+          {/* <span
             className="item trash"
             title="Delete"
             onClick={() => handleDeleteConfirm(row.id)}
           >
             <i className="icon-trash-2" />
-          </span>
+          </span> */}
         </div>
       ),
     },
@@ -242,8 +242,8 @@ await appData?.loadPurchaseBills();
   // }, []);
 
   useEffect(() => {
-  appData?.loadPurchaseBills();
-}, []);
+    appData?.loadPurchaseBills();
+  }, []);
 
   useEffect(() => {
     const searchText = search.toLowerCase();
@@ -274,7 +274,7 @@ await appData?.loadPurchaseBills();
       <div className="main-content-inner">
         <div className="main-content-wrap">
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <span
                 style={{
                   width: "5px",
