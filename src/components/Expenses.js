@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import Layout from "./layout";
 import { useAppData } from "../context/AppDataContext";
 import { hasFeature } from "../utils/hasFeature";
+import { invalidateDashboardCache } from "./Dashboardcache";
 
 /* ------------------------------------------------------------------ */
 /*  Constants & helpers                                                */
@@ -776,7 +777,10 @@ const Expenses = () => {
   }, [expenseCategories, formState]);
 
   // Cash in hand / bank balance badalte hain, dashboard cache stale mark karo
-  const afterMoneyChange = () => appData?.invalidate("dashboard");
+  const afterMoneyChange = () => {
+    appData?.invalidate("dashboard");
+    invalidateDashboardCache();
+  };
 
   const saveExpense = async (form, addAnother) => {
     const amount = Number(form.amount);
