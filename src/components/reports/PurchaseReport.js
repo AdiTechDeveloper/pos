@@ -468,7 +468,7 @@ const BillsTable = ({ data }) => {
       selector: (row) => row.bill_date,
       sortable: true,
       cell: (row) => (
-        <span className="text-base text-gray-700">
+        <span className="text-2xl text-gray-700">
           {row.bill_date}
         </span>
       ),
@@ -479,7 +479,7 @@ const BillsTable = ({ data }) => {
       sortable: true,
       wrap: true,
       cell: (row) => (
-        <span className="text-base font-semibold text-gray-800">
+        <span className="text-2xl font-semibold text-gray-800">
           {row.bill_no}
         </span>
       ),
@@ -490,7 +490,7 @@ const BillsTable = ({ data }) => {
       sortable: true,
       wrap: true,
       cell: (row) => (
-        <span className="text-base text-gray-700">
+        <span className="text-2xl text-gray-700">
           {row.supplier_name}
         </span>
       ),
@@ -501,7 +501,7 @@ const BillsTable = ({ data }) => {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="text-base text-gray-700">
+        <span className="text-2xl text-gray-700">
           ₹{row.taxable_value}
         </span>
       ),
@@ -512,7 +512,7 @@ const BillsTable = ({ data }) => {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="text-base text-gray-700">
+        <span className="text-2xl text-gray-700">
           ₹{row.total_tax}
         </span>
       ),
@@ -523,7 +523,7 @@ const BillsTable = ({ data }) => {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="text-base font-semibold text-gray-900">
+        <span className="text-2xl font-semibold text-gray-900">
           ₹{row.total_amount}
         </span>
       ),
@@ -599,7 +599,7 @@ const ProductsTable = ({ data }) => {
       sortable: true,
       wrap: true,
       cell: (row) => (
-        <span className="text-base text-gray-800 font-semibold">
+        <span className="text-2xl text-gray-800 font-semibold">
           {row.product_name}
         </span>
       ),
@@ -610,7 +610,7 @@ const ProductsTable = ({ data }) => {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="text-base text-gray-700">
+        <span className="text-2xl text-gray-700">
           {row.total_qty}
         </span>
       ),
@@ -621,7 +621,7 @@ const ProductsTable = ({ data }) => {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="text-base text-gray-700">
+        <span className="text-2xl text-gray-700">
           {row.total_free_qty}
         </span>
       ),
@@ -632,7 +632,7 @@ const ProductsTable = ({ data }) => {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="text-base text-gray-700">
+        <span className="text-2xl text-gray-700">
           ₹{row.taxable_value}
         </span>
       ),
@@ -643,7 +643,7 @@ const ProductsTable = ({ data }) => {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="text-base text-gray-700">
+        <span className="text-2xl text-gray-700">
           ₹{parseFloat(row.avg_purchase_rate || 0).toFixed(2)}
         </span>
       ),
