@@ -22,7 +22,7 @@ const ROUTES = {
   addExpense: "/expenses",
   addProduct: "/create-product",
   products: "/product",
-  newPurchase: "/purchase",
+  newPurchase: "/purchase-bill",
   dues: "/customer-dues",
   ai: "/ai-insights",
 };
@@ -1046,10 +1046,10 @@ const Home = () => {
   const managerBranchId =
     role === "manager"
       ? user_data?.branch_id ??
-        user_data?.user?.branch_id ??
-        user_data?.user?.branch_ids?.[0] ??
-        user_data?.branch_ids?.[0] ??
-        null
+      user_data?.user?.branch_id ??
+      user_data?.user?.branch_ids?.[0] ??
+      user_data?.branch_ids?.[0] ??
+      null
       : null;
 
   const adminStoreId = role === "admin" ? user_data?.user?.store_id ?? null : null;
@@ -1358,7 +1358,10 @@ const Home = () => {
 
                   <button
                     type="button"
-                    onClick={invalidateDashboardCache}
+                    onClick={() => {
+                      invalidateDashboardCache();
+                      appData.invalidate("dashboard");
+                    }}
                     aria-label="Refresh dashboard"
                     title="Refresh"
                     style={{
@@ -1411,8 +1414,8 @@ const Home = () => {
                       range === "today"
                         ? "Today's Sales"
                         : range === "week"
-                        ? "This Week's Sales"
-                        : "This Month's Sales"
+                          ? "This Week's Sales"
+                          : "This Month's Sales"
                     }
                     value={wait || !sales ? "-" : fmt(sales.total)}
                     accent="#2377FC"
