@@ -1383,26 +1383,28 @@ const Home = () => {
                     </svg>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => navigate(ROUTES.ai)}
-                    aria-label="Ask AI"
-                    title="Ask AI"
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 10,
-                      border: "1px solid #ddd6fe",
-                      background: "#f5f3ff",
-                      color: "#7c3aed",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <IconSpark />
-                  </button>
+                  {hasFeature("ai_insights") && (
+                    <button
+                      type="button"
+                      onClick={() => navigate(ROUTES.ai)}
+                      aria-label="Ask AI"
+                      title="Ask AI"
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 10,
+                        border: "1px solid #ddd6fe",
+                        background: "#f5f3ff",
+                        color: "#7c3aed",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <IconSpark />
+                    </button>
+                  )}
                 </div>
               </div>
 

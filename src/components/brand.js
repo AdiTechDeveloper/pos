@@ -170,7 +170,7 @@ const brands = appData?.brands || [];
               </li>
             </ul>
           </div>
-          <div className="wg-box brand-box" style={{ width: "80%" }}>
+          <div className="wg-box brand-box mb-50" style={{ width: "80%" }}>
             <div className="flex items-center justify-between gap10 flex-wrap mb-3">
               <div className="wg-filter flex-grow">
                 <form

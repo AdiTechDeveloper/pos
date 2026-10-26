@@ -195,7 +195,7 @@ const GstRate = () => {
               </li>
             </ul>
           </div>
-          <div className="wg-box wg-gst-content" >
+          <div className="wg-box wg-gst-content mb-50" >
             <div className="flex items-center justify-between gap10 flex-wrap">
               <div className="wg-filter flex-grow">
                 <form

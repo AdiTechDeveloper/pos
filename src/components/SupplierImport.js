@@ -1,6 +1,7 @@
 
 import React, { useRef, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 /**
  * Bulk supplier import from Excel.
@@ -96,7 +97,7 @@ export default function SupplierImport({ onImported }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [result, setResult] = useState(null);
-
+  const navigate = useNavigate()
   const downloadTemplate = async () => {
     setMessage("");
 
@@ -180,13 +181,14 @@ export default function SupplierImport({ onImported }) {
       if (res.data?.summary?.created > 0) {
         onImported?.(res.data);
       }
+      navigate('/suppliers')
     } catch (err) {
       const data = err.response?.data;
 
       setMessage(
         data?.errors?.file?.[0] ||
-          data?.message ||
-          "Import failed. Please check your file and try again."
+        data?.message ||
+        "Import failed. Please check your file and try again."
       );
     } finally {
       setBusy(false);
@@ -203,10 +205,10 @@ export default function SupplierImport({ onImported }) {
       </h3>
 
       <p style={styles.hint}>
-        1) Download the template.<br/> 2) Fill in the supplier
+        1) Download the template.<br /> 2) Fill in the supplier
         details. (The <b>name</b> and <b>state</b> fields are
         required. If a valid GSTIN is provided, the state will
-        be detected automatically)<br/> 3) Upload the complete
+        be detected automatically)<br /> 3) Upload the complete
         file , You can import up to <b>2,000</b>  suppliers at a time.
       </p>
 

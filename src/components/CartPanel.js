@@ -45,6 +45,7 @@ export default function CartPanel({
   const [showPayment, setShowPayment] = useState(false);
   const todayFormatted = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(todayFormatted);
+  const dateInputRef = useRef(null);
   localStorage.setItem("cart_detail", JSON.stringify(cart));
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const role = user_data?.user?.role || user_data?.role;
@@ -54,6 +55,22 @@ export default function CartPanel({
   const [priceOverrides, setPriceOverrides] = useState({});
   const [showEndShift, setShowEndShift] = useState(false);
   const [showAddAdvance, setShowAddAdvance] = useState(false);
+
+  const openDatePicker = () => {
+    const input = dateInputRef.current;
+    if (!input) return;
+    try {
+      if (typeof input.showPicker === "function") {
+        input.showPicker();
+      } else {
+        input.focus();
+        input.click();
+      }
+    } catch (err) {
+      input.focus();
+      input.click();
+    }
+  };
 
   const getPriceWithGST = (item) => {
     const sellingPrice = parseFloat(item.selling_price) || 0;
@@ -503,21 +520,22 @@ export default function CartPanel({
         {itemCount} {itemCount === 1 ? "item" : "items"} · {totalQty} qty
       </p>
 
+      {/* ---- Bill date (click anywhere to open calendar) ---- */}
       <div
         className="relative flex items-center justify-between mb-5"
+        onClick={openDatePicker}
+        title="Click to change bill date"
         style={{
           background: "#fff",
           border: `1px solid ${colors.itemBorder}`,
           borderRadius: "12px",
           padding: "12px 16px",
+          cursor: "pointer",
         }}
       >
         <span style={{ color: "#000", fontSize: "14px" }}>Bill date</span>
-        <div
-          className="flex items-center gap-2"
-          style={{ position: "relative" }}
-        >
-          <span style={{ fontWeight: 600, fontSize: "14px" }}>
+        <div className="flex items-center gap-2">
+          <span style={{ fontWeight: 600, fontSize: "14px", color: "#000" }}>
             {new Date(selectedDate)
               .toLocaleDateString("en-GB", {
                 day: "2-digit",
@@ -540,6 +558,24 @@ export default function CartPanel({
             }}
           />
         </div>
+        <input
+          ref={dateInputRef}
+          type="date"
+          value={selectedDate}
+          onChange={(e) => {
+            if (e.target.value) setSelectedDate(e.target.value);
+          }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: "absolute",
+            inset: 0,
+            opacity: 0,
+            width: "100%",
+            height: "100%",
+            cursor: "pointer",
+            pointerEvents: "none",
+          }}
+        />
       </div>
 
       <div className="flex-1 overflow-y-auto">

@@ -1,6 +1,7 @@
 
 import React, { useRef, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 /**
  * Bulk product import from Excel.
@@ -99,6 +100,7 @@ export default function ProductImport({ onImported }) {
   const [message, setMessage] = useState("");
   const [result, setResult] = useState(null);
 
+  const navigate = useNavigate()
 
   const downloadTemplate = async () => {
     setMessage("");
@@ -211,6 +213,7 @@ export default function ProductImport({ onImported }) {
       if (res.data?.summary?.created > 0) {
         onImported?.(res.data);
       }
+      navigate("/product")
     } catch (err) {
       const data = err.response?.data;
 

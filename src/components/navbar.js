@@ -944,7 +944,7 @@ const Navbar = () => {
                     target="_blank"
                     className="app-sidebar-social-btn"
                     aria-label="Facebook"
-                    target="_blank"
+                    
                   >
                     <FaFacebookF />
                   </a>
@@ -954,7 +954,7 @@ const Navbar = () => {
                     target="_blank"
                     className="app-sidebar-social-btn"
                     aria-label="LinkedIn"
-                    target="_blank"
+                  
                   >
                     <FaLinkedinIn />
                   </a>
@@ -964,7 +964,7 @@ const Navbar = () => {
                     target="_blank"
                     className="app-sidebar-social-btn"
                     aria-label="Instagram"
-                    target="_blank"
+                   
                   >
                     <FaInstagram />
                   </a>
