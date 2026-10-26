@@ -10,12 +10,17 @@ const PurchaseBill = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
+  const [resetPaging, setResetPaging] = useState(false);
+  const [loading, setLoading] = useState(false);
   // const [purchaseBill, setPurchaseBill] = useState([]);
   const appData = useAppData();
   const purchaseBill = appData?.purchaseBills || [];
+  const totalRows = appData?.purchaseBillsMeta?.total ?? purchaseBill.length;
   const [filteredData, setFilteredData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const perPage = 10;
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
   const handleCreatePurchaseBills = () => {
@@ -242,32 +247,27 @@ const PurchaseBill = () => {
   // }, []);
 
   useEffect(() => {
-    appData?.loadPurchaseBills();
-  }, []);
+    const t = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+      setResetPaging((v) => !v);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const fetchBills = async () => {
+    setLoading(true);
+    await appData?.loadPurchaseBills({
+      page,
+      per_page: perPage,
+      search: debouncedSearch || undefined,
+    });
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const searchText = search.toLowerCase();
-    const result = purchaseBill.filter((item) => {
-      const searchable = `
-        ${item.id}
-        ${item.branch?.name}
-        ${item.supplier?.name}
-        ${item.inward_no}
-        ${item.bill_no}
-        ${item.bill_date}
-        ${item.taxable_value}
-        ${item.cgst_amount}
-        ${item.sgst_amount}
-        ${item.igst_amount}
-        ${item.cess_amount}
-        ${item.total_tax}
-        ${item.total_amount}
-        ${item.settlement_amount}
-      `.toLowerCase();
-      return searchable.includes(searchText);
-    });
-    setFilteredData(result);
-  }, [search, purchaseBill]);
+    fetchBills();
+  }, [page, perPage, debouncedSearch]);
 
   return (
     <Layout>
@@ -365,20 +365,24 @@ const PurchaseBill = () => {
 
             <DataTable
               columns={columns}
-              data={filteredData}
+              data={purchaseBill}
               pagination
+              paginationServer
+              paginationTotalRows={totalRows}
               paginationPerPage={perPage}
-              onChangePage={(page) => setCurrentPage(page)}
+              paginationRowsPerPageOptions={[25, 50, 100]}
+              paginationResetDefaultPage={resetPaging}
+              onChangePage={(p) => setPage(p)}
+              onChangeRowsPerPage={(n, p) => {
+                setPerPage(n);
+                setPage(p);
+              }}
+              progressPending={loading}
               highlightOnHover
               pointerOnHover
               responsive
               customStyles={{
-                headCells: {
-                  style: {
-                    fontWeight: "bold",
-                    fontSize: "12px",
-                  },
-                },
+                headCells: { style: { fontWeight: "bold", fontSize: "12px" } },
               }}
             />
             <div className="divider"></div>

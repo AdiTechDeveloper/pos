@@ -10,10 +10,15 @@ import ReceiptModal from "./ReceiptModal";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import PaymentEditModal from "../components/PaymentEditModal";
-import { Check, RotateCcw, FileSpreadsheet, FileDown, Printer, Wallet } from "lucide-react";
+import {
+  Check,
+  RotateCcw,
+  FileSpreadsheet,
+  FileDown,
+  Printer,
+  Wallet,
+} from "lucide-react";
 import { useAppData } from "../context/AppDataContext";
-
-
 
 const getAuthHeader = () => {
   const user_detail = localStorage.getItem("user_detail");
@@ -25,10 +30,13 @@ const getAuthHeader = () => {
     : {};
 };
 
+const todayStr = () => new Date().toLocaleDateString("en-CA");
+
 const SaleBill = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const [search, setSearch] = useState("");
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(todayStr());
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   // const [saleBills, setSaleBills] = useState([]);
   const [showReceipt, setShowReceipt] = useState(false);
   const [printData, setPrintData] = useState(null);
@@ -37,6 +45,8 @@ const SaleBill = () => {
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const appData = useAppData();
   const saleBills = appData?.saleBills || [];
@@ -46,45 +56,23 @@ const SaleBill = () => {
     setShowPaymentModal(true);
   };
 
-  // Fetch Sale Bills from API
-  // const fetchSaleBill = async (dateParam = selectedDate) => {
-  //   try {
-  //     const response = await axios.get(`${BASE_URL}/api/sales-bills`, {
-  //       params: {
-  //         selected_date: dateParam || undefined, // Sends YYYY-MM-DD to API
-  //       },
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${user_data?.token}`,
-  //       },
-  //     });
-  //     setSaleBills(response.data.data || []);
-  //   } catch (error) {
-  //     console.error("Error fetching sales bills:", error);
-  //   }
-  // };
-
-  // // Re-fetch API data whenever selectedDate changes
-  // useEffect(() => {
-  //   fetchSaleBill(selectedDate);
-  // }, [selectedDate]);
   useEffect(() => {
-    appData?.loadSaleBills({
-      selected_date: selectedDate || undefined,
-    });
-  }, [selectedDate]);
-  // Handle Client-Side Search AND Date Filtering
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    appData?.loadSaleBills(
+      debouncedSearch.length >= 2
+        ? { search: debouncedSearch }
+        : { selected_date: selectedDate },
+    );
+  }, [selectedDate, debouncedSearch]);
+
   useEffect(() => {
     const searchText = search.toLowerCase().trim();
 
     const result = saleBills.filter((item) => {
-      // Format item date to YYYY-MM-DD for comparison
-      const itemDateStr = item.created_at
-        ? new Date(item.created_at).toISOString().split("T")[0]
-        : "";
-
-      const matchesDate = selectedDate ? itemDateStr === selectedDate : true;
-
       // Text Search Filtering
       const formattedDate = new Date(item.created_at).toLocaleDateString(
         "en-IN",
@@ -110,7 +98,7 @@ const SaleBill = () => {
 
       const matchesSearch = searchable.includes(searchText);
 
-      return matchesDate && matchesSearch;
+      return matchesSearch;
     });
 
     setFilteredData(result);
@@ -166,7 +154,13 @@ const SaleBill = () => {
   }, [filteredData]);
 
   const columns = [
-    // { name: "Id", selector: (row) => row.id, sortable: true, width: "70px" },
+    {
+      name: "Sr. No.",
+      selector: (row, index) => index + 1,
+      sortable: false,
+      width: "90px",
+      cell: (row, index) => (currentPage - 1) * rowsPerPage + index + 1,
+    },
     {
       name: "Action",
       button: true,
@@ -492,7 +486,9 @@ const SaleBill = () => {
         <div className="main-content-wrap">
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
             <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+              >
                 <span
                   style={{
                     width: "5px",
@@ -525,7 +521,6 @@ const SaleBill = () => {
                   </p>
                 </div>
               </div>
-
             </div>
             <ul className="breadcrumbs flex items-center flex-wrap justify-start gap10">
               <li>
@@ -609,26 +604,28 @@ const SaleBill = () => {
                   className="px-3 py-4 border rounded text-2xl"
                 />
 
-                {selectedDate && (
+                {selectedDate !== todayStr() && (
                   <button
                     type="button"
-                    onClick={() => setSelectedDate("")}
+                    onClick={() => setSelectedDate(todayStr())}
                     className="px-3 py-2 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
                   >
-                    Clear Date
+                    Today
                   </button>
                 )}
               </div>
 
               <div className="flex gap-2">
                 {/* CSV/Excel Export */}
-                <button
-                  onClick={formatExportData(filteredData)}
+                <CSVLink
+                  data={formatExportData(filteredData)}
+                  headers={csvHeaders}
+                  filename="sales_report.csv"
                   title="Export as CSV"
                   className="flex items-center justify-center bg-green-500 text-white w-[44px] h-[44px] rounded-xl hover:bg-green-700 shadow-md"
                 >
                   <FileSpreadsheet size={22} />
-                </button>
+                </CSVLink>
 
                 <button
                   onClick={exportPDF}
@@ -640,11 +637,16 @@ const SaleBill = () => {
               </div>
             </div>
 
-
             <DataTable
               columns={columns}
               data={filteredData}
               pagination
+              paginationPerPage={rowsPerPage}
+              onChangePage={(page) => setCurrentPage(page)}
+              onChangeRowsPerPage={(newPerPage, page) => {
+                setRowsPerPage(newPerPage);
+                setCurrentPage(page);
+              }}
               highlightOnHover
               pointerOnHover
               responsive
@@ -669,12 +671,12 @@ const SaleBill = () => {
           onClose={() => setShowPaymentModal(false)}
           onSuccess={async () => {
             setShowPaymentModal(false);
-
             appData?.invalidate("saleBills");
-
-            await appData?.loadSaleBills({
-              selected_date: selectedDate || undefined,
-            });
+            await appData?.loadSaleBills(
+              debouncedSearch.length >= 2
+                ? { search: debouncedSearch }
+                : { selected_date: selectedDate },
+            );
           }}
         />
       )}

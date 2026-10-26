@@ -49,14 +49,14 @@ const CreateEditSupplier = () => {
     name: Yup.string()
       .required("Name is required")
       .min(3, "Name must be at least 3 characters")
-      .max(30, "Name cannot exceed 30 characters"),
+      .max(100, "Name cannot exceed 100 characters"),
 
     gstin: Yup.string()
       .required("GSTIN is required")
       .length(15, "GSTIN must be exactly 15 characters")
       .matches(
         /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
-        "Invalid GSTIN format (e.g., 22AAAAA0000A1Z5)"
+        "Invalid GSTIN format (e.g., 22AAAAA0000A1Z5)",
       ),
 
     contact: Yup.string()
@@ -67,10 +67,8 @@ const CreateEditSupplier = () => {
       .required("Address is required")
       .max(255, "Address cannot exceed 255 characters"),
 
-    state: Yup.string()
-      .required("State is required"),
+    state: Yup.string().required("State is required"),
   });
-
 
   const handleSubmit = async (values) => {
     try {
@@ -98,17 +96,13 @@ const CreateEditSupplier = () => {
       appData?.invalidate("suppliers");
       await appData?.loadSuppliers();
 
-      toast.success(
-        isEdit ? "Suppliers Updated!" : "Suppliers Created!"
-      );
+      toast.success(isEdit ? "Suppliers Updated!" : "Suppliers Created!");
 
       navigate("/suppliers");
     } catch (error) {
       console.error("Error saving supplier:", error);
 
-      toast.error(
-        error.response?.data?.message || "Failed to save supplier"
-      );
+      toast.error(error.response?.data?.message || "Failed to save supplier");
     }
   };
 
@@ -181,9 +175,10 @@ const CreateEditSupplier = () => {
                           className="mb-5"
                           placeholder="Enter mobile no."
                           onInput={(e) => {
-                            e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
+                            e.target.value = e.target.value
+                              .replace(/[^0-9]/g, "")
+                              .slice(0, 10);
                           }}
-
                         />
                         <ErrorMessage
                           name="contact"
@@ -210,7 +205,6 @@ const CreateEditSupplier = () => {
                     </fieldset>
                   </div>
                   <div className="row mb-12">
-
                     <fieldset className="col-md-2 mb-12">
                       <div className="body-title">State *</div>
                       <div className="body-content">
@@ -277,7 +271,13 @@ const CreateEditSupplier = () => {
                       {isEdit ? "Update Supplier" : "Create Supplier"}
                     </button>
                     <button type="button" className="ml-5 tf-button style-1">
-                      <a href="/suppliers" style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
+                      <a
+                        href="/suppliers"
+                        style={{ color: "inherit", textDecoration: "none" }}
+                      >
+                        {" "}
+                        Cancel
+                      </a>
                     </button>
                   </div>
                 </Form>

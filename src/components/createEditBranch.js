@@ -45,7 +45,7 @@ const CreateEditBranch = () => {
     name: Yup.string()
         .required("Name is required")
         .min(3, "Name must be at least 3 characters")
-        .max(30, "Name cannot exceed 30 characters"),
+        .max(100, "Name cannot exceed 100 characters"),
   
    address: Yup.string()
         .required("Address is required")

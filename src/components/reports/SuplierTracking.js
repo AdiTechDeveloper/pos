@@ -18,8 +18,18 @@ import { useAppData } from "../../context/AppDataContext";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 const MONTH_LABELS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 const rupee = (v) => `₹${Number(v || 0).toLocaleString("en-IN")}`;
@@ -37,13 +47,14 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function SupplierTracking() {
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const role = user_data?.user?.role;
-  const adminStoreId = role === "admin" ? user_data?.user?.store_id ?? null : null;
+  const adminStoreId =
+    role === "admin" ? (user_data?.user?.store_id ?? null) : null;
   const managerBranchId =
     role === "manager"
-      ? user_data?.branch_id ??
+      ? (user_data?.branch_id ??
         user_data?.user?.branch_id ??
         user_data?.user?.branch_ids?.[0] ??
-        null
+        null)
       : null;
 
   const appData = useAppData();
@@ -70,36 +81,36 @@ export default function SupplierTracking() {
   }, [role]);
 
   // Lifetime ranking — which supplier we've bought the most from overall
-  useEffect(() => {
-    const fetchRanking = async () => {
-      setRankingLoading(true);
-      try {
-        const res = await axios.get(`${BASE_URL}/api/reports/purchase-report`, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${user_data?.token}`,
-          },
-          params: {
-            date_range: "custom",
-            date_from: "2015-01-01", // stand-in for "all time" - see note above
-            date_to: new Date().toISOString().slice(0, 10),
-            branch_id: effectiveBranchId,
-            store_id: adminStoreId,
-          },
-        });
-        const rows = res.data?.supplier_breakdown?.rows || [];
-        setRanking([...rows].sort((a, b) => b.total_amount - a.total_amount));
-      } catch {
-        setRanking([]);
-      } finally {
-        setRankingLoading(false);
-      }
-    };
-    fetchRanking();
-  }, [effectiveBranchId, adminStoreId]);
+  // useEffect(() => {
+  //   const fetchRanking = async () => {
+  //     setRankingLoading(true);
+  //     try {
+  //       const res = await axios.get(`${BASE_URL}/api/reports/purchase-report`, {
+  //         headers: {
+  //           Accept: "application/json",
+  //           Authorization: `Bearer ${user_data?.token}`,
+  //         },
+  //         params: {
+  //           date_range: "custom",
+  //           date_from: "2015-01-01", // stand-in for "all time" - see note above
+  //           date_to: new Date().toISOString().slice(0, 10),
+  //           branch_id: effectiveBranchId,
+  //           store_id: adminStoreId,
+  //         },
+  //       });
+  //       const rows = res.data?.supplier_breakdown?.rows || [];
+  //       setRanking([...rows].sort((a, b) => b.total_amount - a.total_amount));
+  //     } catch {
+  //       setRanking([]);
+  //     } finally {
+  //       setRankingLoading(false);
+  //     }
+  //   };
+  //   fetchRanking();
+  // }, [effectiveBranchId, adminStoreId]);
 
   // Selected supplier's bills for the chosen year - one call, grouped client-side
-   useEffect(() => {
+  useEffect(() => {
     const fetchRanking = async () => {
       setRankingLoading(true);
       try {
@@ -153,7 +164,10 @@ export default function SupplierTracking() {
     fetchSupplierYear();
   }, [selectedSupplier, year, effectiveBranchId, adminStoreId]);
 
-  const yearlyTotal = bills.reduce((s, b) => s + (Number(b.total_amount) || 0), 0);
+  const yearlyTotal = bills.reduce(
+    (s, b) => s + (Number(b.total_amount) || 0),
+    0,
+  );
 
   const monthlyData = MONTH_LABELS.map((label, i) => {
     const total = bills
@@ -163,19 +177,35 @@ export default function SupplierTracking() {
   });
   const maxMonth = Math.max(...monthlyData.map((d) => d.total), 0);
 
+  const PAY_STATUS = {
+    paid: {
+      label: "Paid",
+      cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    },
+    partial: {
+      label: "Partial",
+      cls: "bg-amber-50 text-amber-700 border-amber-200",
+    },
+    due: { label: "Pending", cls: "bg-rose-50 text-rose-700 border-rose-200" },
+  };
+
   const billColumns = [
     {
       name: "Date",
       selector: (row) => row.bill_date,
       sortable: true,
-      cell: (row) => <span className="text-xl text-gray-700">{row.bill_date}</span>,
+      cell: (row) => (
+        <span className="text-xl text-gray-700">{row.bill_date}</span>
+      ),
     },
     {
       name: "Bill No",
       selector: (row) => row.bill_no,
       sortable: true,
       cell: (row) => (
-        <span className="text-xl font-semibold text-gray-800">{row.bill_no}</span>
+        <span className="text-xl font-semibold text-gray-800">
+          {row.bill_no}
+        </span>
       ),
     },
     {
@@ -183,14 +213,20 @@ export default function SupplierTracking() {
       selector: (row) => row.taxable_value,
       sortable: true,
       right: true,
-      cell: (row) => <span className="text-xl text-gray-700">{rupee(row.taxable_value)}</span>,
+      cell: (row) => (
+        <span className="text-xl text-gray-700">
+          {rupee(row.taxable_value)}
+        </span>
+      ),
     },
     {
       name: "Tax",
       selector: (row) => row.total_tax,
       sortable: true,
       right: true,
-      cell: (row) => <span className="text-xl text-gray-700">{rupee(row.total_tax)}</span>,
+      cell: (row) => (
+        <span className="text-xl text-gray-700">{rupee(row.total_tax)}</span>
+      ),
     },
     {
       name: "Total",
@@ -198,23 +234,33 @@ export default function SupplierTracking() {
       sortable: true,
       right: true,
       cell: (row) => (
-        <span className="text-xl font-semibold text-gray-900">{rupee(row.total_amount)}</span>
+        <span className="text-xl font-semibold text-gray-900">
+          {rupee(row.total_amount)}
+        </span>
+      ),
+    },
+    {
+      name: "Due",
+      selector: (row) => row.due_amount,
+      sortable: true,
+      right: true,
+      cell: (row) => (
+        <span className="text-xl text-gray-700">{rupee(row.due_amount)}</span>
       ),
     },
     {
       name: "Status",
       center: true,
-      cell: (row) => (
-        <span
-          className={`px-3 py-1 rounded-full text-xl font-medium border ${
-            row.received
-              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-              : "bg-rose-50 text-rose-700 border-rose-200"
-          }`}
-        >
-          {row.received ? "Received" : "Pending"}
-        </span>
-      ),
+      cell: (row) => {
+        const s = PAY_STATUS[row.payment_status] || PAY_STATUS.due;
+        return (
+          <span
+            className={`px-3 py-1 rounded-full text-xl font-medium border ${s.cls}`}
+          >
+            {s.label}
+          </span>
+        );
+      },
     },
   ];
 
@@ -232,7 +278,14 @@ export default function SupplierTracking() {
                   background: "linear-gradient(180deg, #2f63f6, #1f49dd)",
                 }}
               />
-              <h3 style={{ fontSize: "24px", fontWeight: 800, color: "#111827", margin: 0 }}>
+              <h3
+                style={{
+                  fontSize: "24px",
+                  fontWeight: 800,
+                  color: "#111827",
+                  margin: 0,
+                }}
+              >
                 Supplier Tracking
               </h3>
             </div>
@@ -241,8 +294,8 @@ export default function SupplierTracking() {
               <select
                 value={selectedBranch}
                 onChange={(e) => setSelectedBranch(e.target.value)}
-                className="border border-black-800 rounded-lg px-3 py-2 text-xl" 
-                style={{ width:200}}
+                className="border border-black-800 rounded-lg px-3 py-2 text-xl"
+                style={{ width: 200 }}
               >
                 <option value="">All Branches</option>
                 {branches.map((b) => (
@@ -261,16 +314,23 @@ export default function SupplierTracking() {
                 <Building2 size={20} className="text-blue-600" />
                 Top Suppliers
               </h3>
-              <p className="text-xl text-gray-400 mb-4">By total purchase amount</p>
+              <p className="text-xl text-gray-400 mb-4">
+                By total purchase amount
+              </p>
 
               {rankingLoading ? (
                 <div className="space-y-3">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="h-10 bg-gray-50 rounded animate-pulse" />
+                    <div
+                      key={i}
+                      className="h-10 bg-gray-50 rounded animate-pulse"
+                    />
                   ))}
                 </div>
               ) : ranking.length === 0 ? (
-                <p className="text-xl text-gray-400 py-6 text-center">No purchase data yet.</p>
+                <p className="text-xl text-gray-400 py-6 text-center">
+                  No purchase data yet.
+                </p>
               ) : (
                 <div className="divide-y divide-gray-50">
                   {ranking.map((s) => {
@@ -280,7 +340,10 @@ export default function SupplierTracking() {
                       <button
                         key={s.supplier_id}
                         onClick={() =>
-                          setSelectedSupplier({ id: s.supplier_id, name: s.supplier_name })
+                          setSelectedSupplier({
+                            id: s.supplier_id,
+                            name: s.supplier_name,
+                          })
                         }
                         className={`w-full text-left py-3 px-2 rounded-lg transition-colors ${
                           isSelected ? "bg-blue-50" : "hover:bg-gray-50"
@@ -297,7 +360,9 @@ export default function SupplierTracking() {
                         <div className="w-full bg-gray-100 rounded-full h-1.5">
                           <div
                             className="h-1.5 rounded-full bg-blue-500"
-                            style={{ width: `${(s.total_amount / maxAmt) * 100}%` }}
+                            style={{
+                              width: `${(s.total_amount / maxAmt) * 100}%`,
+                            }}
                           />
                         </div>
                         <div className="text-xl text-gray-400 mt-1">
@@ -314,7 +379,8 @@ export default function SupplierTracking() {
             <div className="flex flex-col gap-6">
               {!selectedSupplier ? (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-xl text-center text-gray-400">
-                  Select a supplier on the left to see their monthly totals and bills.
+                  Select a supplier on the left to see their monthly totals and
+                  bills.
                 </div>
               ) : (
                 <>
@@ -324,7 +390,9 @@ export default function SupplierTracking() {
                         <h3 className="text-xl font-bold text-gray-800">
                           {selectedSupplier.name}
                         </h3>
-                        <p className="text-xl text-gray-400">Monthly purchase total</p>
+                        <p className="text-xl text-gray-400">
+                          Monthly purchase total
+                        </p>
                       </div>
                       <div className="flex items-center gap-3">
                         <select
@@ -352,8 +420,15 @@ export default function SupplierTracking() {
                       <div className="h-64 bg-gray-50 rounded-xl animate-pulse" />
                     ) : (
                       <ResponsiveContainer width="100%" height={260}>
-                        <BarChart data={monthlyData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F3F6" />
+                        <BarChart
+                          data={monthlyData}
+                          margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            vertical={false}
+                            stroke="#F1F3F6"
+                          />
                           <XAxis
                             dataKey="month"
                             tick={{ fontSize: 12, fill: "#6B7280" }}
@@ -365,12 +440,19 @@ export default function SupplierTracking() {
                             axisLine={false}
                             tickLine={false}
                           />
-                          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
+                          <Tooltip
+                            content={<CustomTooltip />}
+                            cursor={{ fill: "rgba(0,0,0,0.03)" }}
+                          />
                           <Bar dataKey="total" radius={[6, 6, 0, 0]}>
                             {monthlyData.map((entry, i) => (
                               <Cell
                                 key={i}
-                                fill={entry.total === maxMonth && maxMonth > 0 ? "#2377FC" : "#BFDBFE"}
+                                fill={
+                                  entry.total === maxMonth && maxMonth > 0
+                                    ? "#2377FC"
+                                    : "#BFDBFE"
+                                }
                               />
                             ))}
                           </Bar>

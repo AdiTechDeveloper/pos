@@ -9,7 +9,7 @@ import { useAppData } from "../context/AppDataContext";
 
 const CreateEditStaff = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-  const { id } = useParams(); 
+  const { id } = useParams();
   const navigate = useNavigate();
   const [featureCatalog, setFeatureCatalog] = useState({});
   const featureKeys = Object.keys(featureCatalog);
@@ -34,17 +34,17 @@ const CreateEditStaff = () => {
     incomingStaff?.branches?.map((b) => b.pivot.branch_id) || [];
 
   const loadStaffData = () => {
-    if (incomingStaff) {
+    if (isEdit && incomingStaff) {
       setInitialValues({
         name: incomingStaff.name,
         username: incomingStaff.username,
         role: incomingStaff.role,
         pin: incomingStaff.pin,
-        branch_ids: isEdit ? cleanedBranchIds : [],
+        branch_ids: cleanedBranchIds,
         features: [],
       });
 
-      if (isEdit && incomingStaff.role === "manager") {
+      if (incomingStaff.role === "manager") {
         axios
           .get(`${BASE_URL}/api/staff/${id}/features`, {
             headers: { Authorization: `Bearer ${user_data.token}` },
@@ -54,9 +54,6 @@ const CreateEditStaff = () => {
               ...prev,
               features: res.data.data || [],
             }));
-            setFeatureCatalog((prev) =>
-              Object.keys(prev).length ? prev : prev,
-            );
           });
       }
     }
@@ -77,20 +74,18 @@ const CreateEditStaff = () => {
   const validationSchema = Yup.object({
     name: Yup.string()
       .required("Name is required")
-      .min(3, "Name must be at least 3 characters") 
-      .max(30, "Name cannot exceed 30 characters"),
+      .min(3, "Name must be at least 3 characters")
+      .max(100, "Name cannot exceed 100 characters"),
     username: Yup.string()
       .required("Username is required")
-      .min(3, "Name must be at least 3 characters") 
-      .max(30, "Name cannot exceed 30 characters"),
+      .min(3, "Name must be at least 3 characters")
+      .max(100, "Name cannot exceed 100 characters"),
 
     role: Yup.string().required("Role is required"),
     branch_ids: Yup.array()
       .min(1, "At least one branch is required")
       .required("Branch is required"),
   });
-
-
 
   const handleSubmit = async (values, actions) => {
     try {
@@ -157,8 +152,18 @@ const CreateEditStaff = () => {
                     >
                       <div className="body-title">Name *</div>
                       <div className="body-content mb-15">
-                        <Field type="text" name="name" className="mb-5" placeholder="Enter staff name" maxLength={30} />
-                        <ErrorMessage name="name" component="div" className="error-text" />
+                        <Field
+                          type="text"
+                          name="name"
+                          className="mb-5"
+                          placeholder="Enter staff name"
+                          maxLength={30}
+                        />
+                        <ErrorMessage
+                          name="name"
+                          component="div"
+                          className="error-text"
+                        />
                       </div>
                     </fieldset>
 
@@ -167,8 +172,18 @@ const CreateEditStaff = () => {
                     >
                       <div className="body-title">Username *</div>
                       <div className="body-content">
-                        <Field type="text" name="username" className="mb-5" placeholder="Enter username" maxLength={30} />
-                        <ErrorMessage name="username" component="div" className="error-text" />
+                        <Field
+                          type="text"
+                          name="username"
+                          className="mb-5"
+                          placeholder="Enter username"
+                          maxLength={30}
+                        />
+                        <ErrorMessage
+                          name="username"
+                          component="div"
+                          className="error-text"
+                        />
                       </div>
                     </fieldset>
 
@@ -303,9 +318,9 @@ const CreateEditStaff = () => {
                               borderRadius: "6px",
                               backgroundColor:
                                 featureKeys.length > 0 &&
-                                  featureKeys.every((key) =>
-                                    values.features.includes(key),
-                                  )
+                                featureKeys.every((key) =>
+                                  values.features.includes(key),
+                                )
                                   ? "#dbeafe"
                                   : "#f8fafc",
                               color: "#1d4ed8",
@@ -388,8 +403,8 @@ const CreateEditStaff = () => {
                                     const next = e.target.checked
                                       ? [...values.features, key]
                                       : values.features.filter(
-                                        (f) => f !== key,
-                                      );
+                                          (f) => f !== key,
+                                        );
                                     setFieldValue("features", next);
                                   }}
                                   style={{

@@ -526,7 +526,7 @@ export default function CartPanel({
               })
               .replace(/\//g, "-")}
           </span>
-          <Calendar size={18} style={{ color: "#fff" }} />
+          <Calendar size={18} style={{ color: "#000" }} />
           <input
             type="date"
             value={selectedDate}

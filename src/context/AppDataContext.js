@@ -438,6 +438,45 @@ function fetchKey(key, { force = false, storeId } = {}) {
   return inFlight[key];
 }
 
+let purchaseBillsReqId = 0;
+
+function fetchPurchaseBills(params = {}) {
+  ensureCacheOwner();
+
+  const reqId = ++purchaseBillsReqId;
+
+  return axios
+    .get(ENDPOINTS.purchaseBills, { params })
+    .then((res) => {
+      if (reqId !== purchaseBillsReqId) return;
+
+      notifyListeners("purchaseBillsMeta", res.data?.meta || null);
+      notifyListeners("purchaseBills", RESPONSE_PATH.purchaseBills(res));
+    })
+    .catch((err) => {
+      console.error("Failed to load purchaseBills", err);
+    });
+}
+
+let saleBillsReqId = 0;
+
+function fetchSaleBills(params = {}) {
+  ensureCacheOwner();
+
+  const reqId = ++saleBillsReqId;
+
+  return axios
+    .get(ENDPOINTS.saleBills, { params })
+    .then((res) => {
+      if (reqId !== saleBillsReqId) return;
+
+      notifyListeners("saleBills", RESPONSE_PATH.saleBills(res));
+    })
+    .catch((err) => {
+      console.error("Failed to load saleBills", err);
+    });
+}
+
 function fetchStockExpiryAlerts({ force = false } = {}) {
   ensureCacheOwner();
 
@@ -1042,7 +1081,10 @@ export function AppDataProvider({ children }) {
 
     loadExpiredProducts: (filters, opts) => fetchExpiredProducts(filters, opts),
 
-    loadPurchaseBills: (opts) => load("purchaseBills", opts),
+    loadPurchaseBills: (opts) =>
+      opts && (opts.page || opts.per_page || opts.search)
+        ? fetchPurchaseBills(opts)
+        : load("purchaseBills", opts),
 
     // loadPurchaseProducts: () =>
     //   load(
@@ -1051,7 +1093,10 @@ export function AppDataProvider({ children }) {
 
     loadSaleProducts: () => load("saleProducts"),
 
-    loadSaleBills: (opts) => load("saleBills", opts),
+    loadSaleBills: (opts) =>
+      opts && (opts.selected_date || opts.search || opts.date)
+        ? fetchSaleBills(opts)
+        : load("saleBills", opts),
 
     loadPurchaseLines: () => load("purchaseLines"),
 
