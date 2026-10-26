@@ -234,7 +234,7 @@ const Store = () => {
           </div>
 
           {/* Table Section */}
-          <div className="wg-box">
+          <div className="wg-box mb-50">
             {/* TOP Search Box + Add Button */}
             <div className="flex items-center justify-between gap10 flex-wrap mb-3">
               <div className="wg-filter flex-grow">

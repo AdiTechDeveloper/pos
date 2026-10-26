@@ -106,7 +106,7 @@ const BrachStaff = () => {
               </li>
             </ul>
           </div>
-          <div className="wg-box">
+          <div className="wg-box mb-50">
             <input
               type="text"
               placeholder="Search..."

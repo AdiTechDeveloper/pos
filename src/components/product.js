@@ -568,7 +568,7 @@ const Product = () => {
 
           {/* Product Box */}
 
-          <div className="wg-box">
+          <div className="wg-box mb-50">
             {/* Search + Add New */}
 
             <div

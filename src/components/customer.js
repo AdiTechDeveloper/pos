@@ -224,7 +224,7 @@ const Customer = () => {
             </ul>
           </div>
 
-          <div className="wg-box">
+          <div className="wg-box mb-50">
             <div className="flex items-center justify-between gap10 flex-wrap mb-3">
               <div className="wg-filter flex-grow">
 

@@ -1093,7 +1093,7 @@ const Expenses = () => {
 
           {/* Category-wise breakdown */}
           {breakdown.length > 0 && (
-            <div className="wg-box mb-27">
+            <div className="wg-box mb-50">
               <div className="exp-breakdown-head">
                 <h5>Spending by Category</h5>
                 <span className="exp-sub">
@@ -1133,7 +1133,7 @@ const Expenses = () => {
           )}
 
           {/* List */}
-          <div className="wg-box wg-content">
+          <div className="wg-box wg-content mb-50">
             <div className="exp-toolbar">
               <div className="wg-filter">
                 <form
