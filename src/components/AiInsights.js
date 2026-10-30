@@ -5,6 +5,7 @@ import Layout from "./layout";
 import { getAiInsightBranches } from "../utils/api";
 import { toast } from "react-toastify";
 import ReactMarkdown from "react-markdown";
+import { useLocation } from "react-router-dom";
 import remarkGfm from "remark-gfm";
 import { getAiChatCache, setAiChatCache } from "../utils/aiChatCache";
 
@@ -513,6 +514,12 @@ const CSS = `
 
 /* ───────────── Main panel ───────────── */
 function ChatPanel() {
+  const location = useLocation();
+
+const routeQuestion =
+  typeof location.state?.question === "string"
+    ? location.state.question
+    : "";
   const userData = useMemo(getUserData, []);
   const token = userData.token;
 
@@ -534,6 +541,7 @@ function ChatPanel() {
       }),
     };
   });
+  const routeAutoSubmit = location.state?.autoSubmit === true;
 
   const [selectedBranch, setSelectedBranch] = useState(initial?.selectedBranch ?? "");
   const [chats, setChats] = useState(initial?.chats ?? []);
@@ -544,6 +552,8 @@ function ChatPanel() {
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [sending, setSending] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(isDesktop);
+
+  const autoSubmittedRef = useRef(null);
 
   const scrollRef = useRef(null);
   const textareaRef = useRef(null);
@@ -739,6 +749,39 @@ function ChatPanel() {
 
   const focusInput = () => setTimeout(() => textareaRef.current?.focus(), 50);
 
+useEffect(() => {
+  if (!routeAutoSubmit || !routeQuestion.trim()) return;
+
+  const submitKey = location.key || routeQuestion;
+
+  // Same navigation par duplicate request mat bhejo
+  if (autoSubmittedRef.current === submitKey) return;
+
+  // Branch aur existing chat load hone ka wait karo
+  if (loadingBranches || loadingChats || !selectedBranch || sending) {
+    return;
+  }
+
+  autoSubmittedRef.current = submitKey;
+
+  setInput(routeQuestion);
+  setInputError("");
+
+  const timer = window.setTimeout(() => {
+    handleSend(routeQuestion);
+  }, 0);
+
+  return () => window.clearTimeout(timer);
+}, [
+  routeAutoSubmit,
+  routeQuestion,
+  location.key,
+  loadingBranches,
+  loadingChats,
+  selectedBranch,
+  sending,
+]);
+
   const closeHistoryOnMobile = () => {
     if (!isDesktop()) setHistoryOpen(false);
   };
@@ -932,11 +975,17 @@ function ChatPanel() {
     await runDownloads(download, [download.format === "excel" ? "excel" : "pdf"], activeChatId);
   };
 
+
+
   /* ───── Send chat message ───── */
-  const handleSend = async () => {
+  const handleSend = async (questionOverride) => {
     if (sendingRef.current || sending) return;
 
-    const messageText = input.trim();
+   const messageText = (
+  typeof questionOverride === "string"
+    ? questionOverride
+    : input
+).trim();
     const validationError = validateMessage(messageText);
     if (validationError) {
       setInputError(validationError);
@@ -1370,3 +1419,8 @@ export default function AiInsights() {
     </Layout>
   );
 }
+
+
+
+
+

@@ -289,7 +289,7 @@ const Navbar = () => {
 
   const adminMenus = [
     {
-      name: "Know You Bussiness",
+      name: "AI Business Assistant",
       path: "/ai-insights",
       icon: <Sparkles className="w-10 h-10" />,
       feature: "ai_insights",
@@ -312,7 +312,7 @@ const Navbar = () => {
 
   const managerMenus = [
     {
-      name: "Know You Bussiness",
+      name: "AI Business Assistant",
       path: "/ai-insights",
       icon: <Sparkles className="w-10 h-10" />,
       feature: "ai_insights",
