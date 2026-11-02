@@ -7,6 +7,7 @@ import Layout from "./layout";
 import { toast } from "react-toastify";
 import { useAppData } from "../context/AppDataContext";
 import ProductImport from "./ProductImport";
+import { hasFeature } from "../utils/hasFeature";
 
 const CreateEditProduct = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -34,6 +35,14 @@ const CreateEditProduct = () => {
   const [error, setError] = useState("");
   const [loadingProduct, setLoadingProduct] = useState(isEdit);
 
+  const PHARMACY_KEYS = [
+    "salt_composition",
+    "drug_schedule",
+    "requires_prescription",
+    "pack_type",
+    "units_per_pack",
+  ];
+
   let lastTime = 0;
 
   const [initialValues, setInitialValues] = useState({
@@ -52,6 +61,11 @@ const CreateEditProduct = () => {
     sale_type: "unit",
     plu_code: "",
     price_per_kg: "",
+    salt_composition: "",
+    drug_schedule: "none",
+    requires_prescription: false,
+    pack_type: "",
+    units_per_pack: "",
   });
 
   const fetchProduct = async () => {
@@ -89,6 +103,11 @@ const CreateEditProduct = () => {
           sale_type: product.sale_type || "unit",
           plu_code: product.plu_code || "",
           price_per_kg: product.price_per_kg || "",
+          salt_composition: product.salt_composition || "",
+          drug_schedule: product.drug_schedule || "none",
+          requires_prescription: product.requires_prescription == 1,
+          pack_type: product.pack_type || "",
+          units_per_pack: product.units_per_pack || "",
         });
       }
     } catch (error) {
@@ -136,6 +155,11 @@ const CreateEditProduct = () => {
           .min(0.01, "Price per kg must be greater than 0"),
       otherwise: (schema) => schema.nullable(),
     }),
+    units_per_pack: Yup.number()
+      .transform((value, original) => (original === "" ? null : value))
+      .nullable()
+      .integer("Must be a whole number")
+      .min(1, "Must be at least 1"),
   });
 
   const handleSubmit = async (values) => {
@@ -151,10 +175,19 @@ const CreateEditProduct = () => {
         method = "post";
       }
 
+      const payload = { ...values };
+      if (hasFeature("pharmacy")) {
+        payload.units_per_pack =
+          payload.units_per_pack === "" ? null : payload.units_per_pack;
+        payload.requires_prescription = !!payload.requires_prescription;
+      } else {
+        PHARMACY_KEYS.forEach((k) => delete payload[k]);
+      }
+
       await axios({
         method,
         url,
-        data: values,
+        data: payload,
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${user_data.token}`,
@@ -259,7 +292,7 @@ const CreateEditProduct = () => {
                 validationSchema={validationSchema}
                 onSubmit={handleSubmit}
               >
-                {() => (
+                {({ values, setFieldValue }) => (
                   <Form className="wg-form">
                     <div className="row mb-20 col-12">
                       <fieldset className="col-md-3">
@@ -298,7 +331,12 @@ const CreateEditProduct = () => {
                       </fieldset>
 
                       <fieldset className="col-md-3 mb-15">
-                        <div className="body-title">Brand *</div>
+                        <div className="body-title">
+                          {" "}
+                          {hasFeature("pharmacy")
+                            ? "Manufacturer / Company *"
+                            : "Brand *"}
+                        </div>
                         <div className="body-content">
                           <Field name="brand_id" as="select" className="mb-6">
                             {({ field }) => (
@@ -337,7 +375,11 @@ const CreateEditProduct = () => {
                         </div>
                       </fieldset>
                       <fieldset className="col-md-3">
-                        <div className="body-title">Category *</div>
+                        <div className="body-title">
+                          {hasFeature("pharmacy")
+                            ? "Medicine Category *"
+                            : "Category *"}
+                        </div>
                         <div className="body-content">
                           <Field
                             name="category_id"
@@ -381,85 +423,194 @@ const CreateEditProduct = () => {
                       </fieldset>
                     </div>
 
-                    {/* Sale Type / Weight fields */}
-                    <div className="row mb-20">
-                      <fieldset className="col-md-3">
-                        <div className="body-title">Sale Type</div>
-                        <div className="body-content">
-                          <Field name="sale_type" as="select" className="mb-5">
-                            <option value="unit">Unit (piece/box)</option>
-                            <option value="weight">
-                              Weight (kg - loose item)
-                            </option>
-                          </Field>
-                          <ErrorMessage
-                            name="sale_type"
-                            className="error-text"
-                            component="div"
-                          />
-                        </div>
-                      </fieldset>
+                    {/* Sale Type / Weight fields (pharmacy stores do not need this) */}
+                    {!hasFeature("pharmacy") && (
+                      <div className="row mb-20">
+                        <fieldset className="col-md-3">
+                          <div className="body-title">Sale Type</div>
+                          <div className="body-content">
+                            <Field
+                              name="sale_type"
+                              as="select"
+                              className="mb-5"
+                            >
+                              <option value="unit">Unit (piece/box)</option>
+                              <option value="weight">
+                                Weight (kg - loose item)
+                              </option>
+                            </Field>
+                            <ErrorMessage
+                              name="sale_type"
+                              className="error-text"
+                              component="div"
+                            />
+                          </div>
+                        </fieldset>
 
-                      <Field name="sale_type">
-                        {({ field }) =>
-                          field.value === "weight" && (
-                            <>
-                              <fieldset className="col-md-3">
-                                <div className="body-title">PLU Code *</div>
-                                <div className="body-content">
-                                  <Field name="plu_code">
-                                    {({ field, form }) => (
-                                      <input
-                                        {...field}
-                                        type="text"
-                                        inputMode="numeric"
-                                        placeholder="e.g. 00123"
-                                        maxLength={5}
-                                        className="mb-5"
-                                        onChange={(e) => {
-                                          const onlyDigits = e.target.value
-                                            .replace(/\D/g, "")
-                                            .slice(0, 5);
-                                          form.setFieldValue(
-                                            "plu_code",
-                                            onlyDigits,
-                                          );
-                                        }}
-                                      />
-                                    )}
-                                  </Field>
-                                  <ErrorMessage
-                                    name="plu_code"
-                                    className="error-text"
-                                    component="div"
-                                  />
-                                </div>
-                              </fieldset>
+                        <Field name="sale_type">
+                          {({ field }) =>
+                            field.value === "weight" && (
+                              <>
+                                <fieldset className="col-md-3">
+                                  <div className="body-title">PLU Code *</div>
+                                  <div className="body-content">
+                                    <Field name="plu_code">
+                                      {({ field, form }) => (
+                                        <input
+                                          {...field}
+                                          type="text"
+                                          inputMode="numeric"
+                                          placeholder="e.g. 00123"
+                                          maxLength={5}
+                                          className="mb-5"
+                                          onChange={(e) => {
+                                            const onlyDigits = e.target.value
+                                              .replace(/\D/g, "")
+                                              .slice(0, 5);
+                                            form.setFieldValue(
+                                              "plu_code",
+                                              onlyDigits,
+                                            );
+                                          }}
+                                        />
+                                      )}
+                                    </Field>
+                                    <ErrorMessage
+                                      name="plu_code"
+                                      className="error-text"
+                                      component="div"
+                                    />
+                                  </div>
+                                </fieldset>
 
-                              <fieldset className="col-md-3">
-                                <div className="body-title">
-                                  Price per Kg (₹) *
-                                </div>
-                                <div className="body-content">
-                                  <Field
-                                    type="number"
-                                    step="0.01"
-                                    name="price_per_kg"
-                                    placeholder="e.g. 40.00"
-                                    className="mb-5"
-                                  />
-                                  <ErrorMessage
-                                    name="price_per_kg"
-                                    className="error-text"
-                                    component="div"
-                                  />
-                                </div>
-                              </fieldset>
-                            </>
-                          )
-                        }
-                      </Field>
-                    </div>
+                                <fieldset className="col-md-3">
+                                  <div className="body-title">
+                                    Price per Kg (₹) *
+                                  </div>
+                                  <div className="body-content">
+                                    <Field
+                                      type="number"
+                                      step="0.01"
+                                      name="price_per_kg"
+                                      placeholder="e.g. 40.00"
+                                      className="mb-5"
+                                    />
+                                    <ErrorMessage
+                                      name="price_per_kg"
+                                      className="error-text"
+                                      component="div"
+                                    />
+                                  </div>
+                                </fieldset>
+                              </>
+                            )
+                          }
+                        </Field>
+                      </div>
+                    )}
+
+                    {hasFeature("pharmacy") && (
+                      <div className="row mb-20">
+                        <fieldset className="col-md-3">
+                          <div className="body-title">Drug Schedule</div>
+                          <div className="body-content">
+                            <Field
+                              as="select"
+                              name="drug_schedule"
+                              className="mb-5"
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setFieldValue("drug_schedule", v);
+                                if (["H", "H1", "X"].includes(v)) {
+                                  setFieldValue("requires_prescription", true);
+                                }
+                              }}
+                            >
+                              <option value="none">None (OTC)</option>
+                              <option value="G">Schedule G</option>
+                              <option value="H">Schedule H</option>
+                              <option value="H1">Schedule H1</option>
+                              <option value="X">Schedule X</option>
+                            </Field>
+                          </div>
+                        </fieldset>
+
+                        <fieldset className="col-md-3">
+                          <div className="body-title">Salt / Composition</div>
+                          <div className="body-content">
+                            <Field
+                              type="text"
+                              name="salt_composition"
+                              placeholder="e.g. Paracetamol 500mg"
+                              className="mb-5"
+                            />
+                          </div>
+                        </fieldset>
+
+                        <fieldset className="col-md-3">
+                          <div className="body-title">Pack Type</div>
+                          <div className="body-content">
+                            <Field
+                              as="select"
+                              name="pack_type"
+                              className="mb-5"
+                            >
+                              <option value="">Select</option>
+                              <option value="strip">Strip</option>
+                              <option value="bottle">Bottle</option>
+                              <option value="tube">Tube</option>
+                              <option value="box">Box</option>
+                              <option value="vial">Vial</option>
+                              <option value="sachet">Sachet</option>
+                            </Field>
+                          </div>
+                        </fieldset>
+
+                        <fieldset className="col-md-3">
+                          <div className="body-title">Units per Pack</div>
+                          <div className="body-content">
+                            <Field
+                              type="number"
+                              min="1"
+                              name="units_per_pack"
+                              placeholder="e.g. 10"
+                              className="mb-5"
+                            />
+                            <ErrorMessage
+                              name="units_per_pack"
+                              className="error-text"
+                              component="div"
+                            />
+                          </div>
+                        </fieldset>
+
+                        <fieldset className="col-md-3">
+                          <div className="body-title mb-5">
+                            Prescription Required
+                          </div>
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <Field
+                              type="checkbox"
+                              name="requires_prescription"
+                              disabled={["H", "H1", "X"].includes(
+                                values.drug_schedule,
+                              )}
+                            />
+                            <span>
+                              {["H", "H1", "X"].includes(values.drug_schedule)
+                                ? "Always required for this schedule"
+                                : "Yes"}
+                            </span>
+                          </label>
+                        </fieldset>
+                      </div>
+                    )}
 
                     {/* Category / GST Rate / HSN */}
                     <div className="row mb-20">

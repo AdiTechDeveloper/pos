@@ -76,6 +76,7 @@ import ChangePassword from "./components/ChangePassword";
 import customer from "./components/customer";
 import AiInsights from "./components/AiInsights";
 import SupplierTracking from "./components/reports/SuplierTracking";
+import PrescriptionRegister from "./components/reports/pharmacy/PrescriptionRegister";
 
 import CustomerPortalLogin from "./components/CustomerPortalLogin";
 import Expenses from "./components/Expenses";
@@ -94,9 +95,10 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <>
       {/* Customer Portal */}
-   <Route
-  path="/customer-portal"
-  element={<Public Component={CustomerPortalLogin} />} />
+      <Route
+        path="/customer-portal"
+        element={<Public Component={CustomerPortalLogin} />}
+      />
 
       {/* Public Routes */}
       <Route path="/" element={<Public Component={Login} />} />
@@ -129,10 +131,7 @@ const router = createBrowserRouter(
         path="/product"
         element={<Protected Component={Product} requiredFeature="products" />}
       />
-       <Route
-        path="/expenses"
-        element={<Protected Component={Expenses} />}
-      />
+      <Route path="/expenses" element={<Protected Component={Expenses} />} />
 
       <Route
         path="/print-barcode"
@@ -537,11 +536,11 @@ const router = createBrowserRouter(
       />
 
       <Route
-        path="/supplier-tracking"
+        path="/reports/prescription-register"
         element={
           <Protected
-            Component={SupplierTracking}
-            requiredFeature="reports_suplier"
+            Component={PrescriptionRegister}
+            requiredFeature="pharmacy"
           />
         }
       />
@@ -553,7 +552,7 @@ const router = createBrowserRouter(
         }
       />
 
-        <Route
+      <Route
         path="/supplier-tracking"
         element={
           <Protected

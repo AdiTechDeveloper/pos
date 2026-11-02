@@ -58,10 +58,11 @@ export const createSalesBill = async (payload) => {
         "Idempotency-Key": key,
       },
     });
-
-    return res;
-  } finally {
     localStorage.removeItem("store_idemp_key");
+    return res;
+  } catch (err) {
+    if (err.response) localStorage.removeItem("store_idemp_key");
+    throw err;
   }
 };
 

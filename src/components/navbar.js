@@ -109,6 +109,11 @@ const Navbar = () => {
       feature: "stock_alerts",
     },
     {
+      name: "Prescription Register",
+      path: "/reports/prescription-register",
+      feature: "pharmacy",
+    },
+    {
       name: "Supplier Tracking",
       path: "/supplier-tracking",
       feature: "reports_suplier",
@@ -156,7 +161,6 @@ const Navbar = () => {
     role === "superadmin" || !store?.logo
       ? DEFAULT_LOGO
       : `${BASE_URL}/storage/${store.logo}`;
-
 
   const closeSidebar = () => {
     if (window.innerWidth <= 768) {
@@ -272,7 +276,6 @@ const Navbar = () => {
     },
   ];
 
-
   const superadminMenus = [
     {
       name: "Stores",
@@ -343,7 +346,6 @@ const Navbar = () => {
 
   const isBackOffice = role === "admin" || role === "manager";
   const showReports = isBackOffice && visibleReportLinks.length > 0;
-
 
   const renderMenuItem = (item) => (
     <li key={`${item.path}-${item.name}`} className="app-sidebar-menu-item">
@@ -832,8 +834,9 @@ const Navbar = () => {
       `}</style>
 
       <aside
-        className={`app-sidebar ${isOpen ? "open" : ""} ${isCollapsed ? "collapsed" : ""
-          }`}
+        className={`app-sidebar ${isOpen ? "open" : ""} ${
+          isCollapsed ? "collapsed" : ""
+        }`}
       >
         <div className="app-sidebar-header">
           <div className="app-sidebar-logo">
@@ -849,8 +852,9 @@ const Navbar = () => {
             <li className="app-sidebar-menu-item">
               <Link
                 to="/dashboard"
-                className={`app-sidebar-link ${isActive("/dashboard") ? "active" : ""
-                  }`}
+                className={`app-sidebar-link ${
+                  isActive("/dashboard") ? "active" : ""
+                }`}
                 onClick={closeSidebar}
                 title={isCollapsed ? "Dashboard" : undefined}
               >
@@ -898,8 +902,9 @@ const Navbar = () => {
                         <Link
                           ref={isActive(item.path) ? activeMenuRef : null}
                           to={item.path}
-                          className={`app-sidebar-submenu-link ${isActive(item.path) ? "active" : ""
-                            }`}
+                          className={`app-sidebar-submenu-link ${
+                            isActive(item.path) ? "active" : ""
+                          }`}
                           onClick={closeSidebar}
                         >
                           {item.name}
@@ -944,7 +949,6 @@ const Navbar = () => {
                     target="_blank"
                     className="app-sidebar-social-btn"
                     aria-label="Facebook"
-                    
                   >
                     <FaFacebookF />
                   </a>
@@ -954,7 +958,6 @@ const Navbar = () => {
                     target="_blank"
                     className="app-sidebar-social-btn"
                     aria-label="LinkedIn"
-                  
                   >
                     <FaLinkedinIn />
                   </a>
@@ -964,7 +967,6 @@ const Navbar = () => {
                     target="_blank"
                     className="app-sidebar-social-btn"
                     aria-label="Instagram"
-                   
                   >
                     <FaInstagram />
                   </a>

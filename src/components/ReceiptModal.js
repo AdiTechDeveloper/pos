@@ -13,6 +13,7 @@ const ReceiptModal = forwardRef(
       items = [],
       barcode,
       footer,
+      prescription,
     } = billData;
 
     const format = (v) => Number(v || 0).toFixed(2);
@@ -30,6 +31,10 @@ const ReceiptModal = forwardRef(
 
     // Check if any item has a price override
     const hasAnyOverride = items.some((item) => item.is_price_overridden);
+
+    const hasRxItem = items.some(
+      (item) => item.drug_schedule && item.drug_schedule !== "none",
+    );
 
     const metaRows = [
       ["Bill No", bill?.number],
@@ -50,6 +55,17 @@ const ReceiptModal = forwardRef(
               <div>{branch?.address}</div>
               <div>Phone: {store?.phone}</div>
               {store?.gst && <div>GST: {store?.gst}</div>}
+              {store?.is_pharmacy && store?.drug_licence_no && (
+                <div>D.L. No: {store.drug_licence_no}</div>
+              )}
+              {store?.is_pharmacy && store?.pharmacist_name && (
+                <div>
+                  Pharmacist: {store.pharmacist_name}
+                  {store?.pharmacist_reg_no
+                    ? ` (Reg: ${store.pharmacist_reg_no})`
+                    : ""}
+                </div>
+              )}
             </div>
             <div style={styles.dash} />
             <div style={styles.taxInvoice}>Tax Invoice</div>
@@ -57,6 +73,13 @@ const ReceiptModal = forwardRef(
 
             <div>Customer Name: {customer?.name}</div>
             <div>Customer Mobile No: {customer?.mobile}</div>
+
+            {prescription && (
+              <>
+                <div>Patient: {prescription.patient_name}</div>
+                <div>Doctor: {prescription.doctor_name}</div>
+              </>
+            )}
 
             {/* ================= SAVINGS ================= */}
             {bill?.total_saved > 0 && (
@@ -83,18 +106,29 @@ const ReceiptModal = forwardRef(
             </div>
             <div style={styles.dash} />
             {items.map((item, i) => (
-              <div key={i} style={styles.itemRow}>
-                <span style={{ flex: 2 }}>{item.name ?? ""}</span>
-                <span style={{ flex: 1 }}>{item.mrp ?? ""}</span>
-                <span style={{ flex: 1 }}>{format(item.selling ?? "")}</span>
-                <span style={{ flex: 1, textAlign: "center" }}>
-                  {item.qty ?? ""}
-                </span>
-                <span style={{ flex: 1, textAlign: "right" }}>
-                  {format(item.amount) ?? ""}
-                </span>
+              <div key={i} style={{ margin: "2px 0" }}>
+                <div style={{ display: "flex" }}>
+                  <span style={{ flex: 2 }}>{item.name ?? ""}</span>
+                  <span style={{ flex: 1 }}>{item.mrp ?? ""}</span>
+                  <span style={{ flex: 1 }}>{format(item.selling ?? "")}</span>
+                  <span style={{ flex: 1, textAlign: "center" }}>
+                    {item.qty ?? ""}
+                  </span>
+                  <span style={{ flex: 1, textAlign: "right" }}>
+                    {format(item.amount)}
+                  </span>
+                </div>
 
-                {/* Price override note — only shown if overridden */}
+                {item.batch_no && (
+                  <div style={styles.batchNote}>
+                    Batch: {item.batch_no}
+                    {item.expiry ? `  Exp: ${item.expiry}` : ""}
+                    {item.drug_schedule && item.drug_schedule !== "none"
+                      ? `  [Sch ${item.drug_schedule}]`
+                      : ""}
+                  </div>
+                )}
+
                 {item.is_price_overridden && (
                   <div style={styles.overrideNote}>
                     * Price: ₹{format(item.original_price)} → ₹
@@ -164,7 +198,7 @@ const ReceiptModal = forwardRef(
             </div>
             <div style={styles.row}>
               <span>CESS</span>
-              <span>{format(bill?.cess)}</span>
+              <span>{format(bill?.cess_total ?? bill?.cess)}</span>
             </div>
             <div style={styles.dash} />
             {/* ================= BARCODE ================= */}
@@ -178,6 +212,13 @@ const ReceiptModal = forwardRef(
               </div>
             )}
             {/* ================= FOOTER ================= */}
+            {hasRxItem && (
+              <div style={styles.footer}>
+                * Schedule drugs sold on prescription of a registered medical
+                practitioner.
+              </div>
+            )}
+
             <div style={styles.footer}>
               {(footer || "Thank you for shopping with us")
                 .split("\n")
@@ -346,5 +387,11 @@ const styles = {
     whiteSpace: "nowrap",
     pointerEvents: "none",
     zIndex: 0,
+  },
+
+  batchNote: {
+    fontSize: 11,
+    color: "#444",
+    marginLeft: 2,
   },
 };

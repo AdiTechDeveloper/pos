@@ -76,7 +76,7 @@ const BarcodePrintSheet = forwardRef(({ product }, ref) => {
             letterSpacing: "0.2px",
           }}
         >
-          Loyaaliti Price: ₹{product?.selling_price}
+          Our Price: ₹{product?.selling_price}
         </div>
       </div>
     </div>
