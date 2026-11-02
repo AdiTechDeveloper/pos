@@ -121,103 +121,136 @@ const RESPONSE_PATH = {
   suppliers: (res) => res.data?.suppliers ?? [],
   expenseCategories: (res) => res.data?.categories ?? res.data?.data ?? [],
 
-  products: (res) => {
-    const products = res.data?.products ?? [];
-    const rows = [];
 
-    products.forEach((product) => {
-      const inventories = Array.isArray(product.inventories)
-        ? product.inventories
-        : [];
+products: (res) => {
+  const products = res.data?.products ?? [];
+  const rows = [];
 
-      let totalQty = 0;
-      let totalFree = 0;
-      let costTotal = 0;
+  products.forEach((product) => {
+    const inventories = Array.isArray(product.inventories)
+      ? product.inventories
+      : [];
 
-      const inventoryIds = [];
-      const barcodeSet = new Set();
+    let totalQty = 0;
+    let totalFree = 0;
+    let costTotal = 0;
 
-      inventories.forEach((inv) => {
-        const qty =
-          Number(
-            inv.qty_available ??
-              Number(inv.qty || 0) - Number(inv.sold_qty || 0),
-          ) || 0;
+    const inventoryIds = [];
+    const priceGroups = {};
 
-        const free = Number(inv.free_qty ?? inv.free ?? 0) || 0;
+    inventories.forEach((inv) => {
+      const qty =
+        Number(
+          inv.available_qty ??
+          (Number(inv.qty || 0) - Number(inv.sold_qty || 0))
+        ) || 0;
 
-        totalQty += qty;
-        totalFree += free;
+      const free = Number(inv.free_qty ?? inv.free ?? 0) || 0;
 
-        costTotal += Number(inv.cost_price || 0) * qty;
+      totalQty += qty;
+      totalFree += free;
+      costTotal += Number(inv.cost_price || 0) * qty;
 
-        if (inv.id) {
-          inventoryIds.push(inv.id);
-        }
+      if (inv.id) {
+        inventoryIds.push(inv.id);
+      }
 
-        if (inv.batch_barcode) {
-          barcodeSet.add(inv.batch_barcode);
-        }
-      });
+      // Unique MRP + Selling Price combination
+      // Batch barcode is intentionally ignored.
+      const mrp = Number(inv.mrp || 0);
+      const sellingPrice = Number(inv.selling_price || 0);
 
-      const hasInventory = inventories.length > 0;
+      const key = `${mrp}_${sellingPrice}`;
 
-      const avgCostPrice = totalQty ? (costTotal / totalQty).toFixed(2) : 0;
+      if (!priceGroups[key]) {
+        priceGroups[key] = {
+          mrp,
+          selling_price: sellingPrice,
 
-      const showBarcode = barcodeSet.size === 1;
+          // Same product-level barcode for every variant
+          barcode: product.barcode || null,
 
-      const stock = Number(product.total_stock ?? totalQty) || 0;
+          inventory_ids: [],
+          batch_numbers: [],
+          quantity: 0,
+          free: 0,
+        };
+      }
 
-      rows.push({
-        row_id: `prod-${product.id}`,
+      if (inv.id) {
+        priceGroups[key].inventory_ids.push(inv.id);
+      }
 
-        inventory_ids: inventoryIds,
+      priceGroups[key].quantity += qty;
+      priceGroups[key].free += free;
 
-        product_id: product.id,
-
-        sku: product.sku,
-
-        name: product.name,
-
-        brand: product.brand,
-
-        category: product.category,
-
-        hsn_code: product.hsn_code,
-
-        gst_rate: product.gst_rate,
-
-        gst_inclusive: product.gst_inclusive,
-
-        is_price_override: product.is_price_override,
-
-        batch_no: "-",
-
-        barcode: showBarcode ? [...barcodeSet][0] : (product.barcode ?? null),
-
-        mrp: Number(product.min_price) || Number(product.mrp) || 0,
-
-        selling_price:
-          Number(product.min_price) || Number(product.selling_price) || 0,
-
-        cost_price: hasInventory ? avgCostPrice : (product.cost_price ?? 0),
-
-        qty: stock,
-
-        total_stock: stock,
-
-        free: totalFree,
-
-        total_qty: totalQty + totalFree,
-
-        batch_count: inventories.length,
-
-        show_barcode: showBarcode || !!product.barcode,
-      });
+      if (
+        inv.batch_no &&
+        !priceGroups[key].batch_numbers.includes(inv.batch_no)
+      ) {
+        priceGroups[key].batch_numbers.push(inv.batch_no);
+      }
     });
 
-    return rows;
-  },
+    const hasInventory = inventories.length > 0;
+
+    const priceOptions = Object.values(priceGroups);
+
+    const avgCostPrice = totalQty
+      ? (costTotal / totalQty).toFixed(2)
+      : 0;
+
+    const stock = Number(product.total_stock ?? totalQty) || 0;
+
+    // Always use product-level barcode
+    const barcode = product.barcode || null;
+
+    rows.push({
+      row_id: `prod-${product.id}`,
+      product_id: product.id,
+
+      inventory_ids: inventoryIds,
+
+      sku: product.sku,
+      name: product.name,
+      brand: product.brand,
+      category: product.category,
+      hsn_code: product.hsn_code,
+      gst_rate: product.gst_rate,
+      gst_inclusive: product.gst_inclusive,
+
+      is_price_override: product.is_price_override,
+
+      barcode,
+      show_barcode: !!barcode,
+
+      // Different price variants, same product barcode
+      price_options: priceOptions,
+
+      // Default price for backward compatibility
+      mrp: priceOptions[0]?.mrp ?? Number(product.mrp || 0),
+
+      selling_price:
+        priceOptions[0]?.selling_price ??
+        Number(product.selling_price || 0),
+
+      cost_price: hasInventory
+        ? avgCostPrice
+        : product.cost_price ?? 0,
+
+      qty: stock,
+      total_stock: stock,
+      free: totalFree,
+      total_qty: totalQty + totalFree,
+
+      batch_count: inventories.length,
+      batch_no: "-",
+    });
+  });
+
+  return rows;
+},
+
 
   purchaseProducts: (res) =>
     (res.data?.products || []).sort((a, b) =>

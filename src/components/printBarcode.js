@@ -135,6 +135,11 @@ const PrintBarcode = () => {
   }, []);
 
   useEffect(() => {
+      console.log("Products from AppDataContext:", products);
+
+  if (products.length > 0) {
+    console.log("First Product:", products[0]);
+  }
     const text = search.toLowerCase();
     const result = products.filter((item) => {
       const searchString = `
