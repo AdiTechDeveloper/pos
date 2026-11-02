@@ -54,7 +54,9 @@ const ChangePassword = () => {
 
       toast.success("Password changed successfully!");
       const role = userDetail?.user?.role;
-      navigate(role === "cashier" ? "/pos" : "/dashboard");
+      navigate(
+        role === "delivery" ? "/delivery" : role === "cashier" ? "/pos" : "/dashboard",
+      );
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to change password");
     } finally {

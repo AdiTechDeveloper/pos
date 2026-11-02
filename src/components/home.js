@@ -22,6 +22,7 @@ const ROUTES = {
   addExpense: "/expenses",
   addProduct: "/create-product",
   products: "/product",
+  expiry: "/reports/stock-expiry-report",
   newPurchase: "/purchase-bill",
   dues: "/customer-dues",
   ai: "/ai-insights",
@@ -120,7 +121,13 @@ const IconStore = () => (
 );
 
 const IconSpark = ({ size = 20 }) => (
-  <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+  <svg
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    fill="currentColor"
+    aria-hidden="true"
+  >
     <path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9L12 2z" />
     <path d="M19 15l.9 2.6 2.6.9-2.6.9L19 22l-.9-2.6-2.6-.9 2.6-.9L19 15z" />
   </svg>
@@ -159,11 +166,25 @@ const Card = ({ title, hint, right, children }) => (
         }}
       >
         <div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#111827", lineHeight: 1.3 }}>
+          <div
+            style={{
+              fontSize: 18,
+              fontWeight: 700,
+              color: "#111827",
+              lineHeight: 1.3,
+            }}
+          >
             {title}
           </div>
           {hint && (
-            <div style={{ fontSize: 14, color: "#6b7280", marginTop: 4, lineHeight: 1.4 }}>
+            <div
+              style={{
+                fontSize: 14,
+                color: "#6b7280",
+                marginTop: 4,
+                lineHeight: 1.4,
+              }}
+            >
               {hint}
             </div>
           )}
@@ -177,12 +198,22 @@ const Card = ({ title, hint, right, children }) => (
 
 const Delta = ({ cur, prev, label }) => {
   if (!prev) {
-    return <span style={{ fontSize: 14, color: "#6b7280" }}>No earlier data to compare</span>;
+    return (
+      <span style={{ fontSize: 14, color: "#6b7280" }}>
+        No earlier data to compare
+      </span>
+    );
   }
   const pct = ((cur - prev) / prev) * 100;
   const up = pct >= 0;
   return (
-    <span style={{ fontSize: 14, fontWeight: 600, color: up ? "#16a34a" : "#dc2626" }}>
+    <span
+      style={{
+        fontSize: 14,
+        fontWeight: 600,
+        color: up ? "#16a34a" : "#dc2626",
+      }}
+    >
       {up ? "▲" : "▼"} {Math.abs(pct).toFixed(0)}%{" "}
       <span style={{ fontWeight: 500, color: "#6b7280" }}>{label}</span>
     </span>
@@ -190,8 +221,12 @@ const Delta = ({ cur, prev, label }) => {
 };
 
 const Kpi = ({ label, value, sub, accent }) => (
-  <div style={{ ...card, borderTop: `3px solid ${accent}`, padding: "18px 20px" }}>
-    <div style={{ fontSize: 15, fontWeight: 600, color: "#4b5563" }}>{label}</div>
+  <div
+    style={{ ...card, borderTop: `3px solid ${accent}`, padding: "18px 20px" }}
+  >
+    <div style={{ fontSize: 15, fontWeight: 600, color: "#4b5563" }}>
+      {label}
+    </div>
     <div
       style={{
         fontSize: 30,
@@ -210,11 +245,17 @@ const Kpi = ({ label, value, sub, accent }) => (
 
 const Mini = ({ label, value, sub }) => (
   <div style={{ ...card, padding: "14px 18px" }}>
-    <div style={{ fontSize: 14, fontWeight: 600, color: "#4b5563" }}>{label}</div>
-    <div style={{ fontSize: 22, fontWeight: 700, color: "#111827", marginTop: 2 }}>
+    <div style={{ fontSize: 14, fontWeight: 600, color: "#4b5563" }}>
+      {label}
+    </div>
+    <div
+      style={{ fontSize: 22, fontWeight: 700, color: "#111827", marginTop: 2 }}
+    >
       {value}
     </div>
-    {sub && <div style={{ fontSize: 14, color: "#6b7280", marginTop: 2 }}>{sub}</div>}
+    {sub && (
+      <div style={{ fontSize: 14, color: "#6b7280", marginTop: 2 }}>{sub}</div>
+    )}
   </div>
 );
 
@@ -258,7 +299,9 @@ const Row = ({ left, sub, right, rightColor }) => (
 );
 
 const Empty = ({ children }) => (
-  <div style={{ fontSize: 15, color: "#6b7280", padding: "8px 0" }}>{children}</div>
+  <div style={{ fontSize: 15, color: "#6b7280", padding: "8px 0" }}>
+    {children}
+  </div>
 );
 
 const SERIES = [
@@ -282,23 +325,32 @@ const VS_LABEL = {
   "1y": "vs previous 12 months",
 };
 
-const hourShort = (h) => `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? "AM" : "PM"}`;
+const hourShort = (h) =>
+  `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? "AM" : "PM"}`;
 
 function pointLabel(series, p, long) {
-  if (series === "1d") return long ? `Today, ${hourLabel(p.k)}` : hourShort(p.k);
+  if (series === "1d")
+    return long ? `Today, ${hourLabel(p.k)}` : hourShort(p.k);
   const d = new Date(`${p.k}T00:00:00`);
   if (series === "1y") {
-    return d.toLocaleDateString("en-IN", long ? { month: "long", year: "numeric" } : { month: "short" });
+    return d.toLocaleDateString(
+      "en-IN",
+      long ? { month: "long", year: "numeric" } : { month: "short" },
+    );
   }
   if (series === "1w") {
     return d.toLocaleDateString(
       "en-IN",
-      long ? { weekday: "long", day: "numeric", month: "short" } : { weekday: "short", day: "numeric" }
+      long
+        ? { weekday: "long", day: "numeric", month: "short" }
+        : { weekday: "short", day: "numeric" },
     );
   }
   return d.toLocaleDateString(
     "en-IN",
-    long ? { weekday: "short", day: "numeric", month: "short" } : { day: "numeric", month: "short" }
+    long
+      ? { weekday: "short", day: "numeric", month: "short" }
+      : { day: "numeric", month: "short" },
   );
 }
 
@@ -337,7 +389,7 @@ function SalesTrendCard({ token, branchId }) {
   const { data, loading } = useCachedApi(
     `${BASE_URL}/api/dashboard/insights`,
     { series, branch_id: branchId || 0, only: "trend_series" },
-    { token }
+    { token },
   );
 
   useEffect(() => {
@@ -349,7 +401,8 @@ function SalesTrendCard({ token, branchId }) {
     if (!menuOpen) return undefined;
 
     const close = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target))
+        setMenuOpen(false);
     };
     const esc = (e) => {
       if (e.key === "Escape") setMenuOpen(false);
@@ -413,7 +466,9 @@ function SalesTrendCard({ token, branchId }) {
   const ts = data?.trend_series;
   const points = ts?.points || [];
   const n = points.length;
-  const valid = points.map((p, i) => ({ p, i })).filter((x) => x.p.total !== null);
+  const valid = points
+    .map((p, i) => ({ p, i }))
+    .filter((x) => x.p.total !== null);
   const totals = valid.map((x) => x.p.total);
 
   const W = 600;
@@ -422,7 +477,8 @@ function SalesTrendCard({ token, branchId }) {
   const pad = 8;
   const max = Math.max(...totals, 1);
 
-  const xPct = (i) => ((pad + (i * (W - pad * 2)) / Math.max(n - 1, 1)) / W) * 100;
+  const xPct = (i) =>
+    ((pad + (i * (W - pad * 2)) / Math.max(n - 1, 1)) / W) * 100;
   const yPx = (v) => H - pad - (v / max) * (H - pad * 2);
 
   const total = Number(ts?.total) || 0;
@@ -432,8 +488,12 @@ function SalesTrendCard({ token, branchId }) {
   const color = change === null ? "#2f63f6" : up ? "#16a34a" : "#dc2626";
   const avg = totals.length ? total / totals.length : 0;
   const billsTotal = valid.reduce((a, x) => a + (x.p.bills || 0), 0);
-  const high = valid.length ? valid.reduce((a, b) => (b.p.total > a.p.total ? b : a)) : null;
-  const low = valid.length ? valid.reduce((a, b) => (b.p.total < a.p.total ? b : a)) : null;
+  const high = valid.length
+    ? valid.reduce((a, b) => (b.p.total > a.p.total ? b : a))
+    : null;
+  const low = valid.length
+    ? valid.reduce((a, b) => (b.p.total < a.p.total ? b : a))
+    : null;
 
   const line = valid
     .map((x, k) => `${k ? "L" : "M"}${(xPct(x.i) / 100) * W} ${yPx(x.p.total)}`)
@@ -452,7 +512,8 @@ function SalesTrendCard({ token, branchId }) {
     setHover(Math.max(0, Math.min(lastValid, Math.round(raw))));
   };
 
-  const hp = hover !== null && points[hover]?.total !== null ? points[hover] : null;
+  const hp =
+    hover !== null && points[hover]?.total !== null ? points[hover] : null;
 
   const pillBase = {
     height: 30,
@@ -479,7 +540,12 @@ function SalesTrendCard({ token, branchId }) {
         >
           <div
             role="tablist"
-            style={{ display: "inline-flex", background: "#f1f5f9", borderRadius: 10, padding: 3 }}
+            style={{
+              display: "inline-flex",
+              background: "#f1f5f9",
+              borderRadius: 10,
+              padding: 3,
+            }}
           >
             {SERIES.map((r) => (
               <button
@@ -492,7 +558,10 @@ function SalesTrendCard({ token, branchId }) {
                   ...pillBase,
                   background: series === r.value ? "#fff" : "transparent",
                   color: series === r.value ? "#2f63f6" : "#6b7280",
-                  boxShadow: series === r.value ? "0 1px 2px rgba(15,23,42,.12)" : "none",
+                  boxShadow:
+                    series === r.value
+                      ? "0 1px 2px rgba(15,23,42,.12)"
+                      : "none",
                 }}
               >
                 {r.label}
@@ -547,13 +616,21 @@ function SalesTrendCard({ token, branchId }) {
                   padding: 6,
                 }}
               >
-                <div style={{ padding: "6px 10px", fontSize: 13, color: "#6b7280" }}>
+                <div
+                  style={{
+                    padding: "6px 10px",
+                    fontSize: 13,
+                    color: "#6b7280",
+                  }}
+                >
                   {fromDate && toDate
                     ? "Sales report · Custom dates"
                     : `Sales report · ${SERIES_TITLE[series]}`}
                 </div>
 
-                <div style={{ display: "flex", gap: 8, padding: "4px 10px 8px" }}>
+                <div
+                  style={{ display: "flex", gap: 8, padding: "4px 10px 8px" }}
+                >
                   <label style={{ flex: 1, fontSize: 12, color: "#6b7280" }}>
                     From
                     <input
@@ -616,10 +693,25 @@ function SalesTrendCard({ token, branchId }) {
                       cursor: "pointer",
                     }}
                   >
-                    <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: "#111827" }}>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: "#111827",
+                      }}
+                    >
                       {title}
                     </span>
-                    <span style={{ display: "block", fontSize: 13, color: "#6b7280" }}>{sub}</span>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: 13,
+                        color: "#6b7280",
+                      }}
+                    >
+                      {sub}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -681,7 +773,11 @@ function SalesTrendCard({ token, branchId }) {
             ))}
 
             <div
-              style={{ position: "relative", height: AREA, cursor: "crosshair" }}
+              style={{
+                position: "relative",
+                height: AREA,
+                cursor: "crosshair",
+              }}
               onMouseMove={onMove}
               onMouseLeave={() => setHover(null)}
               onTouchStart={onMove}
@@ -787,10 +883,18 @@ function SalesTrendCard({ token, branchId }) {
                     <div style={{ fontSize: 13, color: "#6b7280" }}>
                       {pointLabel(series, hp, true)}
                     </div>
-                    <div style={{ fontSize: 17, fontWeight: 700, color: "#111827" }}>
+                    <div
+                      style={{
+                        fontSize: 17,
+                        fontWeight: 700,
+                        color: "#111827",
+                      }}
+                    >
                       {fmt(hp.total)}
                     </div>
-                    <div style={{ fontSize: 13, color: "#6b7280" }}>{billsText(hp.bills)}</div>
+                    <div style={{ fontSize: 13, color: "#6b7280" }}>
+                      {billsText(hp.bills)}
+                    </div>
                   </div>
                 </>
               )}
@@ -805,7 +909,11 @@ function SalesTrendCard({ token, branchId }) {
                     position: "absolute",
                     left: `${xPct(i)}%`,
                     transform:
-                      i === 0 ? "none" : i === n - 1 ? "translateX(-100%)" : "translateX(-50%)",
+                      i === 0
+                        ? "none"
+                        : i === n - 1
+                          ? "translateX(-100%)"
+                          : "translateX(-50%)",
                     fontSize: 13,
                     color: "#9ca3af",
                     whiteSpace: "nowrap",
@@ -829,14 +937,34 @@ function SalesTrendCard({ token, branchId }) {
             }}
           >
             {[
-              ["High", fmt(high?.p.total), high ? pointLabel(series, high.p, false) : ""],
-              ["Low", fmt(low?.p.total), low ? pointLabel(series, low.p, false) : ""],
-              ["Average", fmt(avg), series === "1d" ? "per hour" : series === "1y" ? "per month" : "per day"],
+              [
+                "High",
+                fmt(high?.p.total),
+                high ? pointLabel(series, high.p, false) : "",
+              ],
+              [
+                "Low",
+                fmt(low?.p.total),
+                low ? pointLabel(series, low.p, false) : "",
+              ],
+              [
+                "Average",
+                fmt(avg),
+                series === "1d"
+                  ? "per hour"
+                  : series === "1y"
+                    ? "per month"
+                    : "per day",
+              ],
               ["Bills", billsTotal, "in this period"],
             ].map(([label, value, sub]) => (
               <div key={label}>
                 <div style={{ fontSize: 13, color: "#6b7280" }}>{label}</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>{value}</div>
+                <div
+                  style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}
+                >
+                  {value}
+                </div>
                 <div style={{ fontSize: 13, color: "#9ca3af" }}>{sub}</div>
               </div>
             ))}
@@ -921,7 +1049,7 @@ function BusiestTimesCard({ token, branches, globalBranch, showSelect }) {
   const { data, loading } = useCachedApi(
     `${BASE_URL}/api/dashboard/insights`,
     { branch_id: branch || 0, only: "peak" },
-    { token }
+    { token },
   );
   const peak = data?.peak;
   const top = Math.max(...(peak?.hours || []).map((h) => h.bills), 1);
@@ -936,7 +1064,11 @@ function BusiestTimesCard({ token, branches, globalBranch, showSelect }) {
       hint="Based on bills from the last 30 days"
       right={
         showSelect ? (
-          <BranchSelect value={branch} onChange={setBranch} branches={branches} />
+          <BranchSelect
+            value={branch}
+            onChange={setBranch}
+            branches={branches}
+          />
         ) : null
       }
     >
@@ -977,7 +1109,7 @@ function TopCustomersCard({ token, branches, globalBranch, showSelect }) {
   const { data, loading } = useCachedApi(
     `${BASE_URL}/api/dashboard/insights`,
     { branch_id: branch || 0, only: "customers" },
-    { token }
+    { token },
   );
   const list = data?.customers || [];
   const maxTotal = Math.max(...list.map((c) => Number(c.total) || 0), 1);
@@ -992,7 +1124,11 @@ function TopCustomersCard({ token, branches, globalBranch, showSelect }) {
       hint="Highest spenders in the last 30 days"
       right={
         showSelect ? (
-          <BranchSelect value={branch} onChange={setBranch} branches={branches} />
+          <BranchSelect
+            value={branch}
+            onChange={setBranch}
+            branches={branches}
+          />
         ) : null
       }
     >
@@ -1041,18 +1177,26 @@ const Home = () => {
   const isBackOffice = role === "admin" || role === "manager";
   const nothingEnabled =
     isBackOffice &&
-    !(canSales || canPurchase || canFinancial || canStock || canBills || canCustomers);
+    !(
+      canSales ||
+      canPurchase ||
+      canFinancial ||
+      canStock ||
+      canBills ||
+      canCustomers
+    );
 
   const managerBranchId =
     role === "manager"
-      ? user_data?.branch_id ??
-      user_data?.user?.branch_id ??
-      user_data?.user?.branch_ids?.[0] ??
-      user_data?.branch_ids?.[0] ??
-      null
+      ? (user_data?.branch_id ??
+        user_data?.user?.branch_id ??
+        user_data?.user?.branch_ids?.[0] ??
+        user_data?.branch_ids?.[0] ??
+        null)
       : null;
 
-  const adminStoreId = role === "admin" ? user_data?.user?.store_id ?? null : null;
+  const adminStoreId =
+    role === "admin" ? (user_data?.user?.store_id ?? null) : null;
 
   const branches = appData?.branches || [];
   const [range, setRange] = useState("today");
@@ -1076,7 +1220,8 @@ const Home = () => {
   };
 
   const branchId = role === "manager" ? managerBranchId : pickedBranch || null;
-  const showBranchPicker = role === "admin" && canBranches && branches.length > 1;
+  const showBranchPicker =
+    role === "admin" && canBranches && branches.length > 1;
 
   const [loading, setLoading] = useState(true);
 
@@ -1119,14 +1264,14 @@ const Home = () => {
   const { data: money } = useCachedApi(
     `${BASE_URL}/api/dashboard/money-summary`,
     { branch_id: branchId || 0 },
-    { token, enabled: isBackOffice }
+    { token, enabled: isBackOffice },
   );
 
   // Insights for the selected range and branch (cached)
   const { data: ins, loading: insLoading } = useCachedApi(
     `${BASE_URL}/api/dashboard/insights`,
     { range, branch_id: branchId || 0, only: MAIN_SECTIONS },
-    { token, enabled: isBackOffice }
+    { token, enabled: isBackOffice },
   );
 
   const widgetBranch = branchId || "ALL";
@@ -1141,7 +1286,12 @@ const Home = () => {
       if (sr.out > 0) {
         list.push({
           tone: "red",
-          text: (<><b>{sr.out}</b> {sr.out === 1 ? "item is" : "items are"} out of stock</>),
+          text: (
+            <>
+              <b>{sr.out}</b> {sr.out === 1 ? "item is" : "items are"} out of
+              stock
+            </>
+          ),
           cta: "Restock",
           to: ROUTES.newPurchase,
         });
@@ -1149,7 +1299,12 @@ const Home = () => {
       if (sr.low > 0) {
         list.push({
           tone: "amber",
-          text: (<><b>{sr.low}</b> {sr.low === 1 ? "item is" : "items are"} running low ({sr.limit} or fewer left)</>),
+          text: (
+            <>
+              <b>{sr.low}</b> {sr.low === 1 ? "item is" : "items are"} running
+              low ({sr.limit} or fewer left)
+            </>
+          ),
           cta: "Restock",
           to: ROUTES.newPurchase,
         });
@@ -1159,12 +1314,13 @@ const Home = () => {
           tone: "red",
           text: (
             <>
-              <b>{b.name}</b> is selling fast ({b.sold} sold) but only {b.left} left in stock
+              <b>{b.name}</b> is selling fast ({b.sold} sold) but only {b.left}{" "}
+              left in stock
             </>
           ),
           cta: "Reorder",
           to: ROUTES.newPurchase,
-        })
+        }),
       );
     }
 
@@ -1186,7 +1342,11 @@ const Home = () => {
       if (canPurchase && Number(money.supplier_dues) > 0) {
         list.push({
           tone: "amber",
-          text: (<><b>{fmt(money.supplier_dues)}</b> to pay suppliers</>),
+          text: (
+            <>
+              <b>{fmt(money.supplier_dues)}</b> to pay suppliers
+            </>
+          ),
           cta: "Purchases",
           to: ROUTES.newPurchase,
         });
@@ -1205,15 +1365,26 @@ const Home = () => {
       if (ins.expiry.expired > 0) {
         list.push({
           tone: "red",
-          text: (<><b>{ins.expiry.expired}</b> {ins.expiry.expired === 1 ? "batch has" : "batches have"} expired</>),
-          cta: "Products",
-          to: ROUTES.products,
+          text: (
+            <>
+              <b>{ins.expiry.expired}</b>{" "}
+              {ins.expiry.expired === 1 ? "batch has" : "batches have"} expired
+            </>
+          ),
+          cta: "View batches",
+          to: ROUTES.expiry,
         });
       }
       if (ins.expiry.soon > 0) {
         list.push({
           tone: "amber",
-          text: (<><b>{ins.expiry.soon}</b> {ins.expiry.soon === 1 ? "batch expires" : "batches expire"} within 30 days</>),
+          text: (
+            <>
+              <b>{ins.expiry.soon}</b>{" "}
+              {ins.expiry.soon === 1 ? "batch expires" : "batches expire"}{" "}
+              within 30 days
+            </>
+          ),
           cta: "Products",
           to: ROUTES.products,
         });
@@ -1225,12 +1396,13 @@ const Home = () => {
         tone: "blue",
         text: (
           <>
-            <b>{ins.dead_stock.count}</b> items have not sold in 30 days, {fmt(ins.dead_stock.value)} of
-            stock is tied up
+            <b>{ins.expiry.soon}</b>{" "}
+            {ins.expiry.soon === 1 ? "batch expires" : "batches expire"} within
+            30 days
           </>
         ),
-        cta: "Products",
-        to: ROUTES.products,
+        cta: "View batches",
+        to: ROUTES.expiry,
       });
     }
 
@@ -1242,7 +1414,9 @@ const Home = () => {
   const exp = ins?.expenses;
   const pay = ins?.payments;
   const payTotal = (pay?.cash || 0) + (pay?.online || 0);
-  const available = money ? Number(money.cash_in_hand) + Number(money.bank_balance) : 0;
+  const available = money
+    ? Number(money.cash_in_hand) + Number(money.bank_balance)
+    : 0;
   const rangeLabel = RANGES.find((r) => r.value === range)?.label;
   const cardProps = {
     token,
@@ -1256,7 +1430,6 @@ const Home = () => {
       <style>{selectCss}</style>
       <div className="main-content-inner">
         <div className="main-content-wrap">
-
           {role === "superadmin" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
               <StatCard
@@ -1274,8 +1447,9 @@ const Home = () => {
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
               <h3 className="text-2xl font-bold mb-2">Empty Dashboard</h3>
               <p className="text-gray-500">
-                There is no dashboard features enable for your account. You can use available
-                menus from the left side menu or kindly contact your Admin.
+                There is no dashboard features enable for your account. You can
+                use available menus from the left side menu or kindly contact
+                your Admin.
               </p>
             </div>
           )}
@@ -1293,8 +1467,22 @@ const Home = () => {
                   marginBottom: 20,
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                  <h3 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "#111827" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontSize: 24,
+                      fontWeight: 800,
+                      color: "#111827",
+                    }}
+                  >
                     Dashboard
                   </h3>
                   {role === "admin" && pickedBranch && (
@@ -1317,7 +1505,9 @@ const Home = () => {
                         cursor: "pointer",
                       }}
                     >
-                      {branches.find((b) => String(b.id) === String(pickedBranch))?.name || "Branch"}
+                      {branches.find(
+                        (b) => String(b.id) === String(pickedBranch),
+                      )?.name || "Branch"}
                       <span aria-hidden="true">×</span>
                     </button>
                   )}
@@ -1399,12 +1589,19 @@ const Home = () => {
                         cursor: aiQuestion.trim() ? "pointer" : "not-allowed",
                       }}
                     >
-                    <span style={{ fontSize: 20, lineHeight: 1 }}>✦</span>
+                      <span style={{ fontSize: 20, lineHeight: 1 }}>✦</span>
                     </button>
                   </form>
                 )}
 
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    flexWrap: "wrap",
+                  }}
+                >
                   {showBranchPicker && (
                     <select
                       className="dash-select"
@@ -1445,9 +1642,13 @@ const Home = () => {
                           fontSize: 15,
                           fontWeight: 600,
                           cursor: "pointer",
-                          background: range === r.value ? "#fff" : "transparent",
+                          background:
+                            range === r.value ? "#fff" : "transparent",
                           color: range === r.value ? "#2f63f6" : "#4b5563",
-                          boxShadow: range === r.value ? "0 1px 2px rgba(0,0,0,.1)" : "none",
+                          boxShadow:
+                            range === r.value
+                              ? "0 1px 2px rgba(0,0,0,.1)"
+                              : "none",
                         }}
                       >
                         {r.label}
@@ -1522,7 +1723,11 @@ const Home = () => {
                     accent="#2377FC"
                     sub={
                       sales ? (
-                        <Delta cur={sales.total} prev={sales.prev_total} label={PREV_LABEL[range]} />
+                        <Delta
+                          cur={sales.total}
+                          prev={sales.prev_total}
+                          label={PREV_LABEL[range]}
+                        />
                       ) : (
                         " "
                       )
@@ -1537,8 +1742,12 @@ const Home = () => {
                     accent="#22C55E"
                     sub={
                       <>
-                        Margin <b style={{ color: "#111827" }}>{profit.margin_pct}%</b> · After
-                        expenses <b style={{ color: "#111827" }}>{fmt(profit.after_expenses)}</b>
+                        Margin{" "}
+                        <b style={{ color: "#111827" }}>{profit.margin_pct}%</b>{" "}
+                        · After expenses{" "}
+                        <b style={{ color: "#111827" }}>
+                          {fmt(profit.after_expenses)}
+                        </b>
                       </>
                     }
                   />
@@ -1552,8 +1761,14 @@ const Home = () => {
                     sub={
                       money ? (
                         <>
-                          Cash <b style={{ color: "#111827" }}>{fmt(money.cash_in_hand)}</b> · Bank{" "}
-                          <b style={{ color: "#111827" }}>{fmt(money.bank_balance)}</b>
+                          Cash{" "}
+                          <b style={{ color: "#111827" }}>
+                            {fmt(money.cash_in_hand)}
+                          </b>{" "}
+                          · Bank{" "}
+                          <b style={{ color: "#111827" }}>
+                            {fmt(money.bank_balance)}
+                          </b>
                         </>
                       ) : (
                         " "
@@ -1571,7 +1786,9 @@ const Home = () => {
                       money ? (
                         <>
                           To pay suppliers{" "}
-                          <b style={{ color: "#111827" }}>{fmt(money.supplier_dues)}</b>
+                          <b style={{ color: "#111827" }}>
+                            {fmt(money.supplier_dues)}
+                          </b>
                         </>
                       ) : (
                         " "
@@ -1591,7 +1808,11 @@ const Home = () => {
                   />
                 )}
                 {canSales && sales && (
-                  <Mini label="Bills" value={sales.bills} sub={`Average bill ${fmt(sales.avg_bill)}`} />
+                  <Mini
+                    label="Bills"
+                    value={sales.bills}
+                    sub={`Average bill ${fmt(sales.avg_bill)}`}
+                  />
                 )}
                 {canSales && pay && payTotal > 0 && (
                   <Mini
@@ -1600,22 +1821,29 @@ const Home = () => {
                     sub={`UPI/Bank ${Math.round((pay.online / payTotal) * 100)}% · ${fmt(pay.online)}`}
                   />
                 )}
-                {canStock && ins?.expiry && (ins.expiry.soon > 0 || ins.expiry.expired > 0) && (
-                  <Mini
-                    label="Expiring Soon"
-                    value={ins.expiry.soon}
-                    sub={`Expiring in 30 days · ${ins.expiry.expired} expired`}
-                  />
-                )}
+                {canStock &&
+                  ins?.expiry &&
+                  (ins.expiry.soon > 0 || ins.expiry.expired > 0) && (
+                    <Mini
+                      label="Expiring Soon"
+                      value={ins.expiry.soon}
+                      sub={`Expiring in 30 days · ${ins.expiry.expired} expired`}
+                    />
+                  )}
               </div>
 
               {/* 2. Kya karna hai */}
               <div className="mb-8">
-                <Card title="Needs Attention" hint="Things that need action right now">
+                <Card
+                  title="Needs Attention"
+                  hint="Things that need action right now"
+                >
                   {!money && !ins ? (
                     <Empty>Checking your numbers...</Empty>
                   ) : actions.length === 0 ? (
-                    <Empty>Everything looks good. Nothing urgent right now.</Empty>
+                    <Empty>
+                      Everything looks good. Nothing urgent right now.
+                    </Empty>
                   ) : (
                     actions.map((a, i) => (
                       <div
@@ -1625,7 +1853,8 @@ const Home = () => {
                           alignItems: "center",
                           gap: 12,
                           padding: "10px 0",
-                          borderBottom: i === actions.length - 1 ? 0 : "1px solid #f1f5f9",
+                          borderBottom:
+                            i === actions.length - 1 ? 0 : "1px solid #f1f5f9",
                         }}
                       >
                         <span
@@ -1637,7 +1866,11 @@ const Home = () => {
                             flex: "none",
                           }}
                         />
-                        <div style={{ flex: 1, fontSize: 15, color: "#374151" }}>{a.text}</div>
+                        <div
+                          style={{ flex: 1, fontSize: 15, color: "#374151" }}
+                        >
+                          {a.text}
+                        </div>
                         <Link
                           to={a.to}
                           style={{
@@ -1725,7 +1958,10 @@ const Home = () => {
 
                 {canSales && ins?.top_profit && ins.top_profit.length > 0 && (
                   <div>
-                    <Card title="Most Profitable Products" hint="Last 30 days (approximate)">
+                    <Card
+                      title="Most Profitable Products"
+                      hint="Last 30 days (approximate)"
+                    >
                       {ins.top_profit.map((p) => (
                         <Row
                           key={p.name}
@@ -1744,7 +1980,7 @@ const Home = () => {
                     <Card
                       title="Dead Stock"
                       hint={`${ins.dead_stock.count} items have not sold in 30 days · ${fmt(
-                        ins.dead_stock.value
+                        ins.dead_stock.value,
                       )} tied up`}
                     >
                       {ins.dead_stock.items.map((d) => (
@@ -1760,60 +1996,76 @@ const Home = () => {
                   </div>
                 )}
 
-                {role === "admin" && ins?.branches && ins.branches.length > 1 && (
-                  <div>
-                    <Card
-                      title="Sales by Branch"
-                      hint={`${rangeLabel} · Click a branch to filter the whole dashboard`}
-                    >
-                      {ins.branches.map((b) => {
-                        const on = String(b.id) === String(pickedBranch);
-                        return (
-                          <button
-                            key={b.id ?? b.name}
-                            type="button"
-                            onClick={() => setPickedBranch(on ? "" : String(b.id))}
-                            aria-pressed={on}
-                            style={{
-                              display: "flex",
-                              width: "100%",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              gap: 12,
-                              padding: "10px 12px",
-                              border: 0,
-                              borderBottom: "1px solid #f1f5f9",
-                              borderRadius: 10,
-                              background: on ? "#eff6ff" : "transparent",
-                              font: "inherit",
-                              textAlign: "left",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <span>
+                {role === "admin" &&
+                  ins?.branches &&
+                  ins.branches.length > 1 && (
+                    <div>
+                      <Card
+                        title="Sales by Branch"
+                        hint={`${rangeLabel} · Click a branch to filter the whole dashboard`}
+                      >
+                        {ins.branches.map((b) => {
+                          const on = String(b.id) === String(pickedBranch);
+                          return (
+                            <button
+                              key={b.id ?? b.name}
+                              type="button"
+                              onClick={() =>
+                                setPickedBranch(on ? "" : String(b.id))
+                              }
+                              aria-pressed={on}
+                              style={{
+                                display: "flex",
+                                width: "100%",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                gap: 12,
+                                padding: "10px 12px",
+                                border: 0,
+                                borderBottom: "1px solid #f1f5f9",
+                                borderRadius: 10,
+                                background: on ? "#eff6ff" : "transparent",
+                                font: "inherit",
+                                textAlign: "left",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <span>
+                                <span
+                                  style={{
+                                    display: "block",
+                                    fontSize: 15,
+                                    fontWeight: 600,
+                                    color: on ? "#2f63f6" : "#111827",
+                                  }}
+                                >
+                                  {b.name}
+                                </span>
+                                <span
+                                  style={{
+                                    display: "block",
+                                    fontSize: 14,
+                                    color: "#6b7280",
+                                  }}
+                                >
+                                  {billsText(b.bills)}
+                                </span>
+                              </span>
                               <span
                                 style={{
-                                  display: "block",
                                   fontSize: 15,
-                                  fontWeight: 600,
-                                  color: on ? "#2f63f6" : "#111827",
+                                  fontWeight: 700,
+                                  color: "#111827",
                                 }}
                               >
-                                {b.name}
+                                {fmt(b.total)}
                               </span>
-                              <span style={{ display: "block", fontSize: 14, color: "#6b7280" }}>
-                                {billsText(b.bills)}
-                              </span>
-                            </span>
-                            <span style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>
-                              {fmt(b.total)}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </Card>
-                  </div>
-                )}
+                            </button>
+                          );
+                        })}
+                      </Card>
+                    </div>
+                  )}
               </div>
 
               {/* Low stock (detail table) */}

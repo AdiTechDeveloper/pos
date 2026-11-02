@@ -93,6 +93,22 @@ const CreateStore = () => {
     gstin: Yup.string().required("GSTIN is required"),
     username: Yup.string().required("Username is required"),
 
+    drug_licence_no: Yup.string()
+      .nullable()
+      .test(
+        "pharmacy-licence",
+        "Drug licence no. is required for a pharmacy store",
+        (v) => !selectedFeatures.includes("pharmacy") || !!(v && v.trim()),
+      ),
+    pharmacist_name: Yup.string()
+      .nullable()
+      .test(
+        "pharmacy-pharmacist",
+        "Pharmacist name is required for a pharmacy store",
+        (v) => !selectedFeatures.includes("pharmacy") || !!(v && v.trim()),
+      ),
+    pharmacist_reg_no: Yup.string().nullable(),
+
     password: Yup.string().test(
       "password-rules",
       "Password must be at least 6 characters",
@@ -157,6 +173,9 @@ const CreateStore = () => {
     logo: editingData?.logo || null,
     tagline: editingData?.tagline || "",
     username: editingData?.username || "",
+    drug_licence_no: editingData?.drug_licence_no || "",
+    pharmacist_name: editingData?.pharmacist_name || "",
+    pharmacist_reg_no: editingData?.pharmacist_reg_no || "",
     password: "",
     password_confirmation: "",
   };
@@ -175,6 +194,9 @@ const CreateStore = () => {
       formData.append("gstin", values.gstin);
       formData.append("tagline", values.tagline || "");
       formData.append("username", values.username);
+      formData.append("drug_licence_no", values.drug_licence_no || "");
+      formData.append("pharmacist_name", values.pharmacist_name || "");
+      formData.append("pharmacist_reg_no", values.pharmacist_reg_no || "");
 
       if (values.password) {
         formData.append("password", values.password);
@@ -503,6 +525,91 @@ const CreateStore = () => {
                       />
                     </div>
                   </fieldset>
+
+                  {selectedFeatures.includes("pharmacy") && (
+                    <>
+                      <fieldset
+                        style={{ border: "none", padding: 0, margin: 0 }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "8px",
+                          }}
+                        >
+                          <div className="body-title">
+                            Drug Licence No.{" "}
+                            <span className="tf-color-1">*</span>
+                          </div>
+                          <Field
+                            type="text"
+                            name="drug_licence_no"
+                            placeholder="Enter drug licence number"
+                            style={{ width: "100%" }}
+                          />
+                          <ErrorMessage
+                            name="drug_licence_no"
+                            component="p"
+                            className="error-text"
+                          />
+                        </div>
+                      </fieldset>
+
+                      <fieldset
+                        style={{ border: "none", padding: 0, margin: 0 }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "8px",
+                          }}
+                        >
+                          <div className="body-title">
+                            Pharmacist Name{" "}
+                            <span className="tf-color-1">*</span>
+                          </div>
+                          <Field
+                            type="text"
+                            name="pharmacist_name"
+                            placeholder="Enter pharmacist name"
+                            style={{ width: "100%" }}
+                          />
+                          <ErrorMessage
+                            name="pharmacist_name"
+                            component="p"
+                            className="error-text"
+                          />
+                        </div>
+                      </fieldset>
+
+                      <fieldset
+                        style={{ border: "none", padding: 0, margin: 0 }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "8px",
+                          }}
+                        >
+                          <div className="body-title">Pharmacist Reg. No.</div>
+                          <Field
+                            type="text"
+                            name="pharmacist_reg_no"
+                            placeholder="Enter registration number"
+                            style={{ width: "100%" }}
+                          />
+                          <ErrorMessage
+                            name="pharmacist_reg_no"
+                            component="p"
+                            className="error-text"
+                          />
+                        </div>
+                      </fieldset>
+                    </>
+                  )}
 
                   <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
                     <div

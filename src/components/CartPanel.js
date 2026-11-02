@@ -22,6 +22,7 @@ import {
   LayoutDashboard,
   Wallet,
 } from "lucide-react";
+import PrescriptionModal from "./PrescriptionModal";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -55,6 +56,8 @@ export default function CartPanel({
   const [priceOverrides, setPriceOverrides] = useState({});
   const [showEndShift, setShowEndShift] = useState(false);
   const [showAddAdvance, setShowAddAdvance] = useState(false);
+  const [showRx, setShowRx] = useState(false);
+  const [rxData, setRxData] = useState(null);
 
   const openDatePicker = () => {
     const input = dateInputRef.current;
@@ -105,6 +108,25 @@ export default function CartPanel({
     return acc + gstAmount * item.qty;
   }, 0);
 
+  const rxItems = cart.filter(
+    (i) =>
+      Number(i.requires_prescription) === 1 ||
+      (i.drug_schedule && i.drug_schedule !== "none"),
+  );
+  const needsRx = rxItems.length > 0;
+
+  const openPayment = () => {
+    if (needsRx && !rxData) {
+      setShowRx(true);
+      return;
+    }
+    setShowPayment(true);
+  };
+
+  useEffect(() => {
+    if (!needsRx && rxData) setRxData(null);
+  }, [needsRx, rxData]);
+
   const itemCount = cart.length;
   const totalQty = cart.reduce((acc, item) => acc + (Number(item.qty) || 0), 0);
 
@@ -112,14 +134,15 @@ export default function CartPanel({
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "F9" && cart.length > 0 && !showPayment) {
+      if (e.key === "F9" && cart.length > 0 && !showPayment && !showRx) {
         e.preventDefault();
-        setShowPayment(true);
+        if (needsRx && !rxData) setShowRx(true);
+        else setShowPayment(true);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [cart.length, showPayment]);
+  }, [cart.length, showPayment, showRx, needsRx, rxData]);
 
   const increaseQty = (item) => {
     setCart(
@@ -269,6 +292,7 @@ export default function CartPanel({
       if (payment_type) createPayload.payment_type = payment_type;
       if (customer) createPayload.customer = customer;
       if (points_redeemed > 0) createPayload.points_redeemed = points_redeemed;
+      if (needsRx && rxData) createPayload.prescription = rxData;
 
       const res = await createSalesBill(createPayload);
       const billId = res.data.data.id;
@@ -288,6 +312,7 @@ export default function CartPanel({
 
       toast.success("Sales bill created successfully!");
       setCart([]);
+      setRxData(null);
       setPriceOverrides({});
       triggerRefresh();
       setShowPayment(false);
@@ -627,6 +652,21 @@ export default function CartPanel({
                   <p style={{ fontWeight: 700, fontSize: "15px" }}>
                     {item.name}
                   </p>
+                  {item.drug_schedule && item.drug_schedule !== "none" && (
+                    <span
+                      style={{
+                        marginLeft: 8,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: "#b91c1c",
+                        background: "#fee2e2",
+                        borderRadius: 6,
+                        padding: "1px 6px",
+                      }}
+                    >
+                      {item.drug_schedule}
+                    </span>
+                  )}
                   {isOverridden && (
                     <span
                       className="flex items-center gap-1"
@@ -970,8 +1010,19 @@ export default function CartPanel({
           </span>
         </div>
 
+        {needsRx && rxData && (
+          <button
+            type="button"
+            onClick={() => setShowRx(true)}
+            className="w-full mb-2 text-3xl font-bold"
+            style={{ color: "#f0a04b", textAlign: "left" }}
+          >
+            ✎ Edit Prescription ({rxData.patient_name})
+          </button>
+        )}
+
         <button
-          onClick={() => setShowPayment(true)}
+          onClick={openPayment}
           disabled={cart.length === 0}
           className="w-full flex items-center justify-center gap-2"
           style={{
@@ -1035,6 +1086,19 @@ export default function CartPanel({
           Customer Dues
         </button>
       </div>
+
+      {showRx && (
+        <PrescriptionModal
+          items={rxItems}
+          initial={rxData}
+          onClose={() => setShowRx(false)}
+          onConfirm={(data) => {
+            setRxData(data);
+            setShowRx(false);
+            setShowPayment(true);
+          }}
+        />
+      )}
 
       {showPayment && (
         <PaymentModal

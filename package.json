@@ -2,7 +2,7 @@
   "name": "store-management-system",
   "version": "0.1.0",
   "private": true,
-  "proxy": "https://loyality-backend.theaditech.in",
+  "proxy": "https://api.vakaro.in",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

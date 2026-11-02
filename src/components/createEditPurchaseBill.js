@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import ProductForm from "./ProductForm";
 import { useAppData } from "../context/AppDataContext";
 import FormikDatePicker from "./FormikDatePicker";
+import { hasFeature } from "../utils/hasFeature";
 
 const ledgerStyles = `
   :root {
@@ -238,6 +239,10 @@ const ledgerStyles = `
     position: relative;
     transition: box-shadow 0.15s;
     min-width: 1320px;
+  }
+  .pb-line-row.with-batch {
+    grid-template-columns: 220px 70px 70px 110px 110px 110px 90px 100px 90px 130px 140px 160px 36px;
+    min-width: 1460px;
   }
   .pb-line-row:hover { box-shadow: 0 2px 8px rgba(15, 27, 46, 0.06); }
   .pb-line-row.is-opening {
@@ -517,6 +522,8 @@ const CreateEditPurchaseBill = () => {
     ? JSON.parse(store_purchase_bill)
     : null;
   const isEdit = Boolean(id);
+  const isPharmacy = hasFeature("pharmacy");
+  const showBatch = isPharmacy || hasFeature("batch_entry");
 
   const [initialValues, setInitialValues] = useState({
     branch_id: "",
@@ -674,46 +681,80 @@ const CreateEditPurchaseBill = () => {
 
   const validationSchema = Yup.object().shape({
     branch_id: Yup.string().required("Branch is required"),
+
     supplier_id: Yup.string().required("Supplier is required"),
+
     bill_no: Yup.string().required("Bill No is required"),
+
     bill_date: Yup.date()
       .transform(parseDateString)
       .typeError("Invalid date format")
       .required("Bill date is required"),
+
     tax_type: Yup.string().oneOf(["inclusive", "exclusive"]).required(),
+
     settlement_amount: Yup.number().nullable().min(0, "Cannot be negative"),
+
     notes: Yup.string().nullable(),
+
     lines: Yup.array()
       .min(1, "At least one product is required")
       .of(
         Yup.object().shape({
           product_id: Yup.string().required("Product is required"),
+
           qty: Yup.number()
             .typeError("Quantity must be a number")
             .required("Qty required")
             .min(0.0001, "Qty must be greater than 0"),
+
           free_qty: Yup.number()
             .nullable()
             .typeError("Free Qty must be a number")
             .min(0, "Free Qty cannot be negative"),
+
           purchase_rate: Yup.number()
             .typeError("Purchase rate must be a number")
             .required("Purchase rate required")
             .min(0, "Rate cannot be negative"),
+
           mrp: Yup.number()
             .typeError("MRP must be a number")
             .required("MRP required")
             .min(0, "MRP cannot be negative"),
+
           selling_price: Yup.number()
             .typeError("Selling price must be a number")
             .required("Selling price required")
-            .min(0, "Selling price cannot be negative"),
+            .min(0, "Selling price cannot be negative")
+            .test("sp-le-mrp", "SP not more then MRP", function (v) {
+              if (!isPharmacy) return true;
+              const mrp = Number(this.parent.mrp);
+              return !mrp || v == null || Number(v) <= mrp;
+            }),
+
+          batch_no: isPharmacy
+            ? Yup.string()
+                .trim()
+                .required("Batch no required")
+                .max(50, "Max 50 chars")
+            : Yup.string().nullable(),
+
           discount_type: Yup.string()
             .nullable()
             .oneOf(["percent", "fixed", ""]),
+
           discount: Yup.number().nullable().min(0, "Cannot be negative"),
+
           gst_rate_id: Yup.string().required("GST rate required"),
-          expiry_date: Yup.date().transform(parseDateString).nullable(),
+
+          expiry_date: isPharmacy
+            ? Yup.date()
+                .transform(parseDateString)
+                .typeError("Expiry date required")
+                .required("Expiry date required")
+            : Yup.date().transform(parseDateString).nullable(),
+
           is_opening: Yup.boolean().default(false),
         }),
       ),
@@ -722,10 +763,13 @@ const CreateEditPurchaseBill = () => {
         amount: Yup.number()
           .required("Amount is required")
           .min(0.01, "Min amount is 0.01"),
+
         method: Yup.string()
           .required("Method is required")
           .oneOf(["cash", "online", "bank"], "Invalid payment method"),
+
         reference: Yup.string().nullable(),
+
         payment_date: Yup.date().transform(parseDateString).nullable(),
       }),
     ),
@@ -801,8 +845,11 @@ const CreateEditPurchaseBill = () => {
       navigate("/purchase-bill");
     } catch (error) {
       console.log(error.response?.data);
+      const apiErrors = error.response?.data?.errors;
+      const firstError = apiErrors ? Object.values(apiErrors).flat()[0] : null;
       toast.error(
-        error.response?.data?.message ||
+        firstError ||
+          error.response?.data?.message ||
           "Failed to save purchase bill. Please check the form.",
       );
     } finally {
@@ -1376,7 +1423,7 @@ const CreateEditPurchaseBill = () => {
                               {values?.lines?.map((line, index) => (
                                 <div
                                   key={index}
-                                  className={`pb-line-row${line.is_opening ? " is-opening" : ""}`}
+                                  className={`pb-line-row${line.is_opening ? " is-opening" : ""}${showBatch ? " with-batch" : ""}`}
                                 >
                                   <div className="field-col">
                                     <small className="field-label">
@@ -1570,9 +1617,32 @@ const CreateEditPurchaseBill = () => {
                                     />
                                   </div>
 
+                                  {showBatch && (
+                                    <div className="field-col">
+                                      <small className="field-label">
+                                        Batch No{isPharmacy ? " *" : ""}
+                                      </small>
+                                      <Field
+                                        type="text"
+                                        name={`lines.${index}.batch_no`}
+                                        placeholder={
+                                          isPharmacy
+                                            ? "Batch no"
+                                            : "Batch no / Blank"
+                                        }
+                                        style={{ textTransform: "uppercase" }}
+                                      />
+                                      <ErrorMessage
+                                        name={`lines.${index}.batch_no`}
+                                        component="div"
+                                        className="field-error"
+                                      />
+                                    </div>
+                                  )}
+
                                   <div className="field-col">
                                     <small className="field-label">
-                                      Expiry
+                                      Expiry{isPharmacy ? " *" : ""}
                                     </small>
                                     <FormikDatePicker
                                       name={`lines.${index}.expiry_date`}

@@ -3,6 +3,7 @@ import axios from "axios";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { toast } from "react-toastify";
+import { hasFeature } from "../utils/hasFeature";
 
 const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -16,6 +17,14 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
   const [quickAddValue, setQuickAddValue] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const PHARMACY_KEYS = [
+    "salt_composition",
+    "drug_schedule",
+    "requires_prescription",
+    "pack_type",
+    "units_per_pack",
+  ];
+
   let lastTime = 0;
 
   const initialValues = {
@@ -27,7 +36,15 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
     gst_rate_id: initialData?.gst_rate_id || "",
     barcode: initialData?.barcode || "",
     gst_inclusive: initialData?.gst_inclusive == 1 || false,
-    is_price_override: 0,
+    is_price_override: initialData?.is_price_override ? 1 : 0,
+    sale_type: initialData?.sale_type || "unit",
+    plu_code: initialData?.plu_code || "",
+    price_per_kg: initialData?.price_per_kg || "",
+    salt_composition: initialData?.salt_composition || "",
+    drug_schedule: initialData?.drug_schedule || "none",
+    requires_prescription: initialData?.requires_prescription == 1,
+    pack_type: initialData?.pack_type || "",
+    units_per_pack: initialData?.units_per_pack || "",
   };
 
   useEffect(() => {
@@ -53,6 +70,27 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
     name: Yup.string().required("Product Name is required"),
     brand_id: Yup.string().required("Required"),
     category_id: Yup.string().required("Required"),
+    plu_code: Yup.string().when("sale_type", {
+      is: "weight",
+      then: (schema) =>
+        schema
+          .required("PLU code is required for weight-type products")
+          .matches(/^\d{5}$/, "PLU code must be exactly 5 digits"),
+      otherwise: (schema) => schema.nullable(),
+    }),
+    price_per_kg: Yup.number().when("sale_type", {
+      is: "weight",
+      then: (schema) =>
+        schema
+          .required("Price per kg is required for weight-type products")
+          .min(0.01, "Price per kg must be greater than 0"),
+      otherwise: (schema) => schema.nullable(),
+    }),
+    units_per_pack: Yup.number()
+      .transform((value, original) => (original === "" ? null : value))
+      .nullable()
+      .integer("Must be a whole number")
+      .min(1, "Must be at least 1"),
   });
 
   const handleSubmit = async (values, { setSubmitting }) => {
@@ -61,10 +99,19 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
         ? `${BASE_URL}/api/products/${initialData.id}`
         : `${BASE_URL}/api/products`;
 
+      const payload = { ...values };
+      if (hasFeature("pharmacy")) {
+        payload.units_per_pack =
+          payload.units_per_pack === "" ? null : payload.units_per_pack;
+        payload.requires_prescription = !!payload.requires_prescription;
+      } else {
+        PHARMACY_KEYS.forEach((k) => delete payload[k]);
+      }
+
       const response = await axios({
         method: isEdit ? "put" : "post",
         url,
-        data: values,
+        data: payload,
         headers: { Authorization: `Bearer ${user_data.token}` },
       });
 
@@ -116,7 +163,7 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
-        {({ isSubmitting, setFieldValue }) => (
+        {({ isSubmitting, setFieldValue, values }) => (
           <Form className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Name */}
@@ -151,7 +198,9 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
               {/* Brand */}
               <div className="flex flex-col gap-1">
                 <label className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">
-                  Brand *
+                  {hasFeature("pharmacy")
+                    ? "Manufacturer / Company *"
+                    : "Brand *"}
                 </label>
                 <div className="flex gap-2">
                   <Field
@@ -191,7 +240,9 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
               {/* Category */}
               <div className="flex flex-col gap-1">
                 <label className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">
-                  Category *
+                  {hasFeature("pharmacy")
+                    ? "Medicine Category *"
+                    : "Category *"}
                 </label>
                 <div className="flex gap-2">
                   <Field
@@ -426,6 +477,171 @@ const ProductForm = ({ onSuccess, onCancel, initialData = null }) => {
                 </Field>
               </div>
             </div>
+
+            {/* Sale Type / Weight fields (pharmacy stores do not need this) */}
+            {!hasFeature("pharmacy") && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">
+                    Sale Type
+                  </label>
+                  <Field
+                    as="select"
+                    name="sale_type"
+                    className="px-3 py-2 border border-gray-200 rounded-lg outline-none bg-white"
+                  >
+                    <option value="unit">Unit (piece/box)</option>
+                    <option value="weight">Weight (kg - loose item)</option>
+                  </Field>
+                </div>
+
+                {values.sale_type === "weight" && (
+                  <>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">
+                        PLU Code *
+                      </label>
+                      <Field name="plu_code">
+                        {({ field, form }) => (
+                          <input
+                            {...field}
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="e.g. 00123"
+                            maxLength={5}
+                            autoComplete="off"
+                            className="px-4 py-2 border border-gray-200 rounded-lg outline-none"
+                            onChange={(e) =>
+                              form.setFieldValue(
+                                "plu_code",
+                                e.target.value.replace(/\D/g, "").slice(0, 5),
+                              )
+                            }
+                          />
+                        )}
+                      </Field>
+                      <ErrorMessage
+                        name="plu_code"
+                        component="div"
+                        className="text-red-500 text-[10px]"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">
+                        Price per Kg (₹) *
+                      </label>
+                      <Field
+                        type="number"
+                        step="0.01"
+                        name="price_per_kg"
+                        placeholder="e.g. 40.00"
+                        className="px-4 py-2 border border-gray-200 rounded-lg outline-none"
+                      />
+                      <ErrorMessage
+                        name="price_per_kg"
+                        component="div"
+                        className="text-red-500 text-[10px]"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {hasFeature("pharmacy") && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">
+                    Drug Schedule
+                  </label>
+                  <Field
+                    as="select"
+                    name="drug_schedule"
+                    className="px-3 py-2 border border-gray-200 rounded-lg outline-none bg-white"
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setFieldValue("drug_schedule", v);
+                      if (["H", "H1", "X"].includes(v))
+                        setFieldValue("requires_prescription", true);
+                    }}
+                  >
+                    <option value="none">None (OTC)</option>
+                    <option value="G">Schedule G</option>
+                    <option value="H">Schedule H</option>
+                    <option value="H1">Schedule H1</option>
+                    <option value="X">Schedule X</option>
+                  </Field>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">
+                    Salt / Composition
+                  </label>
+                  <Field
+                    name="salt_composition"
+                    placeholder="e.g. Paracetamol 500mg"
+                    className="px-4 py-2 border border-gray-200 rounded-lg outline-none"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">
+                    Pack Type
+                  </label>
+                  <Field
+                    as="select"
+                    name="pack_type"
+                    className="px-3 py-2 border border-gray-200 rounded-lg outline-none bg-white"
+                  >
+                    <option value="">Select</option>
+                    <option value="strip">Strip</option>
+                    <option value="bottle">Bottle</option>
+                    <option value="tube">Tube</option>
+                    <option value="box">Box</option>
+                    <option value="vial">Vial</option>
+                    <option value="sachet">Sachet</option>
+                  </Field>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">
+                    Units per Pack
+                  </label>
+                  <Field
+                    type="number"
+                    min="1"
+                    name="units_per_pack"
+                    placeholder="e.g. 10"
+                    className="px-4 py-2 border border-gray-200 rounded-lg outline-none"
+                  />
+                  <ErrorMessage
+                    name="units_per_pack"
+                    component="div"
+                    className="text-red-500 text-[10px]"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">
+                    Prescription Required
+                  </label>
+                  <label className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-white">
+                    <Field
+                      type="checkbox"
+                      name="requires_prescription"
+                      className="w-4 h-4 accent-indigo-600"
+                      disabled={["H", "H1", "X"].includes(values.drug_schedule)}
+                    />
+                    <span className="text-sm text-gray-600">
+                      {["H", "H1", "X"].includes(values.drug_schedule)
+                        ? "Always required for this schedule"
+                        : "Yes"}
+                    </span>
+                  </label>
+                </div>
+              </div>
+            )}
 
             {/* Footer Actions */}
             <div className="flex justify-end gap-3 border-t pt-5">

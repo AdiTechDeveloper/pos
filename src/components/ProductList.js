@@ -109,6 +109,11 @@ export default function ProductList({
 
       is_price_override: is_price_override,
 
+      drug_schedule: product?.drug_schedule ?? "none",
+      requires_prescription:
+        Number(product?.requires_prescription) === 1 ? 1 : 0,
+      salt_composition: product?.salt_composition ?? null,
+
       qty: 1,
     };
   };
@@ -352,6 +357,17 @@ export default function ProductList({
                       </span>
                     )}
                   </div>
+
+                  {p.drug_schedule && p.drug_schedule !== "none" && (
+                    <span className="inline-block mt-2 mr-2 px-3 py-1 bg-red-50 text-red-700 rounded-full text-sm font-bold border border-red-200">
+                      Schedule {p.drug_schedule}
+                    </span>
+                  )}
+                  {p.salt_composition && (
+                    <p className="text-base text-gray-500 mt-1">
+                      {p.salt_composition}
+                    </p>
+                  )}
 
                   {p.batch_count > 1 && (
                     <span className="inline-block mt-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-semibold">

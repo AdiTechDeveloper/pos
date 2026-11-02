@@ -1,6 +1,7 @@
 import React from "react";
 import { AppDataProvider } from "./context/AppDataContext";
 import "./App.css";
+
 import "../src/assets/css/style.css";
 import "../src/assets/font/fonts.css";
 import "../src/assets/icon/style.css";
@@ -76,9 +77,14 @@ import ChangePassword from "./components/ChangePassword";
 import customer from "./components/customer";
 import AiInsights from "./components/AiInsights";
 import SupplierTracking from "./components/reports/SuplierTracking";
+import PrescriptionRegister from "./components/reports/pharmacy/PrescriptionRegister";
 
 import CustomerPortalLogin from "./components/CustomerPortalLogin";
 import Expenses from "./components/Expenses";
+import OnlineOrders from "./components/OnlineOrders";
+import OnlineStoreSettings from "./components/OnlineStoreSettings";
+import DeliveryOrders from "./components/DeliveryOrders";
+import DeliveryRoute from "./routes/DeliveryRoute";
 
 const Protected = ({ Component, requiredFeature }) => {
   return (
@@ -94,9 +100,10 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <>
       {/* Customer Portal */}
-   <Route
-  path="/customer-portal"
-  element={<Public Component={CustomerPortalLogin} />} />
+      <Route
+        path="/customer-portal"
+        element={<Public Component={CustomerPortalLogin} />}
+      />
 
       {/* Public Routes */}
       <Route path="/" element={<Public Component={Login} />} />
@@ -117,6 +124,11 @@ const router = createBrowserRouter(
 
       <Route path="/dashboard" element={<Protected Component={Home} />} />
 
+      {/* Delivery person ka alag mobile screen: sirf role = delivery */}
+      <Route
+        path="/delivery"
+        element={<DeliveryRoute component={DeliveryOrders} />}
+      />
       {/* AiInsights */}
       <Route
         path="/ai-insights"
@@ -129,9 +141,22 @@ const router = createBrowserRouter(
         path="/product"
         element={<Protected Component={Product} requiredFeature="products" />}
       />
-       <Route
-        path="/expenses"
-        element={<Protected Component={Expenses} />}
+      <Route path="/expenses" element={<Protected Component={Expenses} />} />
+
+      <Route
+        path="/online-orders"
+        element={
+          <Protected Component={OnlineOrders} requiredFeature="online_store" />
+        }
+      />
+      <Route
+        path="/online-settings"
+        element={
+          <Protected
+            Component={OnlineStoreSettings}
+            requiredFeature="online_store"
+          />
+        }
       />
 
       <Route
@@ -537,11 +562,11 @@ const router = createBrowserRouter(
       />
 
       <Route
-        path="/supplier-tracking"
+        path="/reports/prescription-register"
         element={
           <Protected
-            Component={SupplierTracking}
-            requiredFeature="reports_suplier"
+            Component={PrescriptionRegister}
+            requiredFeature="pharmacy"
           />
         }
       />
@@ -553,7 +578,7 @@ const router = createBrowserRouter(
         }
       />
 
-        <Route
+      <Route
         path="/supplier-tracking"
         element={
           <Protected
