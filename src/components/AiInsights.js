@@ -442,7 +442,8 @@ const CSS = `
   flex: 1; width: 100%; display: block; resize: none; border: 0 !important; outline: 0 !important;
   box-shadow: none !important; background: transparent !important; border-radius: 0 !important;
   padding: 4px 0 !important; height: ${TA_MIN}px; min-height: ${TA_MIN}px !important; max-height: ${TA_MAX}px !important;
-  font-size: 15px; line-height: 1.6 !important; color: var(--ink) !important;
+  font-size: 15px; line-height: 1.6 !important; color: var(--ink) !important; text-transform: capitalize !important;
+  
 }
 .aic-panel .aic-textarea::placeholder { color: var(--faint); }
 .aic-panel .aic-send { width: 36px; height: 36px; flex-shrink: 0; border: 0; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; transition: background .15s; }
