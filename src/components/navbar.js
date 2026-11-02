@@ -24,6 +24,8 @@ import {
   IoExitOutline,
   IoPeopleOutline,
   IoCashOutline,
+  IoBagHandleOutline,
+  IoSettingsOutline,
 } from "react-icons/io5";
 import { FaFacebookF, FaLinkedinIn, FaInstagram } from "react-icons/fa";
 
@@ -274,6 +276,12 @@ const Navbar = () => {
       icon: <IoPeopleOutline size={20} />,
       feature: "customers",
     },
+    {
+      name: "Online Orders",
+      path: "/online-orders",
+      icon: <IoBagHandleOutline size={20} />,
+      feature: "online_store",
+    },
   ];
 
   const superadminMenus = [
@@ -292,7 +300,7 @@ const Navbar = () => {
 
   const adminMenus = [
     {
-      name: "Know You Bussiness",
+      name: "AI Business Assistant",
       path: "/ai-insights",
       icon: <Sparkles className="w-10 h-10" />,
       feature: "ai_insights",
@@ -309,13 +317,19 @@ const Navbar = () => {
       icon: <i className="icon-user" />,
       feature: "staff_management",
     },
+    {
+      name: "Online Settings",
+      path: "/online-settings",
+      icon: <IoSettingsOutline size={20} />,
+      feature: "online_store",
+    },
     ...sharedMenuItems,
     posMenuItem,
   ];
 
   const managerMenus = [
     {
-      name: "Know You Bussiness",
+      name: "AI Business Assistant",
       path: "/ai-insights",
       icon: <Sparkles className="w-10 h-10" />,
       feature: "ai_insights",

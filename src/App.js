@@ -1,6 +1,7 @@
 import React from "react";
 import { AppDataProvider } from "./context/AppDataContext";
 import "./App.css";
+
 import "../src/assets/css/style.css";
 import "../src/assets/font/fonts.css";
 import "../src/assets/icon/style.css";
@@ -80,6 +81,10 @@ import PrescriptionRegister from "./components/reports/pharmacy/PrescriptionRegi
 
 import CustomerPortalLogin from "./components/CustomerPortalLogin";
 import Expenses from "./components/Expenses";
+import OnlineOrders from "./components/OnlineOrders";
+import OnlineStoreSettings from "./components/OnlineStoreSettings";
+import DeliveryOrders from "./components/DeliveryOrders";
+import DeliveryRoute from "./routes/DeliveryRoute";
 
 const Protected = ({ Component, requiredFeature }) => {
   return (
@@ -119,6 +124,11 @@ const router = createBrowserRouter(
 
       <Route path="/dashboard" element={<Protected Component={Home} />} />
 
+      {/* Delivery person ka alag mobile screen: sirf role = delivery */}
+      <Route
+        path="/delivery"
+        element={<DeliveryRoute component={DeliveryOrders} />}
+      />
       {/* AiInsights */}
       <Route
         path="/ai-insights"
@@ -132,6 +142,22 @@ const router = createBrowserRouter(
         element={<Protected Component={Product} requiredFeature="products" />}
       />
       <Route path="/expenses" element={<Protected Component={Expenses} />} />
+
+      <Route
+        path="/online-orders"
+        element={
+          <Protected Component={OnlineOrders} requiredFeature="online_store" />
+        }
+      />
+      <Route
+        path="/online-settings"
+        element={
+          <Protected
+            Component={OnlineStoreSettings}
+            requiredFeature="online_store"
+          />
+        }
+      />
 
       <Route
         path="/print-barcode"
