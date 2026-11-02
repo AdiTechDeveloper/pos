@@ -28,6 +28,7 @@ const CreateEditStaff = () => {
     pin: "",
     branch_ids: [],
     features: [],
+    is_delivery: false,
   });
 
   const cleanedBranchIds =
@@ -42,6 +43,7 @@ const CreateEditStaff = () => {
         pin: incomingStaff.pin,
         branch_ids: cleanedBranchIds,
         features: [],
+        is_delivery: !!incomingStaff.is_delivery,
       });
 
       if (incomingStaff.role === "manager") {
@@ -239,6 +241,7 @@ const CreateEditStaff = () => {
                           <option value="">Select Role</option>
                           <option value="manager">Manager</option>
                           <option value="cashier">Cashier</option>
+                          <option value="delivery">Delivery person</option>
                         </Field>
                         <ErrorMessage
                           name="role"
@@ -247,7 +250,31 @@ const CreateEditStaff = () => {
                         />
                       </div>
                     </fieldset>
-
+                    {(values.role === "manager" || values.role === "cashier") && (
+                      <fieldset className="col-12 col-md-3">
+                        <div className="body-title">Delivery</div>
+                        <div className="body-content mb-15">
+                          <label
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              cursor: "pointer",
+                              fontSize: "14px",
+                              height: "44px",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!values.is_delivery}
+                              onChange={(e) => setFieldValue("is_delivery", e.target.checked)}
+                              style={{ width: "18px", height: "18px", accentColor: "#2563eb" }}
+                            />
+                            Can do deliveries
+                          </label>
+                        </div>
+                      </fieldset>
+                    )}
                     {values.role === "cashier" && !isEdit && (
                       <fieldset className="col-12 col-md-3">
                         <div className="body-title">Pin *</div>
@@ -318,9 +345,9 @@ const CreateEditStaff = () => {
                               borderRadius: "6px",
                               backgroundColor:
                                 featureKeys.length > 0 &&
-                                featureKeys.every((key) =>
-                                  values.features.includes(key),
-                                )
+                                  featureKeys.every((key) =>
+                                    values.features.includes(key),
+                                  )
                                   ? "#dbeafe"
                                   : "#f8fafc",
                               color: "#1d4ed8",
@@ -403,8 +430,8 @@ const CreateEditStaff = () => {
                                     const next = e.target.checked
                                       ? [...values.features, key]
                                       : values.features.filter(
-                                          (f) => f !== key,
-                                        );
+                                        (f) => f !== key,
+                                      );
                                     setFieldValue("features", next);
                                   }}
                                   style={{

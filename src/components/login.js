@@ -85,6 +85,8 @@ const Login = () => {
 
         if (user_detail.must_change_credentials) {
           navigate("/change-password");
+        } else if (user_detail?.user?.role === "delivery") {
+          navigate("/delivery");
         } else {
           navigate("/dashboard");
         }

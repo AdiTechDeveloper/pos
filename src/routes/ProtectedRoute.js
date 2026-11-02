@@ -67,6 +67,14 @@ const ProtectedRoute = ({ component: Component, requiredFeature }) => {
     return <Navigate to="/change-password" replace />;
   }
 
+  // Delivery person ko POS ke kisi page par nahi jaane dena: sirf /delivery (aur password badalna)
+  if (
+    role === "delivery" &&
+    location.pathname !== "/change-password"
+  ) {
+    return <Navigate to="/delivery" replace />;
+  }
+
   if (
     role === "cashier" &&
     location.pathname !== "/pos" &&

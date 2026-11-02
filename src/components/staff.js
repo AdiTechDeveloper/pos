@@ -199,6 +199,27 @@ const Staff = () => {
       sortable: true,
       width: "350px",
     },
+        {
+      name: "Delivery",
+      width: "120px",
+      cell: (row) =>
+        row.is_delivery || row.role === "delivery" ? (
+          <span
+            style={{
+              padding: "3px 10px",
+              borderRadius: 999,
+              background: "#dbeafe",
+              color: "#1d4ed8",
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            Can deliver
+          </span>
+        ) : (
+          <span style={{ color: "#94a3b8", fontSize: 13 }}>-</span>
+        ),
+    },
     {
       name: "Action",
       cell: (row) => (

@@ -24,6 +24,8 @@ import {
   IoExitOutline,
   IoPeopleOutline,
   IoCashOutline,
+  IoBagHandleOutline,
+  IoSettingsOutline,
 } from "react-icons/io5";
 import { FaFacebookF, FaLinkedinIn, FaInstagram } from "react-icons/fa";
 
@@ -270,6 +272,12 @@ const Navbar = () => {
       icon: <IoPeopleOutline size={20} />,
       feature: "customers",
     },
+    {
+      name: "Online Orders",
+      path: "/online-orders",
+      icon: <IoBagHandleOutline size={20} />,
+      feature: "online_store",
+    },
   ];
 
 
@@ -305,6 +313,12 @@ const Navbar = () => {
       path: "/staff",
       icon: <i className="icon-user" />,
       feature: "staff_management",
+    },
+    {
+      name: "Online Settings",
+      path: "/online-settings",
+      icon: <IoSettingsOutline size={20} />,
+      feature: "online_store",
     },
     ...sharedMenuItems,
     posMenuItem,

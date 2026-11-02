@@ -44,9 +44,9 @@ const PublicRoute = ({ component: Component }) => {
       return "/change-password";
     }
 
-    return userDetail.user?.role === "cashier"
-      ? "/pos"
-      : "/dashboard";
+    const role = userDetail.user?.role;
+    if (role === "delivery") return "/delivery";
+    return role === "cashier" ? "/pos" : "/dashboard";
   };
 
   const redirectPath = getRedirectPath();
