@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { Clock, Users } from "lucide-react";
+import { Clock, Users, Sparkles } from "lucide-react";
 import { useCachedApi, invalidateDashboardCache } from "./Dashboardcache";
 import Layout from "./layout";
 import ProfitLossWidget from "./ProfitLossWidget";
@@ -1057,6 +1057,24 @@ const Home = () => {
   const branches = appData?.branches || [];
   const [range, setRange] = useState("today");
   const [pickedBranch, setPickedBranch] = useState("");
+  const [aiQuestion, setAiQuestion] = useState("");
+
+  const handleAiSearch = (e) => {
+    e.preventDefault();
+    const question = aiQuestion.trim();
+
+    if (!question) return;
+
+    navigate(ROUTES.ai, {
+      state: {
+        question,
+        autoSubmit: true,
+        branchId: branchId || null,
+        range,
+      },
+    });
+  };
+
   const branchId = role === "manager" ? managerBranchId : pickedBranch || null;
   const showBranchPicker = role === "admin" && canBranches && branches.length > 1;
 
@@ -1304,6 +1322,87 @@ const Home = () => {
                     </button>
                   )}
                 </div>
+
+                {hasFeature("ai_insights") && (
+                  <form
+                    onSubmit={handleAiSearch}
+                    role="search"
+                    aria-label="Ask AI about your business"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      flex: "1 1 320px",
+                      width: "100%",
+                      maxWidth: 620,
+                      minWidth: 220,
+                      height: 50,
+                      margin: "0 auto",
+                      padding: "0 14px 0 18px",
+                      boxSizing: "border-box",
+                      background: "#fff",
+                      border: "1px solid #a855f7",
+                      borderRadius: 16,
+                      boxShadow: "0 4px 18px rgba(124, 58, 237, 0.12)",
+                    }}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="22"
+                      height="22"
+                      fill="none"
+                      stroke="#7c3aed"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                      style={{ flexShrink: 0 }}
+                    >
+                      <circle cx="11" cy="11" r="7" />
+                      <path d="m20 20-4-4" />
+                    </svg>
+
+                    <input
+                      type="text"
+                      value={aiQuestion}
+                      onChange={(e) => setAiQuestion(e.target.value)}
+                      placeholder="Ask AI about your business..."
+                      aria-label="Ask AI about your business"
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        height: "100%",
+                        border: 0,
+                        outline: "none",
+                        background: "transparent",
+                        color: "#111827",
+                        fontSize: 15,
+                      }}
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={!aiQuestion.trim()}
+                      aria-label="Search with AI"
+                      title="Ask AI"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        width: 36,
+                        height: 36,
+                        border: 0,
+                        borderRadius: 10,
+                        background: aiQuestion.trim() ? "#7c3aed" : "#ede9fe",
+                        color: aiQuestion.trim() ? "#fff" : "#a78bfa",
+                        cursor: aiQuestion.trim() ? "pointer" : "not-allowed",
+                      }}
+                    >
+                    <span style={{ fontSize: 20, lineHeight: 1 }}>✦</span>
+                    </button>
+                  </form>
+                )}
 
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                   {showBranchPicker && (
