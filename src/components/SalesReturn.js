@@ -19,8 +19,8 @@ import { useAppData } from "../context/AppDataContext";
 const REFUND_METHODS = [
   { value: "cash", label: "Cash" },
   { value: "online", label: "Online" },
-  { value: "store_credit", label: "Store Credit" },
-  { value: "credit_note", label: "Credit Note" },
+  // { value: "store_credit", label: "Store Credit" },
+  // { value: "credit_note", label: "Credit Note" },
 ];
 
 const formatCurrency = (value) => {
@@ -60,8 +60,8 @@ const getLineTotalAmount = (line) => {
   const gst =
     Number(line.total_gst ?? line.gst_amount ?? 0) ||
     Number(line.cgst_amount ?? 0) +
-    Number(line.sgst_amount ?? 0) +
-    Number(line.igst_amount ?? 0);
+      Number(line.sgst_amount ?? 0) +
+      Number(line.igst_amount ?? 0);
   if (taxable > 0) return taxable + gst;
 
   const qty = Number(line.qty) || 1;
@@ -161,7 +161,7 @@ export default function ProcessSalesReturn() {
     if (!billData) return 0;
     return billData.lines.filter((line) => {
       const maxReturnable = line.qty - (line.total_returned_qty || 0);
-      return maxReturnable > 0;
+      return maxReturnable > 0 && !line.return_blocked;
     }).length;
   }, [billData]);
 
@@ -202,7 +202,9 @@ export default function ProcessSalesReturn() {
 
       const initialLines = {};
       bill.lines.forEach((line) => {
-        const maxReturnable = line.qty - (line.total_returned_qty || 0);
+        const maxReturnable = line.return_blocked
+          ? 0
+          : line.qty - (line.total_returned_qty || 0);
         initialLines[line.id] = {
           checked: false,
           qty: maxReturnable > 0 ? maxReturnable : 0,
@@ -490,7 +492,26 @@ export default function ProcessSalesReturn() {
 
                           <td className="col-product">
                             <strong>{line.product?.name || "—"}</strong>
-                            <span>Inv #{line.inventory_id}</span>
+                            <span>
+                              {line.batch_no
+                                ? `Batch: ${line.batch_no}${line.expiry_date ? `  Exp: ${line.expiry_date.slice(5, 7)}/${line.expiry_date.slice(2, 4)}` : ""}`
+                                : `Inv #${line.inventory_id}`}
+                              {line.drug_schedule &&
+                              line.drug_schedule !== "none"
+                                ? `  ·  Sch ${line.drug_schedule}`
+                                : ""}
+                            </span>
+                            {line.return_blocked && (
+                              <span
+                                style={{
+                                  display: "block",
+                                  color: "#dc2626",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                Not returnable (Schedule {line.drug_schedule})
+                              </span>
+                            )}
                           </td>
 
                           <td className="col-num">
@@ -561,10 +582,11 @@ export default function ProcessSalesReturn() {
                 <div className="sr-bill-row">
                   <span>Payment</span>
                   <span
-                    className={`sr-status ${billData.payment_status?.toLowerCase() === "paid"
+                    className={`sr-status ${
+                      billData.payment_status?.toLowerCase() === "paid"
                         ? "is-paid"
                         : "is-pending"
-                      }`}
+                    }`}
                   >
                     {billData.payment_status}
                   </span>
@@ -584,8 +606,9 @@ export default function ProcessSalesReturn() {
                     <button
                       key={method.value}
                       type="button"
-                      className={`sr-method-btn ${refundType === method.value ? "is-active" : ""
-                        }`}
+                      className={`sr-method-btn ${
+                        refundType === method.value ? "is-active" : ""
+                      }`}
                       onClick={() => setRefundType(method.value)}
                     >
                       {refundType === method.value && (
