@@ -136,6 +136,7 @@ export default function PrescriptionRegister() {
       "Batch",
       "Expiry",
       "Qty",
+      "Returned Qty",
       "Patient Name",
       "Age",
       "Patient Address",
@@ -155,6 +156,7 @@ export default function PrescriptionRegister() {
       r.batch_no || "",
       r.expiry_date || "",
       r.qty,
+      r.returned_qty,
       r.patient_name,
       r.patient_age ?? "",
       r.patient_address || "",
@@ -228,7 +230,7 @@ export default function PrescriptionRegister() {
         r.product_name,
         r.drug_schedule === "none" ? "Rx" : r.drug_schedule,
         r.batch_no || "-",
-        r.qty,
+        r.returned_qty > 0 ? `${r.qty} (ret. ${r.returned_qty})` : r.qty,
       ]),
     });
 
@@ -284,7 +286,22 @@ export default function PrescriptionRegister() {
         </div>
       ),
     },
-    { name: "Qty", selector: (r) => r.qty, sortable: true, right: true },
+    {
+      name: "Qty",
+      selector: (r) => r.qty,
+      sortable: true,
+      right: true,
+      cell: (r) => (
+        <div className="text-right">
+          <div className="font-semibold">{r.qty}</div>
+          {r.returned_qty > 0 && (
+            <div className="text-2xl text-red-600">
+              ↩ {r.returned_qty} returned
+            </div>
+          )}
+        </div>
+      ),
+    },
     {
       name: "Patient",
       selector: (r) => r.patient_name,
