@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
+import DataTable from "react-data-table-component";
 import { toast } from "react-toastify";
 import Layout from "./layout";
 import { ONLINE_CSS } from "./onlineStyles";
+import { ONLINE_TABLE_STYLES } from "./onlineTableStyles";
+import OnlineProductLimits from "./OnlineProductLimits";
 
 const STOREFRONT_URL =
   process.env.REACT_APP_STOREFRONT_URL || "https://store.vakro.in";
@@ -32,6 +35,7 @@ const EMPTY = {
   free_delivery_above: "",
   prep_minutes: "30",
   online_stock_percent: "50",
+  max_qty_per_product: ""
 };
 
 // API se aaya data -> form (sab kuch string, taaki input control rahe)
@@ -54,6 +58,10 @@ const toForm = (s) => ({
       : String(s.free_delivery_above),
   prep_minutes: String(s.prep_minutes ?? 30),
   online_stock_percent: String(s.online_stock_percent ?? 50),
+  max_qty_per_product:
+    s.max_qty_per_product === null || s.max_qty_per_product === undefined
+      ? ""
+      : String(s.max_qty_per_product),
 });
 
 function Card({ title, hint, children }) {
@@ -96,6 +104,28 @@ function Toggle({ checked, onChange, label, hint }) {
   );
 }
 
+const IconEdit = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+);
+const IconTrash = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    <path d="M10 11v6M14 11v6" />
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+  </svg>
+);
+
+const showAmount = (v) =>
+  v === null || v === undefined || v === "" ? (
+    <span className="ovx-dim">Default</span>
+  ) : (
+    `₹${v}`
+  );
+
 export default function OnlineStoreSettings() {
   const user_data = JSON.parse(localStorage.getItem("user_detail") || "null");
   const role = user_data?.user?.role;
@@ -114,6 +144,11 @@ export default function OnlineStoreSettings() {
   const [pinCharge, setPinCharge] = useState("");
   const [pinMin, setPinMin] = useState("");
   const [adding, setAdding] = useState(false);
+
+  // pincode table: inline edit
+  const [editId, setEditId] = useState(null);
+  const [draft, setDraft] = useState({ delivery_charge: "", min_order_amount: "" });
+  const [rowSaving, setRowSaving] = useState(false);
 
   const apply = useCallback((data) => {
     setStoreName(data.store_name || "");
@@ -156,6 +191,8 @@ export default function OnlineStoreSettings() {
         online_stock_percent: num(form.online_stock_percent, 50),
         open_time: form.open_time || null,
         close_time: form.close_time || null,
+        max_qty_per_product:
+          form.max_qty_per_product === "" ? null : Number(form.max_qty_per_product),
       };
       const res = await axios.put("/api/online/settings", payload);
       apply(res.data.data);
@@ -214,6 +251,24 @@ export default function OnlineStoreSettings() {
     }
   };
 
+  const startEdit = (row) => {
+    setEditId(row.id);
+    setDraft({
+      delivery_charge: row.delivery_charge ?? "",
+      min_order_amount: row.min_order_amount ?? "",
+    });
+  };
+
+  const saveEdit = async (row) => {
+    setRowSaving(true);
+    const ok = await updatePincode(row.id, {
+      delivery_charge: draft.delivery_charge === "" ? null : Number(draft.delivery_charge),
+      min_order_amount: draft.min_order_amount === "" ? null : Number(draft.min_order_amount),
+    });
+    setRowSaving(false);
+    if (ok) setEditId(null);
+  };
+
   const copy = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -222,6 +277,111 @@ export default function OnlineStoreSettings() {
       toast.error("Could not copy. Select the link and copy it by hand.");
     }
   };
+
+  const pincodeColumns = [
+    {
+      name: "Pincode",
+      selector: (r) => r.pincode,
+      sortable: true,
+      cell: (r) => <strong style={{ fontSize: 15 }}>{r.pincode}</strong>,
+    },
+    {
+      name: "Charge (₹)",
+      selector: (r) => Number(r.delivery_charge ?? 0),
+      sortable: true,
+      cell: (r) =>
+        editId === r.id ? (
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="Default"
+            className="ovx-input ovx-sm"
+            value={draft.delivery_charge}
+            onChange={(e) => setDraft((d) => ({ ...d, delivery_charge: e.target.value }))}
+          />
+        ) : (
+          showAmount(r.delivery_charge)
+        ),
+    },
+    {
+      name: "Min order (₹)",
+      selector: (r) => Number(r.min_order_amount ?? 0),
+      sortable: true,
+      cell: (r) =>
+        editId === r.id ? (
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="Default"
+            className="ovx-input ovx-sm"
+            value={draft.min_order_amount}
+            onChange={(e) => setDraft((d) => ({ ...d, min_order_amount: e.target.value }))}
+          />
+        ) : (
+          showAmount(r.min_order_amount)
+        ),
+    },
+    {
+      name: "Status",
+      width: "130px",
+      cell: (r) => (
+        <button
+          type="button"
+          onClick={() => updatePincode(r.id, { is_active: !r.is_active })}
+          title="Click to toggle"
+          style={{
+            padding: "3px 12px",
+            borderRadius: 999,
+            border: "none",
+            cursor: "pointer",
+            fontSize: 12,
+            fontWeight: 600,
+            background: r.is_active ? "#dcfce7" : "#f1f5f9",
+            color: r.is_active ? "#15803d" : "#64748b",
+          }}
+        >
+          {r.is_active ? "Active" : "Inactive"}
+        </button>
+      ),
+    },
+    {
+      name: "Actions",
+      right: true,
+      width: "240px",
+      cell: (r) =>
+        editId === r.id ? (
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              className="ovx-btn ovx-btn-primary ovx-btn-sm"
+              disabled={rowSaving}
+              onClick={() => saveEdit(r)}
+            >
+              {rowSaving ? "Saving..." : "Save"}
+            </button>
+            <button
+              type="button"
+              className="ovx-btn ovx-btn-outline ovx-btn-sm"
+              disabled={rowSaving}
+              onClick={() => setEditId(null)}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: 8 }}>
+            <button type="button" className="ovx-btn ovx-btn-edit ovx-btn-sm" onClick={() => startEdit(r)}>
+              <IconEdit /> Edit
+            </button>
+            <button type="button" className="ovx-btn ovx-btn-del ovx-btn-sm" onClick={() => deletePincode(r)}>
+              <IconTrash /> Delete
+            </button>
+          </div>
+        ),
+    },
+  ];
 
   return (
     <Layout>
@@ -317,6 +477,12 @@ export default function OnlineStoreSettings() {
                       >
                         <input type="number" min="0" max="100" className="ovx-input" value={form.online_stock_percent} onChange={set("online_stock_percent")} />
                       </Field>
+                      <Field
+                        label="Max quantity per product (per order)"
+                        hint="Default for every product. Leave empty for no limit. You can set a different limit for a product below."
+                      >
+                        <input type="number" min="1" className="ovx-input" value={form.max_qty_per_product} onChange={set("max_qty_per_product")} />
+                      </Field>
                     </Card>
                   </div>
 
@@ -397,26 +563,20 @@ export default function OnlineStoreSettings() {
                       No delivery areas yet. Customers can only choose pickup until you add a pincode.
                     </p>
                   ) : (
-                    <div className="ovx-tablewrap">
-                      <table className="ovx-table">
-                        <thead>
-                          <tr>
-                            <th>Pincode</th>
-                            <th>Charge (₹)</th>
-                            <th>Min order (₹)</th>
-                            <th>Active</th>
-                            <th className="ovx-right">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {pincodes.map((p) => (
-                            <PincodeRow key={p.id} row={p} onSave={updatePincode} onDelete={deletePincode} />
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="ovx-mt">
+                      <DataTable
+                        columns={pincodeColumns}
+                        data={pincodes}
+                        customStyles={ONLINE_TABLE_STYLES}
+                        highlightOnHover
+                        responsive
+                        pagination={pincodes.length > 10}
+                      />
                     </div>
                   )}
                 </Card>
+
+                <OnlineProductLimits defaultLimit={form.max_qty_per_product} />
 
                 {listings.length > 0 && (
                   <Card
@@ -425,7 +585,7 @@ export default function OnlineStoreSettings() {
                   >
                     <ul className="ovx-list">
                       {listings.map((l) => {
-                        const url = `${STOREFRONT_URL}/s/${l.slug}`;
+                        const url = `${STOREFRONT_URL}/${l.slug}`;
                         return (
                           <li key={l.branch_id}>
                             <div style={{ minWidth: 0 }}>
@@ -449,106 +609,5 @@ export default function OnlineStoreSettings() {
         </div>
       </div>
     </Layout>
-  );
-}
-
-const IconEdit = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 20h9" />
-    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-  </svg>
-);
-const IconTrash = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-    <path d="M10 11v6M14 11v6" />
-    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-  </svg>
-);
-
-const showAmount = (v) =>
-  v === null || v === undefined || v === "" ? (
-    <span className="ovx-dim">Default</span>
-  ) : (
-    `₹${v}`
-  );
-
-function PincodeRow({ row, onSave, onDelete }) {
-  const [charge, setCharge] = useState(row.delivery_charge ?? "");
-  const [min, setMin] = useState(row.min_order_amount ?? "");
-  const [saving, setSaving] = useState(false);
-  const [editing, setEditing] = useState(false);
-
-  // List badalne par (jaise naya pincode jude) inputs server ki value se mil jayein
-  useEffect(() => {
-    setCharge(row.delivery_charge ?? "");
-    setMin(row.min_order_amount ?? "");
-  }, [row.delivery_charge, row.min_order_amount]);
-
-  const cancel = () => {
-    setCharge(row.delivery_charge ?? "");
-    setMin(row.min_order_amount ?? "");
-    setEditing(false);
-  };
-
-  const save = async () => {
-    setSaving(true);
-    const ok = await onSave(row.id, {
-      delivery_charge: charge === "" ? null : Number(charge),
-      min_order_amount: min === "" ? null : Number(min),
-    });
-    setSaving(false);
-    if (ok) setEditing(false);
-  };
-
-  return (
-    <tr>
-      <td className="ovx-pin">{row.pincode}</td>
-      <td>
-        {editing ? (
-          <input type="number" min="0" step="0.01" className="ovx-input ovx-sm" value={charge} onChange={(e) => setCharge(e.target.value)} placeholder="Default" />
-        ) : (
-          showAmount(row.delivery_charge)
-        )}
-      </td>
-      <td>
-        {editing ? (
-          <input type="number" min="0" step="0.01" className="ovx-input ovx-sm" value={min} onChange={(e) => setMin(e.target.value)} placeholder="Default" />
-        ) : (
-          showAmount(row.min_order_amount)
-        )}
-      </td>
-      <td>
-        <input
-          type="checkbox"
-          checked={row.is_active}
-          onChange={(e) => onSave(row.id, { is_active: e.target.checked })}
-          aria-label={`Pincode ${row.pincode} active`}
-          className="ovx-check"
-        />
-      </td>
-      <td className="ovx-right">
-        {editing ? (
-          <>
-            <button type="button" onClick={save} disabled={saving} className="ovx-btn ovx-btn-primary ovx-btn-sm">
-              {saving ? "Saving..." : "Save"}
-            </button>
-            <button type="button" onClick={cancel} disabled={saving} className="ovx-btn ovx-btn-outline ovx-btn-sm">
-              Cancel
-            </button>
-          </>
-        ) : (
-          <>
-            <button type="button" onClick={() => setEditing(true)} className="ovx-btn ovx-btn-edit ovx-btn-sm">
-              <IconEdit /> Edit
-            </button>
-            <button type="button" onClick={() => onDelete(row)} className="ovx-btn ovx-btn-del ovx-btn-sm">
-              <IconTrash /> Delete
-            </button>
-          </>
-        )}
-      </td>
-    </tr>
   );
 }
