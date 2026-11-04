@@ -33,7 +33,7 @@ const EMPTY = {
   min_order_amount: "0",
   delivery_charge: "0",
   free_delivery_above: "",
-  prep_minutes: "30",
+  prep_minutes: "10",
   online_stock_percent: "50",
   max_qty_per_product: ""
 };
@@ -585,7 +585,7 @@ export default function OnlineStoreSettings() {
                   >
                     <ul className="ovx-list">
                       {listings.map((l) => {
-                        const url = `${STOREFRONT_URL}/${l.slug}`;
+                        const url = `${STOREFRONT_URL}/s/${l.slug}`;
                         return (
                           <li key={l.branch_id}>
                             <div style={{ minWidth: 0 }}>
