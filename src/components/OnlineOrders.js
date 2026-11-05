@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import Layout from "./layout";
+import DeliveryTimePicker from "./DeliveryTimePicker";
 import { ONLINE_CSS } from "./onlineStyles";
 
-const NEXT = (o, hasStaff, canOverride) => {
+const nextSteps = (o, hasStaff, canOverride) => {
   const pickup = o.mode === "pickup";
   switch (o.status) {
     case "placed":
-      return [{ to: "accepted", label: "Accept order", primary: true }];
+      return [{ to: "accepted", label: "Accept order", primary: true, accept: true }];
     case "accepted":
       return [
         { to: "preparing", label: "Start packing", primary: true },
@@ -45,6 +46,14 @@ const NEXT = (o, hasStaff, canOverride) => {
   }
 };
 
+// Raste mein jaane se pehle tak store delivery ka time badal sakta hai
+const CAN_CHANGE_TIME = ["accepted", "preparing", "ready"];
+const NEXT = (o, hasStaff, canOverride) => {
+  const steps = nextSteps(o, hasStaff, canOverride);
+  const timeBtn = !!o.eta_at && CAN_CHANGE_TIME.includes(o.status);
+  return timeBtn ? [...steps, { to: "eta", label: "Change time", eta: true }] : steps;
+};
+
 const LABEL = {
   placed: "New",
   accepted: "Accepted",
@@ -69,6 +78,17 @@ const minutesIn = (o, status) => {
   return h?.at ? Math.max(0, Math.round((Date.now() - new Date(h.at).getTime()) / 60000)) : 0;
 };
 const WAIT_ALERT_MINUTES = 5;
+
+// "today, 6:30 PM" / "tomorrow, 10:00 AM" / "8 Nov, 10:00 AM"
+const etaWhen = (iso) => {
+  const d = new Date(iso);
+  const dayStart = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((dayStart(d) - dayStart(new Date())) / 86400000);
+  const time = d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+  if (diff <= 0) return `today, ${time}`;
+  if (diff === 1) return `tomorrow, ${time}`;
+  return `${d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}, ${time}`;
+};
 
 const errMsg = (e) => e?.response?.data?.message || e?.message || "Something went wrong.";
 
@@ -110,6 +130,9 @@ export default function OnlineOrders() {
   const [assignFor, setAssignFor] = useState(null);
   const [assignTo, setAssignTo] = useState("");
   const [unassignFor, setUnassignFor] = useState(null);
+  const [timeFor, setTimeFor] = useState(null); // { order, accept }: delivery time wala popup
+  const [timeBusy, setTimeBusy] = useState(false);
+  const [timeError, setTimeError] = useState("");
   const lastId = useRef(null);
   const role = JSON.parse(localStorage.getItem("user_detail") || "null")?.user?.role;
   const canOverride = role === "admin" || role === "manager";
@@ -252,6 +275,58 @@ export default function OnlineOrders() {
     }
   };
 
+  const openTime = (order, accept) => {
+    setTimeError("");
+    setTimeFor({ order, accept });
+  };
+
+  // Popup se: pehle (accept ho to) order accept, phir time badhao.
+  // Is order se isliye ki time badhne ke baad accept fail ho to dobara dabane par time do baar na jud jaye.
+  const confirmTime = async ({ add_minutes, until, note }) => {
+    if (!timeFor) return;
+    const { order, accept } = timeFor;
+    const changed = !!add_minutes || !!until;
+
+    if (!changed && !accept) {
+      setTimeFor(null);
+      return;
+    }
+
+    setTimeBusy(true);
+    setTimeError("");
+    try {
+      if (accept) {
+        await axios.post(`/api/online-orders/${order.id}/status`, { status: "accepted" });
+      }
+    } catch (e) {
+      setTimeError(errMsg(e));
+      setTimeBusy(false);
+      return;
+    }
+
+    try {
+      if (changed) {
+        await axios.post(`/api/online-orders/${order.id}/eta`, {
+          add_minutes: add_minutes || undefined,
+          until: until || undefined,
+          note: note || undefined,
+        });
+      }
+      setTimeFor(null);
+      setToast(
+        accept
+          ? `${order.order_no} accepted${changed ? ", delivery time updated." : "."}`
+          : `${order.order_no}: delivery time updated.`,
+      );
+    } catch (e) {
+      setTimeFor(null);
+      setError(`${order.order_no}: ${accept ? "Accepted, but the time was not changed. " : ""}${errMsg(e)}`);
+    } finally {
+      setTimeBusy(false);
+      await load(true);
+    }
+  };
+
   // Is order ki branch ke delivery persons
   const staffFor = (o) =>
     staff.filter((u) => (u.branch_ids || []).includes(Number(o.branch_id)));
@@ -341,6 +416,7 @@ export default function OnlineOrders() {
                       ? minutesIn(o, "ready")
                       : 0;
                   const canCancel = !["delivered", "cancelled"].includes(o.status);
+                  const late = !!o.eta_at && new Date(o.eta_at).getTime() < Date.now();
                   return (
                     <div
                       key={o.id}
@@ -351,6 +427,14 @@ export default function OnlineOrders() {
                           <p className="ovx-order-no">{o.order_no}</p>
                           <p className="ovx-small">{ago(o.placed_at)}</p>
                           {o.branch_name && <p className="ovx-small">{o.branch_name}</p>}
+                          {o.eta_at && (
+                            <p className="ovx-small" style={{ color: late ? "#b91c1c" : "#1d4ed8", fontWeight: 600 }}>
+                              {o.mode === "delivery" ? "Deliver by " : "Ready by "}
+                              {etaWhen(o.eta_at)}
+                              {late ? " · late" : ""}
+                            </p>
+                          )}
+                          {o.eta_at && o.eta_note && <p className="ovx-small">Customer sees: {o.eta_note}</p>}
                         </div>
                         <div className="ovx-badges">
                           <span className={`ovx-badge b-${o.status}`}>{LABEL[o.status]}</span>
@@ -442,7 +526,11 @@ export default function OnlineOrders() {
                               key={x.to}
                               disabled={busy === o.id}
                               onClick={() =>
-                                x.assign
+                                x.eta
+                                  ? openTime(o, false)
+                                  : x.accept
+                                    ? openTime(o, true)
+                                    : x.assign
                                   ? (setAssignFor(o), setAssignTo(o.delivery_user_id ? String(o.delivery_user_id) : ""))
                                   : x.resend
                                     ? resendOtp(o)
@@ -477,6 +565,18 @@ export default function OnlineOrders() {
                 })}
               </div>
             )}
+
+            {/* Delivery ka time: accept karte waqt, ya baad mein "Change time" se */}
+            <DeliveryTimePicker
+              open={!!timeFor}
+              orderNo={timeFor?.order.order_no}
+              currentEtaIso={timeFor?.order.eta_at}
+              confirmText={timeFor?.accept ? "Accept order" : "Update time"}
+              busy={timeBusy}
+              error={timeError}
+              onClose={() => !timeBusy && setTimeFor(null)}
+              onConfirm={confirmTime}
+            />
 
             {/* Cancel / reject: wajah likhna zaroori */}
             {cancelFor && (

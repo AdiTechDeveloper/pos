@@ -6,6 +6,7 @@ import Layout from "./layout";
 import { ONLINE_CSS } from "./onlineStyles";
 import { ONLINE_TABLE_STYLES } from "./onlineTableStyles";
 import OnlineProductLimits from "./OnlineProductLimits";
+import StoreLogoUpload from "./StoreLogoUpload";
 
 const STOREFRONT_URL =
   process.env.REACT_APP_STOREFRONT_URL || "https://store.vakro.in";
@@ -373,10 +374,10 @@ export default function OnlineStoreSettings() {
         ) : (
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" className="ovx-btn ovx-btn-edit ovx-btn-sm" onClick={() => startEdit(r)}>
-              <IconEdit /> Edit
+              <IconEdit />
             </button>
             <button type="button" className="ovx-btn ovx-btn-del ovx-btn-sm" onClick={() => deletePincode(r)}>
-              <IconTrash /> Delete
+              <IconTrash /> 
             </button>
           </div>
         ),
@@ -431,6 +432,7 @@ export default function OnlineStoreSettings() {
                   </Card>
 
                   <Card title="Store details" hint="Shown to customers on the online store.">
+                    <StoreLogoUpload storeName={storeName} />
                     <div className="ovx-grid2">
                       <Field label="Display name" hint="Leave empty to use your store name.">
                         <input className="ovx-input" value={form.display_name} onChange={set("display_name")} maxLength={150} />
@@ -451,6 +453,7 @@ export default function OnlineStoreSettings() {
                       </Field>
                     </div>
                   </Card>
+
 
                   <div className="ovx-pair">
                     <Card
