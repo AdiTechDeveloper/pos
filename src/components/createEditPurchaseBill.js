@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
@@ -518,9 +518,19 @@ const CreateEditPurchaseBill = () => {
   const [error, setError] = useState("");
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_purchase_bill = localStorage.getItem("purchase_bills_create");
-  const incomingBill = store_purchase_bill
-    ? JSON.parse(store_purchase_bill)
-    : null;
+  // Parse once per actual localStorage value change, not on every render.
+  // This keeps incomingBill's object reference stable and prevents the edit
+  // fetch effect from repeatedly firing after state updates.
+  const incomingBill = useMemo(() => {
+    if (!store_purchase_bill) return null;
+
+    try {
+      return JSON.parse(store_purchase_bill);
+    } catch (parseError) {
+      console.error("Invalid purchase bill data in localStorage:", parseError);
+      return null;
+    }
+  }, [store_purchase_bill]);
   const isEdit = Boolean(id);
   const isPharmacy = hasFeature("pharmacy");
   const showBatch = isPharmacy || hasFeature("batch_entry");
@@ -580,37 +590,37 @@ const CreateEditPurchaseBill = () => {
       is_lost: bill.is_lost ?? 0,
       lines: bill.lines?.length
         ? bill.lines.map((line) => ({
-            ...line,
-            inventory: line.inventory,
-            product_id: line.product_id?.toString() || "",
-            qty: line.qty || "",
-            free_qty: line.free_qty || "",
-            purchase_rate:
-              line.purchase_rate ??
-              line.inventory?.cost_price ??
-              line.inventory?.rate ??
-              "",
-            mrp: line.mrp ?? line.inventory?.mrp ?? "",
-            selling_price:
-              line.selling_price ?? line.inventory?.selling_price ?? "",
-            discount_type: line.discount_type || "",
-            discount: line.discount || "",
-            hsn_code: line.hsn_code || "",
-            gst_rate_id: line.gst_rate_id?.toString() || "",
-            batch_no: line.batch_no ?? line.inventory?.batch_no ?? "",
-            expiry_date: normalizeDate(
-              line.expiry_date ?? line.inventory?.expiry_date,
-            ),
-            is_opening: line.is_opening || false,
-          }))
+          ...line,
+          inventory: line.inventory,
+          product_id: line.product_id?.toString() || "",
+          qty: line.qty || "",
+          free_qty: line.free_qty || "",
+          purchase_rate:
+            line.purchase_rate ??
+            line.inventory?.cost_price ??
+            line.inventory?.rate ??
+            "",
+          mrp: line.mrp ?? line.inventory?.mrp ?? "",
+          selling_price:
+            line.selling_price ?? line.inventory?.selling_price ?? "",
+          discount_type: line.discount_type || "",
+          discount: line.discount || "",
+          hsn_code: line.hsn_code || "",
+          gst_rate_id: line.gst_rate_id?.toString() || "",
+          batch_no: line.batch_no ?? line.inventory?.batch_no ?? "",
+          expiry_date: normalizeDate(
+            line.expiry_date ?? line.inventory?.expiry_date,
+          ),
+          is_opening: line.is_opening || false,
+        }))
         : initialValues.lines,
       payments: bill.payments?.length
         ? bill.payments.map((p) => ({
-            amount: p.amount || "",
-            method: p.method ?? p.payment_method ?? "cash",
-            reference: p.reference || "",
-            payment_date: normalizeDate(p.payment_date),
-          }))
+          amount: p.amount || "",
+          method: p.method ?? p.payment_method ?? "cash",
+          reference: p.reference || "",
+          payment_date: normalizeDate(p.payment_date),
+        }))
         : [],
     });
   };
@@ -638,12 +648,14 @@ const CreateEditPurchaseBill = () => {
   };
 
   useEffect(() => {
-    if (isEdit) {
+    if (isEdit && id) {
       fetchPurchaseBillById();
     } else if (incomingBill) {
       setBillInitialValues(incomingBill);
     }
-  }, [incomingBill, isEdit, id]);
+    // Edit mode: fetch when bill ID changes.
+    // Create-from-scanned/imported bill: initialize when incoming bill changes.
+  }, [id, isEdit, incomingBill]);
 
   const fetchBranch = () => {
     appData?.loadBranches();
@@ -697,6 +709,7 @@ const CreateEditPurchaseBill = () => {
 
     notes: Yup.string().nullable(),
 
+
     lines: Yup.array()
       .min(1, "At least one product is required")
       .of(
@@ -735,9 +748,9 @@ const CreateEditPurchaseBill = () => {
 
           batch_no: isPharmacy
             ? Yup.string()
-                .trim()
-                .required("Batch no required")
-                .max(50, "Max 50 chars")
+              .trim()
+              .required("Batch no required")
+              .max(50, "Max 50 chars")
             : Yup.string().nullable(),
 
           discount_type: Yup.string()
@@ -749,13 +762,50 @@ const CreateEditPurchaseBill = () => {
           gst_rate_id: Yup.string().required("GST rate required"),
 
           expiry_date: isPharmacy
-            ? Yup.date()
-                .transform(parseDateString)
-                .typeError("Expiry date required")
-                .required("Expiry date required")
-            : Yup.date().transform(parseDateString).nullable(),
+            ? Yup.string()
+              .required("Expiry date is required")
+              .matches(
+                /^\d{4}-\d{2}-\d{2}$/,
+                "Enter expiry date in DD-MM-YYYY format"
+              )
+              .test("valid-calendar-date", "Enter a valid expiry date", (value) => {
+                if (!value) return false;
 
-          is_opening: Yup.boolean().default(false),
+                const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                if (!match) return false;
+
+                const year = Number(match[1]);
+                const month = Number(match[2]);
+                const day = Number(match[3]);
+
+                const date = new Date(year, month - 1, day);
+
+                return (
+                  date.getFullYear() === year &&
+                  date.getMonth() === month - 1 &&
+                  date.getDate() === day
+                );
+              })
+            : Yup.string()
+              .nullable()
+              .test("valid-calendar-date", "Enter a valid expiry date", (value) => {
+                if (!value) return true;
+
+                const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                if (!match) return false;
+
+                const year = Number(match[1]);  
+                const month = Number(match[2]);
+                const day = Number(match[3]);
+
+                const date = new Date(year, month - 1, day);
+
+                return (
+                  date.getFullYear() === year &&
+                  date.getMonth() === month - 1 &&
+                  date.getDate() === day
+                );
+              }),
         }),
       ),
     payments: Yup.array().of(
@@ -849,8 +899,8 @@ const CreateEditPurchaseBill = () => {
       const firstError = apiErrors ? Object.values(apiErrors).flat()[0] : null;
       toast.error(
         firstError ||
-          error.response?.data?.message ||
-          "Failed to save purchase bill. Please check the form.",
+        error.response?.data?.message ||
+        "Failed to save purchase bill. Please check the form.",
       );
     } finally {
       actions.setSubmitting(false);
@@ -977,22 +1027,22 @@ const CreateEditPurchaseBill = () => {
         mappedLines.length
           ? mappedLines
           : [
-              {
-                product_id: "",
-                qty: "",
-                free_qty: "",
-                purchase_rate: "",
-                mrp: "",
-                selling_price: "",
-                discount_type: "",
-                discount: "",
-                hsn_code: "",
-                gst_rate_id: "",
-                batch_no: "",
-                expiry_date: "",
-                is_opening: false,
-              },
-            ],
+            {
+              product_id: "",
+              qty: "",
+              free_qty: "",
+              purchase_rate: "",
+              mrp: "",
+              selling_price: "",
+              discount_type: "",
+              discount: "",
+              hsn_code: "",
+              gst_rate_id: "",
+              batch_no: "",
+              expiry_date: "",
+              is_opening: false,
+            },
+          ],
       );
 
       // Do not set settlement_amount: it is the adjusted paid amount,
@@ -1021,8 +1071,8 @@ const CreateEditPurchaseBill = () => {
 
       toast.error(
         error.response?.data?.message ||
-          error.message ||
-          "Could not scan the bill. Please try again.",
+        error.message ||
+        "Could not scan the bill. Please try again.",
       );
     } finally {
       setIsScanningBill(false);
@@ -1142,8 +1192,8 @@ const CreateEditPurchaseBill = () => {
 
               const effectiveTotal =
                 values.settlement_amount !== "" &&
-                values.settlement_amount != null &&
-                !isNaN(Number(values.settlement_amount))
+                  values.settlement_amount != null &&
+                  !isNaN(Number(values.settlement_amount))
                   ? Number(values.settlement_amount)
                   : incomingBill?.total_amount
                     ? Number(incomingBill.total_amount)
@@ -1293,16 +1343,21 @@ const CreateEditPurchaseBill = () => {
                                 }}
                               >
                                 <option value="">Select Supplier</option>
-                                {suppliers.map((s) => (
-                                  <option key={s.id} value={s.id}>
-                                    {s.name}
-                                  </option>
-                                ))}
                                 {!newSupplier && (
                                   <option value="add_new">
                                     + Add New Supplier
                                   </option>
                                 )}
+                                {suppliers.map((s) => (
+                                  <option key={s.id} value={s.id}>
+                                    {s.name}
+                                  </option>
+                                ))}
+                                {/* {!newSupplier && (
+                                  <option value="add_new">
+                                    + Add New Supplier
+                                  </option>
+                                )} */}
                               </select>
                             )}
                           </Field>
@@ -1453,7 +1508,7 @@ const CreateEditPurchaseBill = () => {
                                             if (
                                               selectedProduct &&
                                               selectedProduct.sale_type ===
-                                                "weight" &&
+                                              "weight" &&
                                               selectedProduct.price_per_kg
                                             ) {
                                               form.setFieldValue(
@@ -1464,14 +1519,15 @@ const CreateEditPurchaseBill = () => {
                                           }}
                                         >
                                           <option value="">Select</option>
+                                          <option value="add_new">
+                                            + Add New Product
+                                          </option>
                                           {products.map((p) => (
                                             <option key={p.id} value={p.id}>
                                               {p.name}
                                             </option>
                                           ))}
-                                          <option value="add_new">
-                                            + Add New Product
-                                          </option>
+
                                         </select>
                                       )}
                                     </Field>

@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useMemo } from "react";
 import { useField, useFormikContext } from "formik";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -12,25 +13,55 @@ const FormikDatePicker = ({
   const [field] = useField(name);
   const { setFieldValue, setFieldTouched } = useFormikContext();
 
-  const getValueAsDate = (val) => {
-    if (!val) return null;
-    if (val instanceof Date) return val;
+  // Parse YYYY-MM-DD safely. Invalid/incomplete values return null.
+  const getValueAsDate = (value) => {
+    if (!value) return null;
 
-    if (typeof val === "string" && val.includes("-")) {
-      const parts = val.split("-");
-      if (parts[0].length === 4) {
-        const [year, month, day] = parts;
-        return new Date(Number(year), Number(month) - 1, Number(day));
-      }
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime()) ? null : value;
     }
-    return new Date(val);
+
+    if (typeof value !== "string") return null;
+
+    const trimmed = value.trim();
+
+    // Formik value format: YYYY-MM-DD
+    const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (match) {
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+
+      const date = new Date(year, month - 1, day);
+
+      // Reject invalid calendar dates (e.g. 2025-02-31)
+      if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== day
+      ) {
+        return null;
+      }
+
+      return date;
+    }
+
+    return null;
   };
 
+  const selectedDate = useMemo(
+    () => getValueAsDate(field.value),
+    [field.value]
+  );
+
   const formatDateToYYYYMMDD = (date) => {
-    if (!date) return "";
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
+    if (!date || Number.isNaN(date.getTime())) return "";
+
     const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
     return `${year}-${month}-${day}`;
   };
 
@@ -39,10 +70,31 @@ const FormikDatePicker = ({
       name={name}
       className={className}
       wrapperClassName="w-100 d-block"
-      selected={getValueAsDate(field.value)}
+      selected={selectedDate}
       onChange={(date) => {
-        const formattedDate = formatDateToYYYYMMDD(date);
-        setFieldValue(name, formattedDate);
+        setFieldValue(name, formatDateToYYYYMMDD(date));
+      }}
+      onChangeRaw={(event) => {
+        const input = event?.target;
+        if (!input) return;
+
+        // Allow only digits and hyphen
+        let value = input.value.replace(/[^\d-]/g, "");
+
+        // Format as DD-MM-YYYY and limit digits
+        const digits = value.replace(/\D/g, "").slice(0, 8);
+
+        let formatted = digits;
+
+        if (digits.length > 4) {
+          formatted = `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4, 8)}`;
+        } else if (digits.length > 2) {
+          formatted = `${digits.slice(0, 2)}-${digits.slice(2, 4)}`;
+        }
+
+        if (input.value !== formatted) {
+          input.value = formatted;
+        }
       }}
       onBlur={() => setFieldTouched(name, true)}
       dateFormat="dd-MM-yyyy"
