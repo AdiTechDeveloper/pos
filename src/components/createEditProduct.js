@@ -266,16 +266,10 @@ const CreateEditProduct = () => {
 
   const handleSubmit = async (values) => {
     try {
-      let url = "";
-      let method = "";
-
-      if (isEdit) {
-        url = `${BASE_URL}/api/products/${id}`;
-        method = "put";
-      } else {
-        url = `${BASE_URL}/api/products`;
-        method = "post";
-      }
+      const url = isEdit
+        ? `${BASE_URL}/api/products/${id}`
+        : `${BASE_URL}/api/products`;
+      const method = isEdit ? "put" : "post";
 
       const payload = { ...values };
       if (hasFeature("pharmacy")) {
@@ -284,10 +278,11 @@ const CreateEditProduct = () => {
         payload.requires_prescription = !!payload.requires_prescription;
         payload.allow_loose = !!payload.allow_loose;
       } else {
-        PHARMACY_KEYS.forEach((k) => delete payload[k]);
+        PHARMACY_KEYS.forEach((key) => delete payload[key]);
       }
 
-      const res = await axios({
+      // Step 1: Save product details first.
+      const productResponse = await axios({
         method,
         url,
         data: payload,
@@ -297,46 +292,85 @@ const CreateEditProduct = () => {
         },
       });
 
-      // Photo alag request se jaati hai (file JSON mein nahi bheji ja sakti). Product pehle save ho chuka hai.
-      const productId = isEdit ? id : res.data?.product?.id;
-      let imageFailed = false;
-      try {
-        const imgHeaders = {
-          Accept: "application/json",
-          Authorization: `Bearer ${user_data.token}`,
-        };
-        if (imageFile && productId) {
-          const fd = new FormData();
-          fd.append("image", imageFile);
-          await axios.post(`${BASE_URL}/api/products/${productId}/image`, fd, {
-            headers: imgHeaders,
-          });
-        } else if (removeImage && isEdit) {
-          await axios.delete(`${BASE_URL}/api/products/${productId}/image`, {
-            headers: imgHeaders,
-          });
-        }
-      } catch (imgErr) {
-        imageFailed = true;
-        console.error("Error saving product image:", imgErr);
-        toast.error(
-          imgErr.response?.data?.message ||
-            "Product saved, but the image could not be uploaded. Edit the product to try again.",
+      const productId = isEdit ? id : productResponse.data?.product?.id;
+      if (!productId) {
+        throw new Error("Product saved, but product ID was not returned by API.");
+      }
+
+      // Step 2: Upload/remove image through its dedicated API endpoint.
+      // Do not set Content-Type manually; browser adds multipart boundary.
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("image", imageFile, imageFile.name || "product.jpg");
+
+        console.log("Uploading product image:", {
+          productId,
+          fileName: imageFile.name,
+          fileType: imageFile.type,
+          fileSize: imageFile.size,
+          formDataFile: formData.get("image"),
+        });
+
+        const uploadResponse = await fetch(
+          `${BASE_URL}/api/products/${productId}/image`,
+          {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${user_data.token}`,
+            },
+            body: formData,
+          }
         );
+
+        const uploadData = await uploadResponse.json().catch(() => ({}));
+        console.log("Product image upload response:", uploadResponse.status, uploadData);
+
+        if (!uploadResponse.ok || uploadData.status === false) {
+          throw new Error(
+            uploadData.message ||
+              uploadData.errors?.image?.[0] ||
+              `Image upload failed (${uploadResponse.status})`
+          );
+        }
+
+        // Keep the returned image URL in state in case the page remains mounted.
+        if (uploadData.image_url) {
+          setServerImage(uploadData.image_url);
+          setImagePreview(uploadData.image_url);
+        }
+        setImageFile(null);
+        setRemoveImage(false);
+      } else if (removeImage && isEdit) {
+        const deleteResponse = await axios.delete(
+          `${BASE_URL}/api/products/${productId}/image`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${user_data.token}`,
+            },
+          }
+        );
+        if (deleteResponse.data?.status === false) {
+          throw new Error(deleteResponse.data.message || "Image removal failed");
+        }
+        setServerImage("");
+        setImagePreview("");
+        setRemoveImage(false);
       }
 
       appData?.invalidate("products");
-      await appData?.loadProducts();
+      await appData?.loadProducts({ force: true });
 
-      if (!imageFailed) {
-        toast.success(isEdit ? "Product Updated!" : "Product Created!");
-      }
-
+      toast.success(isEdit ? "Product Updated!" : "Product Created!");
       navigate("/product");
-    } catch (error) {
-      console.error("Error saving product:", error);
-
-      toast.error(error.response?.data?.message || "Failed to save product");
+    } catch (submitError) {
+      console.error("Error saving product or image:", submitError);
+      toast.error(
+        submitError.response?.data?.message ||
+          submitError.message ||
+          "Failed to save product"
+      );
     }
   };
 

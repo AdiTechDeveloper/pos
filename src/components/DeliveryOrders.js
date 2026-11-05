@@ -5,6 +5,7 @@ import axios from "axios";
 // - Mobile-first, POS ka sidebar / menu nahi, POS ka koi link nahi.
 // - Naya order assign hone par awaaz + vibration + banner (screen khuli ho tab).
 // - Order sirf customer ke OTP se deliver hota hai.
+// - Customer ne map par jo exact pin rakha tha, "Navigate" usi par le jata hai (pin na ho to address text se search).
 
 const POLL_MS = 8000;
 const ALERT_REPEAT_MS = 6000;
@@ -592,6 +593,11 @@ export default function DeliveryOrders() {
                 const addr = addressText(o.address);
                 const cod = o.payment_method === "cod";
                 const callTo = o.address?.mobile || o.customer_mobile;
+                // Exact pin ka link backend se aata hai. Na aaye (purana order) to address text se search.
+                const hasPin = !!o.address?.has_pin;
+                const mapsUrl =
+                  o.address?.maps_url ||
+                  (addr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}` : null);
                 return (
                   <article key={o.id} className="dvx-card">
                     <div className="dvx-card-head">
@@ -613,17 +619,17 @@ export default function DeliveryOrders() {
                       <a href={`tel:${callTo}`} className="dvx-btn dvx-btn-outline">
                         Call customer
                       </a>
-                      {addr && (
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="dvx-btn dvx-btn-blue"
-                        >
-                          Open in Maps
+                      {mapsUrl && (
+                        <a href={mapsUrl} target="_blank" rel="noreferrer" className="dvx-btn dvx-btn-blue">
+                          {hasPin ? "Navigate to customer" : "Open in Maps"}
                         </a>
                       )}
                     </div>
+                    <p className="dvx-small" style={{ marginTop: 8 }}>
+                      {hasPin
+                        ? "Exact map pin saved by the customer."
+                        : "No exact pin: address was typed by hand. Call the customer if you cannot find it."}
+                    </p>
 
                     <ul className="dvx-items">
                       {o.items.map((i) => (
@@ -833,7 +839,7 @@ export default function DeliveryOrders() {
 }
 
 const CSS = `
-.dvx{min-height:100vh;background:#f1f5f9;color:#0f172a;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+.dvx{position:fixed;inset:0;height:100vh;height:100dvh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;scrollbar-width:thin;background:#f1f5f9;color:#0f172a;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 .dvx *{box-sizing:border-box}
 .dvx p{margin:0}
 .dvx-top{position:sticky;top:0;z-index:20;background:#0f172a;color:#fff;padding-top:env(safe-area-inset-top,0px)}
