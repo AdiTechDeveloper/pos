@@ -7,7 +7,11 @@ import { useAppData } from "../context/AppDataContext";
 
 const ExpandedComponent = ({ data }) => {
   const lineColumns = [
-    { name: "Product ID", selector: (row) => row.product_id, sortable: true },
+    {
+      name: "Product",
+      selector: (row) => row.product?.name || row.product_id,
+      sortable: true,
+    },
     { name: "Qty", selector: (row) => row.qty, sortable: true },
     { name: "Rate", selector: (row) => `₹${row.rate}`, sortable: true },
     { name: "Tax (GST)", selector: (row) => `₹${row.total_gst}` },
@@ -152,7 +156,9 @@ const SalesReturnList = () => {
         <div className="main-content-wrap">
           <div className="flex items-center flex-wrap justify-between gap20 mb-27">
             <div className="flex items-center flex-wrap justify-between gap20 mb-27">
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+              >
                 <span
                   style={{
                     width: "5px",
@@ -185,7 +191,6 @@ const SalesReturnList = () => {
                   </p>
                 </div>
               </div>
-
             </div>
             <ul className="breadcrumbs flex items-center flex-wrap justify-start gap10">
               <li>

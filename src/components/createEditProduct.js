@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
@@ -8,6 +8,43 @@ import { toast } from "react-toastify";
 import { useAppData } from "../context/AppDataContext";
 import ProductImport from "./ProductImport";
 import { hasFeature } from "../utils/hasFeature";
+
+const MAX_IMAGE_SIDE = 800;
+const MAX_PICK_MB = 10;
+
+// Photo browser mein hi chhoti kar do (max 800px, JPEG): upload tez rehta hai aur online store fast khulta hai.
+// PNG ka transparent hissa safed ho jata hai (JPEG mein transparency nahi hoti).
+const shrinkImage = (file) =>
+  new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(
+        (blob) =>
+          blob
+            ? resolve(new File([blob], "product.jpg", { type: "image/jpeg" }))
+            : reject(new Error("Could not process this image")),
+        "image/jpeg",
+        0.85,
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("This file is not a valid image"));
+    };
+    img.src = url;
+  });
 
 const CreateEditProduct = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -34,6 +71,13 @@ const CreateEditProduct = () => {
   const [newBrand, setNewBrand] = useState("");
   const [error, setError] = useState("");
   const [loadingProduct, setLoadingProduct] = useState(isEdit);
+
+  // Product image
+  const fileInputRef = useRef(null);
+  const [imageFile, setImageFile] = useState(null); // naya chuna hua (chhota kiya hua) file
+  const [imagePreview, setImagePreview] = useState(""); // dikhne wali photo: server ka URL ya naye file ka blob URL
+  const [serverImage, setServerImage] = useState(""); // abhi server par jo photo hai
+  const [removeImage, setRemoveImage] = useState(false);
 
   const PHARMACY_KEYS = [
     "salt_composition",
@@ -86,6 +130,8 @@ const CreateEditProduct = () => {
 
         setBrandId(product.brand_id || "");
         setCategoryId(product.category_id || "");
+        setServerImage(product.image_url || "");
+        setImagePreview(product.image_url || "");
 
         setInitialValues({
           sku: product.sku || "",
@@ -116,6 +162,45 @@ const CreateEditProduct = () => {
     } finally {
       setLoadingProduct(false);
     }
+  };
+
+  // Blob URL band karo, warna memory bhari rehti hai
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
+  const onPickImage = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // wahi file dobara chunne par bhi onChange chale
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Please choose a JPG, PNG or WebP image");
+      return;
+    }
+    if (file.size > MAX_PICK_MB * 1024 * 1024) {
+      toast.error(`Image is too large (max ${MAX_PICK_MB} MB)`);
+      return;
+    }
+
+    try {
+      const small = await shrinkImage(file);
+      setImageFile(small);
+      setImagePreview(URL.createObjectURL(small));
+      setRemoveImage(false);
+    } catch (err) {
+      toast.error(err.message || "Could not use this image");
+    }
+  };
+
+  const onRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview("");
+    setRemoveImage(Boolean(serverImage)); // server par photo thi to save par hatao
   };
 
   useEffect(() => {
@@ -164,16 +249,10 @@ const CreateEditProduct = () => {
 
   const handleSubmit = async (values) => {
     try {
-      let url = "";
-      let method = "";
-
-      if (isEdit) {
-        url = `${BASE_URL}/api/products/${id}`;
-        method = "put";
-      } else {
-        url = `${BASE_URL}/api/products`;
-        method = "post";
-      }
+      const url = isEdit
+        ? `${BASE_URL}/api/products/${id}`
+        : `${BASE_URL}/api/products`;
+      const method = isEdit ? "put" : "post";
 
       const payload = { ...values };
       if (hasFeature("pharmacy")) {
@@ -181,10 +260,11 @@ const CreateEditProduct = () => {
           payload.units_per_pack === "" ? null : payload.units_per_pack;
         payload.requires_prescription = !!payload.requires_prescription;
       } else {
-        PHARMACY_KEYS.forEach((k) => delete payload[k]);
+        PHARMACY_KEYS.forEach((key) => delete payload[key]);
       }
 
-      await axios({
+      // Step 1: Save product details first.
+      const productResponse = await axios({
         method,
         url,
         data: payload,
@@ -194,16 +274,85 @@ const CreateEditProduct = () => {
         },
       });
 
+      const productId = isEdit ? id : productResponse.data?.product?.id;
+      if (!productId) {
+        throw new Error("Product saved, but product ID was not returned by API.");
+      }
+
+      // Step 2: Upload/remove image through its dedicated API endpoint.
+      // Do not set Content-Type manually; browser adds multipart boundary.
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("image", imageFile, imageFile.name || "product.jpg");
+
+        console.log("Uploading product image:", {
+          productId,
+          fileName: imageFile.name,
+          fileType: imageFile.type,
+          fileSize: imageFile.size,
+          formDataFile: formData.get("image"),
+        });
+
+        const uploadResponse = await fetch(
+          `${BASE_URL}/api/products/${productId}/image`,
+          {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${user_data.token}`,
+            },
+            body: formData,
+          }
+        );
+
+        const uploadData = await uploadResponse.json().catch(() => ({}));
+        console.log("Product image upload response:", uploadResponse.status, uploadData);
+
+        if (!uploadResponse.ok || uploadData.status === false) {
+          throw new Error(
+            uploadData.message ||
+              uploadData.errors?.image?.[0] ||
+              `Image upload failed (${uploadResponse.status})`
+          );
+        }
+
+        // Keep the returned image URL in state in case the page remains mounted.
+        if (uploadData.image_url) {
+          setServerImage(uploadData.image_url);
+          setImagePreview(uploadData.image_url);
+        }
+        setImageFile(null);
+        setRemoveImage(false);
+      } else if (removeImage && isEdit) {
+        const deleteResponse = await axios.delete(
+          `${BASE_URL}/api/products/${productId}/image`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${user_data.token}`,
+            },
+          }
+        );
+        if (deleteResponse.data?.status === false) {
+          throw new Error(deleteResponse.data.message || "Image removal failed");
+        }
+        setServerImage("");
+        setImagePreview("");
+        setRemoveImage(false);
+      }
+
       appData?.invalidate("products");
-      await appData?.loadProducts();
+      await appData?.loadProducts({ force: true });
 
       toast.success(isEdit ? "Product Updated!" : "Product Created!");
-
       navigate("/product");
-    } catch (error) {
-      console.error("Error saving product:", error);
-
-      toast.error(error.response?.data?.message || "Failed to save product");
+    } catch (submitError) {
+      console.error("Error saving product or image:", submitError);
+      toast.error(
+        submitError.response?.data?.message ||
+          submitError.message ||
+          "Failed to save product"
+      );
     }
   };
 
@@ -870,6 +1019,100 @@ const CreateEditProduct = () => {
                             );
                           }}
                         </Field>
+                      </fieldset>
+                    </div>
+
+                    {/* Product Image */}
+                    <div className="row mb-20">
+                      <fieldset className="col-md-12">
+                        <div className="body-title">
+                          Product Image{" "}
+                          <span style={{ fontWeight: 400, color: "#64748b" }}>
+                            (shown on your online store)
+                          </span>
+                        </div>
+                        <div
+                          className="body-content"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "16px",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 120,
+                              height: 120,
+                              flexShrink: 0,
+                              border: "2px dashed #cbd5e1",
+                              borderRadius: 12,
+                              overflow: "hidden",
+                              display: "grid",
+                              placeItems: "center",
+                              background: "#f8fafc",
+                            }}
+                          >
+                            {imagePreview ? (
+                              <img
+                                src={imagePreview}
+                                alt="Product"
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                }}
+                              />
+                            ) : (
+                              <span
+                                style={{
+                                  fontSize: 12,
+                                  color: "#94a3b8",
+                                  textAlign: "center",
+                                  padding: 8,
+                                }}
+                              >
+                                No image
+                              </span>
+                            )}
+                          </div>
+
+                          <div>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp"
+                              onChange={onPickImage}
+                              style={{ display: "none" }}
+                            />
+                            <button
+                              type="button"
+                              className="tf-button style-1"
+                              onClick={() => fileInputRef.current?.click()}
+                            >
+                              {imagePreview ? "Change Image" : "Upload Image"}
+                            </button>
+                            {imagePreview && (
+                              <button
+                                type="button"
+                                className="tf-button style-1 ml-5"
+                                onClick={onRemoveImage}
+                              >
+                                Remove
+                              </button>
+                            )}
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: "#64748b",
+                                marginTop: 8,
+                              }}
+                            >
+                              JPG, PNG or WebP. Resized to 800px automatically.
+                              A square photo looks best.
+                            </div>
+                          </div>
+                        </div>
                       </fieldset>
                     </div>
 

@@ -1,16 +1,35 @@
-import { useRef, useState } from "react";
+
+import { useEffect, useRef, useState } from "react";
 import BarcodePrintSheet from "./BarcodePrintSheet";
 
 const BarcodePrintModal = ({ product, onClose }) => {
   const [qty, setQty] = useState(1);
   const [showPreview, setShowPreview] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const printRef = useRef(null);
+
+  const priceOptions = product?.price_options || [];
+  const selectedOption = priceOptions[selectedIndex] || null;
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [product?.product_id]);
+
+  const selectedProduct = {
+    ...product,
+    barcode: product?.barcode,
+    mrp: selectedOption?.mrp ?? product?.mrp,
+    selling_price:
+      selectedOption?.selling_price ?? product?.selling_price,
+  };
 
   const handlePrint = () => {
     if (!printRef.current) return;
 
     const content = printRef.current.innerHTML;
     const printWindow = window.open("", "", "width=600,height=700");
+
+    if (!printWindow) return;
 
     printWindow.document.write(`
       <html>
@@ -55,6 +74,7 @@ const BarcodePrintModal = ({ product, onClose }) => {
           <p style={styles.productText}>
             Product: <span style={styles.productName}>{product.name}</span>
           </p>
+
           <button
             onClick={() => setShowPreview(!showPreview)}
             style={showPreview ? styles.btnModernActive : styles.btnModern}
@@ -73,15 +93,44 @@ const BarcodePrintModal = ({ product, onClose }) => {
           </button>
         </div>
 
+        {/* Variation Selection */}
+        {priceOptions.length > 0 && (
+          <div style={{ marginBottom: "15px", textAlign: "left" }}>
+            <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", color: "#666" }}>
+              Select Variation:
+            </label>
+
+            <select
+              value={selectedIndex}
+              onChange={(e) => setSelectedIndex(Number(e.target.value))}
+              style={{
+                width: "100%",
+                padding: "9px",
+                border: "1px solid #ccc",
+                borderRadius: "5px",
+                backgroundColor: "#fff",
+                fontSize: "13px",
+              }}
+            >
+              {priceOptions.map((option, index) => (
+                <option key={index} value={index}>
+                  MRP: ₹{option.mrp} | Our Price: ₹{option.selling_price}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {showPreview && (
           <div style={styles.previewArea}>
             <p style={{ fontSize: "12px", color: "#666" }}>
               Preview (Scaling may vary from actual label)
             </p>
+
             <div style={styles.previewScroll}>
               {Array.from({ length: qty }).map((_, i) => (
                 <div key={i} style={styles.previewSticker}>
-                  <BarcodePrintSheet product={product} />
+                  <BarcodePrintSheet product={selectedProduct} />
                 </div>
               ))}
             </div>
@@ -92,6 +141,7 @@ const BarcodePrintModal = ({ product, onClose }) => {
           <label style={{ display: "block", marginBottom: "8px" }}>
             Quantity:
           </label>
+
           <input
             type="number"
             min="1"
@@ -105,6 +155,7 @@ const BarcodePrintModal = ({ product, onClose }) => {
           <button onClick={onClose} style={styles.btnCancel}>
             Cancel
           </button>
+
           <button onClick={handlePrint} style={styles.btnPrint}>
             Print Now
           </button>
@@ -114,7 +165,7 @@ const BarcodePrintModal = ({ product, onClose }) => {
           <div ref={printRef}>
             {Array.from({ length: qty }).map((_, i) => (
               <div key={i} className="sticker">
-                <BarcodePrintSheet product={product} />
+                <BarcodePrintSheet product={selectedProduct} />
               </div>
             ))}
           </div>
@@ -224,7 +275,7 @@ const styles = {
   btnCancel: {
     padding: "10px 20px",
     borderRadius: "5px",
-    border: "1px solid #ccc",
+    border: "1px solid #ccc",   
     cursor: "pointer",
     backgroundColor: "#fff",
   },
