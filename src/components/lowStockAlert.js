@@ -167,6 +167,7 @@ const LowStockAlert = ({
       selector: (row) => row.available_qty,
       sortable: true,
       right: true,
+      minWidth: "190px",
       cell: (row) => (
         <span
           className={`text-xl font-bold ${
@@ -175,7 +176,7 @@ const LowStockAlert = ({
               : "text-amber-600"
           }`}
         >
-          {row.available_qty}
+          {row.available_label ?? row.available_qty}
         </span>
       ),
     },

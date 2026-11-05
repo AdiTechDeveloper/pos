@@ -7,6 +7,9 @@ import Layout from "./layout";
 import { useAppData } from "../context/AppDataContext";
 import { Check, RefreshCw, FileSpreadsheet, FileDown } from "lucide-react";
 import DataTable from "react-data-table-component";
+import { toast } from "react-toastify";
+import { invalidateDashboardCache } from "./Dashboardcache";
+import { hasFeature } from "../utils/hasFeature";
 
 const todayString = () => new Date().toISOString().split("T")[0];
 
@@ -27,6 +30,9 @@ const DiscardProducts = () => {
   const [filters, setFilters] = useState(buildDefaultFilters());
   const [appliedFilters, setAppliedFilters] = useState(buildDefaultFilters());
   const [search, setSearch] = useState("");
+  const [writingOff, setWritingOff] = useState(false);
+  const [history, setHistory] = useState({ data: [], total_loss: 0 });
+  const canWriteOff = hasFeature("pharmacy");
 
   const resetFilters = () => {
     const nextFilters = buildDefaultFilters();
@@ -38,31 +44,102 @@ const DiscardProducts = () => {
     appData?.loadBranches();
   }, [appData]);
 
- const fetchDiscardItems = useCallback(
-  async (currentFilters = appliedFilters) => {
+  const fetchDiscardItems = useCallback(
+    async (currentFilters = appliedFilters) => {
+      try {
+        setLoading(true);
+
+        const data = await appData?.loadExpiredProducts(currentFilters);
+
+        setReport(data);
+      } catch (error) {
+        console.error("Error fetching discard items:", error);
+
+        setReport({
+          status: false,
+          data: [],
+          total_loss: 0,
+          branch_id: currentFilters.branch_id || "all",
+          from_date: currentFilters.date_from || null,
+          to_date: currentFilters.date_to || null,
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [appData, appliedFilters],
+  );
+  const fetchHistory = useCallback(
+    async (f = appliedFilters) => {
+      if (!canWriteOff) return;
+
+      try {
+        const params = {
+          date_range: f.date_range,
+          branch_id: f.branch_id || null,
+        };
+        if (f.date_range === "custom") {
+          params.date_from = f.date_from;
+          params.date_to = f.date_to;
+        }
+
+        const res = await axios.get(
+          `${BASE_URL}/api/expired-stock/write-offs`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${user_data?.token}`,
+            },
+            params,
+          },
+        );
+
+        setHistory({
+          data: res.data?.data || [],
+          total_loss: Number(res.data?.total_loss || 0),
+        });
+      } catch (error) {
+        console.error("Error fetching write-off history:", error);
+        setHistory({ data: [], total_loss: 0 });
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [appliedFilters, canWriteOff],
+  );
+
+  const handleWriteOff = async (items, notes) => {
     try {
-      setLoading(true);
+      setWritingOff(true);
 
-      const data = await appData?.loadExpiredProducts(currentFilters);
+      const res = await axios.post(
+        `${BASE_URL}/api/expired-stock/write-off`,
+        { items, notes: notes || null },
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${user_data?.token}`,
+          },
+        },
+      );
 
-      setReport(data);
+      toast.success(res.data?.message || "Stock written off.");
+
+      // The expired list is cached for 8 hours, and the dashboard expiry numbers change too
+      appData?.invalidate("expiredProducts");
+      appData?.invalidate("dashboard");
+      invalidateDashboardCache();
+
+      await fetchDiscardItems(appliedFilters);
+      await fetchHistory(appliedFilters);
     } catch (error) {
-      console.error("Error fetching discard items:", error);
-
-      setReport({
-        status: false,
-        data: [],
-        total_loss: 0,
-        branch_id: currentFilters.branch_id || "all",
-        from_date: currentFilters.date_from || null,
-        to_date: currentFilters.date_to || null,
-      });
+      toast.error(
+        error.response?.data?.message || "Could not write off stock.",
+      );
     } finally {
-      setLoading(false);
+      setWritingOff(false);
     }
-  },
-  [appData, appliedFilters]
-);
+  };
+
   useEffect(() => {
     fetchBranches();
   }, [fetchBranches]);
@@ -70,6 +147,10 @@ const DiscardProducts = () => {
   useEffect(() => {
     fetchDiscardItems(appliedFilters);
   }, [appliedFilters, fetchDiscardItems]);
+
+  useEffect(() => {
+    fetchHistory(appliedFilters);
+  }, [fetchHistory, appliedFilters]);
 
   const rows = useMemo(() => report?.data || [], [report]);
 
@@ -110,7 +191,7 @@ const DiscardProducts = () => {
 
   const totalExpiredQty = rows.reduce(
     (sum, item) => sum + Number(item.expired_qty || 0),
-    0
+    0,
   );
 
   const handleDateRangeChange = (value) => {
@@ -152,7 +233,7 @@ const DiscardProducts = () => {
       "Expiry Date": row.expiry_date
         ? new Date(row.expiry_date).toLocaleDateString("en-GB")
         : "—",
-      "Expired Qty": Number(row.expired_qty || 0),
+      "Expired Qty": row.expired_label ?? Number(row.expired_qty || 0),
       "Cost Price": Number(row.cost_price || 0),
       Loss: Number(row.loss_amount || 0),
     }));
@@ -193,7 +274,7 @@ const DiscardProducts = () => {
       row.expiry_date
         ? new Date(row.expiry_date).toLocaleDateString("en-GB")
         : "—",
-      Number(row.expired_qty || 0),
+      row.expired_label ?? Number(row.expired_qty || 0),
       `₹${Number(row.cost_price || 0).toFixed(2)}`,
       `₹${Number(row.loss_amount || 0).toFixed(2)}`,
     ]);
@@ -213,7 +294,7 @@ const DiscardProducts = () => {
     doc.text(
       `Total Loss: ₹${Number(report?.total_loss || 0).toFixed(2)}`,
       14,
-      finalY
+      finalY,
     );
 
     doc.save(`Expired_Stock_${Date.now()}.pdf`);
@@ -239,7 +320,7 @@ const DiscardProducts = () => {
 
   return (
     <Layout>
-      <div className="p-8 bg-white min-h-screen text-gray-900">
+      <div className="p-8 pb-48 bg-white min-h-screen text-gray-900">
         <div className="flex items-center flex-wrap justify-between gap-5 mb-7">
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <span
@@ -370,7 +451,10 @@ const DiscardProducts = () => {
                 title={loading ? "Loading..." : "Refresh"}
                 className="flex items-center justify-center bg-green-600 text-white h-[44px] w-[44px] rounded-xl shadow-md hover:bg-green-700 transition-colors"
               >
-                <RefreshCw className={loading ? "animate-spin" : ""} size={22} />
+                <RefreshCw
+                  className={loading ? "animate-spin" : ""}
+                  size={22}
+                />
               </button>
               <button
                 type="button"
@@ -406,7 +490,7 @@ const DiscardProducts = () => {
             variant="bg-blue-50 text-blue-700 border-blue-200 text-center"
           />
           <Card
-            title="Expired Qty"
+            title="Expired Units"
             value={totalExpiredQty}
             isCurrency={false}
             variant="bg-amber-50 text-amber-700 border-amber-200 text-center"
@@ -461,15 +545,68 @@ const DiscardProducts = () => {
               filteredRows={filteredRows}
               branchTotals={branchTotals}
               report={report}
+              canWriteOff={canWriteOff}
+              onWriteOff={handleWriteOff}
+              writingOff={writingOff}
             />
           </div>
         )}
+
+        {canWriteOff && <WriteOffHistory history={history} />}
+
+        <style>{`
+          .rdt_TableCol_Sortable,
+          .rdt_TableCol_Sortable > div,
+          .rdt_TableCol > div {
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            line-height: 1.2;
+          }
+        `}</style>
       </div>
     </Layout>
   );
 };
 
-const ExpiryReportTable = ({ filteredRows, branchTotals, report }) => {
+const ExpiryReportTable = ({
+  filteredRows,
+  branchTotals,
+  report,
+  canWriteOff,
+  onWriteOff,
+  writingOff,
+}) => {
+  const [selected, setSelected] = useState([]);
+  const [notes, setNotes] = useState("");
+  const [confirmRows, setConfirmRows] = useState(null);
+  const [clearToggle, setClearToggle] = useState(false);
+
+  const openWriteOff = (rows) => {
+    if (!rows.length || writingOff) return;
+    setNotes("");
+    setConfirmRows(rows);
+  };
+
+  const confirmWriteOff = async () => {
+    if (!confirmRows || writingOff) return;
+
+    await onWriteOff(
+      confirmRows.map((r) => ({ inventory_id: r.id })),
+      notes.trim(),
+    );
+
+    setConfirmRows(null);
+    setNotes("");
+    setSelected([]);
+    setClearToggle((v) => !v);
+  };
+
+  const confirmLoss = (confirmRows || []).reduce(
+    (s, r) => s + Number(r.loss_amount || 0),
+    0,
+  );
+
   const columns = [
     {
       name: "Branch",
@@ -507,7 +644,9 @@ const ExpiryReportTable = ({ filteredRows, branchTotals, report }) => {
       selector: (row) => row.batch_barcode || "",
       sortable: true,
       cell: (row) => (
-        <span className="text-xl text-gray-700">{row.batch_barcode || "—"}</span>
+        <span className="text-xl text-gray-700">
+          {row.batch_barcode || "—"}
+        </span>
       ),
       minWidth: "170px",
     },
@@ -533,10 +672,10 @@ const ExpiryReportTable = ({ filteredRows, branchTotals, report }) => {
       right: true,
       cell: (row) => (
         <span className="text-xl font-semibold text-gray-900">
-          {row.expired_qty || 0}
+          {row.expired_label ?? (row.expired_qty || 0)}
         </span>
       ),
-      minWidth: "150px",
+      minWidth: "210px",
     },
     {
       name: "Cost Price",
@@ -621,10 +760,94 @@ const ExpiryReportTable = ({ filteredRows, branchTotals, report }) => {
 
   return (
     <>
+      {canWriteOff && (
+        <div className="flex items-center gap-4 flex-wrap px-6 py-4 border-b border-gray-200 bg-red-50/60">
+          <button
+            type="button"
+            disabled={!selected.length || writingOff}
+            onClick={() => openWriteOff(selected)}
+            className="rounded-xl bg-red-600 text-white px-5 py-2.5 text-lg font-semibold hover:bg-red-700 disabled:opacity-50"
+          >
+            {writingOff
+              ? "Writing off..."
+              : `Write off selected (${selected.length})`}
+          </button>
+          <button
+            type="button"
+            disabled={!filteredRows.length || writingOff}
+            onClick={() => openWriteOff(filteredRows)}
+            className="rounded-xl border border-red-600 text-red-700 px-5 py-2.5 text-lg font-semibold hover:bg-red-50 disabled:opacity-50"
+          >
+            Write off all listed ({filteredRows.length})
+          </button>
+        </div>
+      )}
+
+      {confirmRows && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-4"
+          onClick={() => !writingOff && setConfirmRows(null)}
+        >
+          <div
+            className="w-full max-w-xl rounded-2xl bg-white p-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h4 className="text-3xl font-bold text-gray-900 mb-2">
+              Write off expired stock
+            </h4>
+            <p className="text-xl text-gray-600 mb-5">
+              {confirmRows.length} batch(es) · Loss{" "}
+              <span className="font-bold text-red-600">
+                ₹{confirmLoss.toFixed(2)}
+              </span>
+            </p>
+
+            <label className="block text-xl font-semibold text-gray-900 mb-2">
+              Note (optional)
+            </label>
+            <textarea
+              rows={3}
+              maxLength={500}
+              autoFocus
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="e.g. Destroyed as per norms / returned to supplier"
+              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-xl"
+            />
+
+            <p className="mt-4 text-lg text-red-600">
+              This removes the stock permanently and cannot be undone.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={writingOff}
+                onClick={() => setConfirmRows(null)}
+                className="rounded-xl border border-gray-300 px-6 py-3 text-xl font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={writingOff}
+                onClick={confirmWriteOff}
+                className="rounded-xl bg-red-600 px-6 py-3 text-xl font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {writingOff ? "Writing off..." : "Confirm write-off"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <DataTable
         columns={columns}
         data={filteredRows || []}
         customStyles={customStyles}
+        selectableRows={canWriteOff}
+        clearSelectedRows={clearToggle}
+        onSelectedRowsChange={({ selectedRows }) => setSelected(selectedRows)}
         pagination
         paginationPerPage={10}
         paginationRowsPerPageOptions={[5, 10, 20, 50]}
@@ -669,6 +892,165 @@ const ExpiryReportTable = ({ filteredRows, branchTotals, report }) => {
   );
 };
 
+const WriteOffHistory = ({ history }) => {
+  const rows = history?.data || [];
+
+  const exportHistory = () => {
+    if (!rows.length) return;
+
+    const worksheet = XLSX.utils.json_to_sheet(
+      rows.map((r) => ({
+        "Written Off On": r.written_off_at,
+        Branch: r.branch_name || "",
+        Product: r.product_name,
+        "Batch No": r.batch_no || "",
+        "Expiry Date": r.expiry_date || "",
+        Qty: r.qty_label ?? Number(r.qty),
+        "Cost Price": Number(r.cost_price),
+        Loss: Number(r.loss_amount),
+        "Done By": r.written_off_by_name || "",
+        Note: r.notes || "",
+      })),
+    );
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Write-offs");
+    XLSX.writeFile(workbook, `Stock_WriteOff_${Date.now()}.xlsx`);
+  };
+
+  const columns = [
+    {
+      name: "Written Off On",
+      selector: (r) => r.written_off_at,
+      sortable: true,
+      minWidth: "170px",
+      wrap: true,
+    },
+    {
+      name: "Branch",
+      selector: (r) => r.branch_name || "",
+      sortable: true,
+      minWidth: "140px",
+      wrap: true,
+    },
+    {
+      name: "Product",
+      selector: (r) => r.product_name,
+      sortable: true,
+      minWidth: "200px",
+      wrap: true,
+    },
+    {
+      name: "Batch No",
+      selector: (r) => r.batch_no || "",
+      sortable: true,
+      minWidth: "130px",
+      wrap: true,
+    },
+    {
+      name: "Expiry",
+      selector: (r) => r.expiry_date || "",
+      sortable: true,
+      minWidth: "120px",
+      wrap: true,
+    },
+    {
+      name: "Qty",
+      selector: (r) => r.qty,
+      sortable: true,
+      right: true,
+      minWidth: "170px",
+      wrap: true,
+      cell: (r) => r.qty_label ?? r.qty,
+    },
+    {
+      name: "Loss",
+      selector: (r) => r.loss_amount,
+      sortable: true,
+      right: true,
+      wrap: true,
+      cell: (r) => (
+        <span className="text-2xl font-bold text-red-600">
+          ₹{Number(r.loss_amount).toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      name: "Done By",
+      selector: (r) => r.written_off_by_name || "",
+      sortable: true,
+      minWidth: "130px",
+      wrap: true,
+    },
+    {
+      name: "Note",
+      selector: (r) => r.notes || "",
+      minWidth: "180px",
+      wrap: true,
+    },
+  ];
+
+  return (
+    <div className="mt-10 mb-24 bg-white shadow-xl border border-gray-200 rounded-2xl overflow-hidden">
+      <div className="flex items-center justify-between flex-wrap gap-3 px-6 py-4 border-b border-gray-200">
+        <div>
+          <h4 className="text-3xl font-bold text-gray-900">
+            Written-off stock
+          </h4>
+          <p className="text-2xl text-gray-500">
+            Record of expired stock removed from inventory · Total loss ₹
+            {Number(history?.total_loss || 0).toFixed(2)}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={exportHistory}
+          title="Export as Excel"
+          className="flex items-center justify-center bg-green-500 text-white w-[44px] h-[44px] rounded-xl hover:bg-green-700 shadow-md"
+        >
+          <FileSpreadsheet size={22} />
+        </button>
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={rows}
+        pagination
+        paginationPerPage={10}
+        highlightOnHover
+        responsive
+        noDataComponent={
+          <div className="py-10 text-2xl font-semibold text-gray-500">
+            No stock has been written off in this period
+          </div>
+        }
+        customStyles={{
+          headCells: {
+            style: {
+              fontSize: "16px",
+              fontWeight: "600",
+              color: "rgb(55, 65, 81)",
+              backgroundColor: "rgb(241, 245, 249)",
+              whiteSpace: "normal",
+              paddingLeft: "20px",
+              paddingRight: "20px",
+              display: "inline-block",
+            },
+          },
+          rows: { style: { minHeight: "64px" } },
+          cells: {
+            style: {
+              fontSize: "16px",
+              paddingLeft: "20px",
+              paddingRight: "20px",
+            },
+          },
+          pagination: { style: { fontSize: "16px", minHeight: "60px" } },
+        }}
+      />
+    </div>
+  );
+};
+
 const Card = ({
   title,
   value,
@@ -680,9 +1062,7 @@ const Card = ({
   >
     <p className="text-2xl font-semibold text-gray-700 mb-3">{title}</p>
     <h2 className="text-4xl font-bold text-gray-900">
-      {isCurrency && typeof value === "number"
-        ? `₹${value.toFixed(2)}`
-        : value}
+      {isCurrency && typeof value === "number" ? `₹${value.toFixed(2)}` : value}
     </h2>
   </div>
 );

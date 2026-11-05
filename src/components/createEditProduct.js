@@ -12,15 +12,16 @@ import { hasFeature } from "../utils/hasFeature";
 const MAX_IMAGE_SIDE = 800;
 const MAX_PICK_MB = 10;
 
-// Photo browser mein hi chhoti kar do (max 800px, JPEG): upload tez rehta hai aur online store fast khulta hai.
-// PNG ka transparent hissa safed ho jata hai (JPEG mein transparency nahi hoti).
 const shrinkImage = (file) =>
   new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(img.width, img.height));
+      const scale = Math.min(
+        1,
+        MAX_IMAGE_SIDE / Math.max(img.width, img.height),
+      );
       const w = Math.max(1, Math.round(img.width * scale));
       const h = Math.max(1, Math.round(img.height * scale));
       const canvas = document.createElement("canvas");
@@ -71,6 +72,8 @@ const CreateEditProduct = () => {
   const [newBrand, setNewBrand] = useState("");
   const [error, setError] = useState("");
   const [loadingProduct, setLoadingProduct] = useState(isEdit);
+  // true when the product already has purchase / sales history (loose selling can no longer change)
+  const [looseLocked, setLooseLocked] = useState(false);
 
   // Product image
   const fileInputRef = useRef(null);
@@ -85,6 +88,8 @@ const CreateEditProduct = () => {
     "requires_prescription",
     "pack_type",
     "units_per_pack",
+    "allow_loose",
+    "loose_unit",
   ];
 
   let lastTime = 0;
@@ -110,6 +115,8 @@ const CreateEditProduct = () => {
     requires_prescription: false,
     pack_type: "",
     units_per_pack: "",
+    allow_loose: false,
+    loose_unit: "tablet",
   });
 
   const fetchProduct = async () => {
@@ -154,7 +161,10 @@ const CreateEditProduct = () => {
           requires_prescription: product.requires_prescription == 1,
           pack_type: product.pack_type || "",
           units_per_pack: product.units_per_pack || "",
+          allow_loose: product.allow_loose == 1,
+          loose_unit: product.loose_unit || "tablet",
         });
+        setLooseLocked(Boolean(response.data.loose_locked));
       }
     } catch (error) {
       console.error("Error fetching product:", error);
@@ -244,7 +254,14 @@ const CreateEditProduct = () => {
       .transform((value, original) => (original === "" ? null : value))
       .nullable()
       .integer("Must be a whole number")
-      .min(1, "Must be at least 1"),
+      .min(1, "Must be at least 1")
+      .when("allow_loose", {
+        is: true,
+        then: (schema) =>
+          schema
+            .required("Units per pack is required for loose selling")
+            .min(2, "Must be at least 2 for loose selling"),
+      }),
   });
 
   const handleSubmit = async (values) => {
@@ -259,6 +276,7 @@ const CreateEditProduct = () => {
         payload.units_per_pack =
           payload.units_per_pack === "" ? null : payload.units_per_pack;
         payload.requires_prescription = !!payload.requires_prescription;
+        payload.allow_loose = !!payload.allow_loose;
       } else {
         PHARMACY_KEYS.forEach((key) => delete payload[key]);
       }
@@ -724,6 +742,7 @@ const CreateEditProduct = () => {
                               name="units_per_pack"
                               placeholder="e.g. 10"
                               className="mb-5"
+                              disabled={looseLocked && values.allow_loose}
                             />
                             <ErrorMessage
                               name="units_per_pack"
@@ -758,6 +777,134 @@ const CreateEditProduct = () => {
                             </span>
                           </label>
                         </fieldset>
+
+                        <fieldset className="col-md-3">
+                          <div className="body-title mb-5">
+                            Allow Loose Selling
+                          </div>
+                          <Field name="allow_loose">
+                            {({ field, form }) => {
+                              const isOn =
+                                field.value === true || field.value === 1;
+
+                              return (
+                                <div>
+                                  <label
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "12px",
+                                      minHeight: "44px",
+                                      cursor: looseLocked
+                                        ? "not-allowed"
+                                        : "pointer",
+                                      opacity: looseLocked ? 0.6 : 1,
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        position: "relative",
+                                        display: "inline-block",
+                                        width: "56px",
+                                        height: "30px",
+                                      }}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={isOn}
+                                        disabled={looseLocked}
+                                        onChange={() =>
+                                          form.setFieldValue(
+                                            "allow_loose",
+                                            !isOn,
+                                          )
+                                        }
+                                        style={{
+                                          opacity: 0,
+                                          width: 0,
+                                          height: 0,
+                                        }}
+                                      />
+                                      <span
+                                        style={{
+                                          position: "absolute",
+                                          inset: 0,
+                                          background: isOn
+                                            ? "#22c55e"
+                                            : "#cbd5e1",
+                                          borderRadius: "999px",
+                                          transition:
+                                            "background-color 0.2s ease",
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            position: "absolute",
+                                            top: "3px",
+                                            left: isOn ? "29px" : "3px",
+                                            width: "24px",
+                                            height: "24px",
+                                            background: "#fff",
+                                            borderRadius: "50%",
+                                            boxShadow:
+                                              "0 1px 3px rgba(0,0,0,0.3)",
+                                            transition: "left 0.2s ease",
+                                          }}
+                                        />
+                                      </span>
+                                    </span>
+                                    <span
+                                      style={{
+                                        fontSize: "14px",
+                                        fontWeight: 600,
+                                        color: isOn ? "#16a34a" : "#64748b",
+                                      }}
+                                    >
+                                      {isOn ? "Yes" : "No"}
+                                    </span>
+                                  </label>
+                                  <div
+                                    style={{
+                                      fontSize: 12,
+                                      marginTop: 4,
+                                      color: looseLocked
+                                        ? "#b45309"
+                                        : "#64748b",
+                                    }}
+                                  >
+                                    {looseLocked
+                                      ? "Locked: this product already has purchase or sales history."
+                                      : "Sell single tablets / capsules from a strip. Stock is then tracked in single units."}
+                                  </div>
+                                </div>
+                              );
+                            }}
+                          </Field>
+                        </fieldset>
+
+                        {values.allow_loose && (
+                          <fieldset className="col-md-3">
+                            <div className="body-title">Loose Unit</div>
+                            <div className="body-content">
+                              <Field
+                                as="select"
+                                name="loose_unit"
+                                className="mb-5"
+                                disabled={looseLocked}
+                              >
+                                <option value="tablet">Tablet</option>
+                                <option value="capsule">Capsule</option>
+                                <option value="piece">Piece</option>
+                                <option value="ml">ml</option>
+                              </Field>
+                              <div style={{ fontSize: 12, color: "#64748b" }}>
+                                1 {values.pack_type || "pack"} ={" "}
+                                {values.units_per_pack || "?"}{" "}
+                                {values.loose_unit || "tablet"}
+                              </div>
+                            </div>
+                          </fieldset>
+                        )}
                       </div>
                     )}
 

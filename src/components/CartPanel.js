@@ -94,19 +94,41 @@ export default function CartPanel({
     }
   };
 
-  const total = cart.reduce((acc, item) => {
-    const { finalPrice } = getPriceWithGST(item);
-    return acc + finalPrice * item.qty;
-  }, 0);
+  // Same rounding as the backend: round half up to 2 decimals, line by line
+  const round2 = (n) => Math.round(Number((n * 100).toPrecision(15))) / 100;
 
-  const subtotal = cart.reduce((acc, item) => {
-    const { taxable } = getPriceWithGST(item);
-    return acc + taxable * item.qty;
-  }, 0);
-  const gstTotal = cart.reduce((acc, item) => {
-    const { gstAmount } = getPriceWithGST(item);
-    return acc + gstAmount * item.qty;
-  }, 0);
+  // Amounts of one cart line, calculated exactly like SalesBillController@store
+  const getLineAmounts = (item) => {
+    const price = parseFloat(item.selling_price) || 0;
+    const gstRate = parseFloat(item.gst_percent) || 0;
+    const qty = Number(item.qty) || 0;
+    const isInclusive = Number(item.gst_inclusive) === 1;
+
+    if (gstRate > 0 && isInclusive) {
+      const rawTaxable = ((price * 100) / (100 + gstRate)) * qty;
+      return {
+        taxable: round2(rawTaxable),
+        gst: round2(price * qty - rawTaxable),
+        amount: round2(price * qty),
+      };
+    }
+
+    const taxable = round2(price * qty);
+    const gst = gstRate > 0 ? round2((taxable * gstRate) / 100) : 0;
+    return { taxable, gst, amount: round2(taxable + gst) };
+  };
+
+  const total = round2(
+    cart.reduce((acc, item) => acc + getLineAmounts(item).amount, 0),
+  );
+
+  const subtotal = round2(
+    cart.reduce((acc, item) => acc + getLineAmounts(item).taxable, 0),
+  );
+
+  const gstTotal = round2(
+    cart.reduce((acc, item) => acc + getLineAmounts(item).gst, 0),
+  );
 
   const rxItems = cart.filter(
     (i) =>
@@ -147,7 +169,9 @@ export default function CartPanel({
   const increaseQty = (item) => {
     setCart(
       cart.map((i) =>
-        i.cart_key === item.cart_key ? { ...i, qty: i.qty + 1 } : i,
+        i.cart_key === item.cart_key
+          ? { ...i, qty: Math.min(i.qty + 1, maxQtyFor(i)) }
+          : i,
       ),
     );
   };
@@ -157,6 +181,33 @@ export default function CartPanel({
       cart.map((i) =>
         i.cart_key === item.cart_key
           ? { ...i, qty: Math.max(i.qty - 1, 1) }
+          : i,
+      ),
+    );
+  };
+
+  // Max quantity (in the selected sale unit) allowed by stock. Normal products have no limit here.
+  const maxQtyFor = (i) =>
+    i.allow_loose
+      ? Math.floor(
+          Number(i.total_stock) /
+            (i.sale_unit === "pack" ? i.units_per_pack : 1),
+        )
+      : Infinity;
+
+  const setSaleUnit = (item, unit) => {
+    setCart((prev) =>
+      prev.map((i) =>
+        i.cart_key === item.cart_key
+          ? {
+              ...i,
+              sale_unit: unit,
+              selling_price:
+                unit === "pack"
+                  ? Math.round(i.unit_price * i.units_per_pack * 100) / 100
+                  : i.unit_price,
+              qty: 1,
+            }
           : i,
       ),
     );
@@ -268,6 +319,7 @@ export default function CartPanel({
         product_id: i.product_id || i.id,
         inventory_id: i.inventory_id || i.inventoryId,
         qty: i.qty,
+        sale_unit: i.sale_unit || "pack",
         selling_price: i.selling_price,
         original_price: i.original_price || i.selling_price,
         is_price_overridden: i.is_price_overridden || false,
@@ -292,7 +344,11 @@ export default function CartPanel({
       if (payment_type) createPayload.payment_type = payment_type;
       if (customer) createPayload.customer = customer;
       if (points_redeemed > 0) createPayload.points_redeemed = points_redeemed;
-      if (needsRx && rxData) createPayload.prescription = rxData;
+      if (needsRx && rxData) {
+        // customer_mobile is only for the payment screen, not part of the register
+        const { customer_mobile, ...prescription } = rxData;
+        createPayload.prescription = prescription;
+      }
 
       const res = await createSalesBill(createPayload);
       const billId = res.data.data.id;
@@ -421,7 +477,7 @@ export default function CartPanel({
   };
 
   const isProductOverrideAllowed = (item) => {
-    return Number(item.is_price_override) === 1;
+    return Number(item.is_price_override) === 1 && !item.allow_loose;
   };
 
   // ---- dark theme tokens ----
@@ -633,7 +689,7 @@ export default function CartPanel({
           </div>
         ) : (
           cart.map((item) => {
-            const { gstAmount, finalPrice } = getPriceWithGST(item);
+            const line = getLineAmounts(item);
             const override = priceOverrides[item.cart_key];
             const isEditing = override?.editing;
             const isOverridden =
@@ -641,7 +697,7 @@ export default function CartPanel({
 
             return (
               <div
-                key={`${item.inventory_id}_${item.selling_price}`}
+                key={item.cart_key}
                 className="rounded-xl mb-3 p-3"
                 style={{
                   background: "#fff",
@@ -686,10 +742,44 @@ export default function CartPanel({
                   )}
                 </div>
 
+                {item.allow_loose && (
+                  <div className="flex gap-2 mb-2">
+                    {[
+                      ["pack", item.pack_type],
+                      ["loose", item.loose_unit],
+                    ].map(([unit, label]) => (
+                      <button
+                        key={unit}
+                        type="button"
+                        onClick={() => setSaleUnit(item, unit)}
+                        className="touch-manipulation flex-1"
+                        style={{
+                          minHeight: 44,
+                          borderRadius: 10,
+                          fontSize: 15,
+                          fontWeight: 700,
+                          textTransform: "capitalize",
+                          border: "2px solid #2563eb",
+                          background:
+                            item.sale_unit === unit ? "#2563eb" : "#fff",
+                          color: item.sale_unit === unit ? "#fff" : "#2563eb",
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span style={{ color: "#000", fontSize: "13px" }}>
-                      Unit:
+                      {item.allow_loose
+                        ? item.sale_unit === "pack"
+                          ? item.pack_type
+                          : item.loose_unit
+                        : "Unit"}
+                      :
                     </span>
 
                     {isOverridden && (
@@ -883,7 +973,15 @@ export default function CartPanel({
                               );
                               return;
                             }
-                            const newQty = Math.max(1, Number(val));
+                            const newQty = Math.max(
+                              1,
+                              Math.min(
+                                item.allow_loose
+                                  ? Math.floor(Number(val))
+                                  : Number(val),
+                                maxQtyFor(item),
+                              ),
+                            );
                             setCart((prev) =>
                               prev.map((i) =>
                                 i.inventory_id === item.inventory_id
@@ -947,8 +1045,7 @@ export default function CartPanel({
                   style={{ fontSize: "12px", color: colors.textMuted }}
                 >
                   <span>
-                    GST ({item.gst_percent}%): ₹
-                    {(gstAmount * item.qty).toFixed(2)}
+                    GST ({item.gst_percent}%): ₹{line.gst.toFixed(2)}
                   </span>
                   <span
                     style={{
@@ -958,7 +1055,7 @@ export default function CartPanel({
                       fontSize: "16px",
                     }}
                   >
-                    ₹{(finalPrice * item.qty).toFixed(2)}
+                    ₹{line.amount.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -1106,6 +1203,15 @@ export default function CartPanel({
           onClose={() => setShowPayment(false)}
           onConfirm={handlePayment}
           cart_data={cart}
+          prefillCustomer={
+            needsRx && rxData
+              ? {
+                  name: rxData.patient_name,
+                  mobile: rxData.customer_mobile,
+                  address: rxData.patient_address,
+                }
+              : null
+          }
         />
       )}
 
