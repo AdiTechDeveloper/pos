@@ -30,7 +30,7 @@ const StockExpiryReport = () => {
   const appData = useAppData();
   const branches = appData?.branches || [];
 
-  // Pharmacy: 30 / 90 din, baaki stores: pehle jaisa 7 / 30 din
+  // Pharmacy: 30 / 90 days; other stores keep 7 / 30 days as before
   const isPharmacy = hasFeature("pharmacy");
   const CRITICAL_DAYS = isPharmacy ? 30 : 7;
   const NEAR_DAYS = isPharmacy ? 90 : 30;
@@ -108,7 +108,7 @@ const StockExpiryReport = () => {
     );
   }, [data, search]);
 
-  // Status server ke days_left se (browser timezone par depend nahi)
+  // Status comes from the server's days_left (independent of the browser timezone)
   const getStatus = (daysLeft) => {
     if (daysLeft < 0)
       return {
@@ -177,7 +177,7 @@ const StockExpiryReport = () => {
       "Batch No": r.batch_no || "",
       "Expiry Date": formatDate(r.expiry_date),
       "Days Left": r.days_left,
-      Qty: Number(r.remaining_qty),
+      Qty: r.remaining_label ?? Number(r.remaining_qty),
       "Stock Value (Cost)": Number(r.stock_value),
       Status: getStatus(r.days_left).label,
     }));
@@ -226,8 +226,9 @@ const StockExpiryReport = () => {
     {
       name: "Qty",
       selector: (row) => row.remaining_qty,
+      cell: (row) => row.remaining_label ?? row.remaining_qty,
       sortable: true,
-      width: "90px",
+      width: "190px",
       center: true,
     },
     {

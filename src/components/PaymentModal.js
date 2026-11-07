@@ -17,17 +17,38 @@ import {
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 const POINT_VALUE = 1; // 1 loyalty point = ₹1 (keep in sync with backend)
 
-export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
+export default function PaymentModal({
+  total,
+  onClose,
+  onConfirm,
+  cart_data,
+  prefillCustomer = null,
+}) {
   const [cashGiven, setCashGiven] = useState(null);
-  const [onlineGiven, setOnlineGiven] = useState(""); 
+  const [onlineGiven, setOnlineGiven] = useState("");
   const [activeField, setActiveField] = useState("cash");
   const [paymentType, setPaymentType] = useState("cash");
-  const [customerName, setCustomerName] = useState("");
-  const [customerMobile, setCustomerMobile] = useState("");
+  // When a prescription was just entered, its patient details are reused here
+  // (same rules as the fields below) so the customer is asked only once.
+  const [customerName, setCustomerName] = useState(() =>
+    String(prefillCustomer?.name || "")
+      .replace(/[^a-zA-Z\s]/g, "")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
+  const [customerMobile, setCustomerMobile] = useState(() =>
+    String(prefillCustomer?.mobile || "")
+      .replace(/\s+/g, "")
+      .replace(/\D/g, "")
+      .replace(/^0+/, "")
+      .slice(0, 10),
+  );
   const [customerAdd1, setCustomerAdd1] = useState("");
   const [customerAdd2, setCustomerAdd2] = useState("");
   const [customerArea, setCustomerArea] = useState("");
-  const [customerCity, setCustomerCity] = useState("");
+  const [customerCity, setCustomerCity] = useState(
+    () => prefillCustomer?.address || "",
+  );
   const [customerDue, setCustomerDue] = useState(0);
   const [loadingCustomer, setLoadingCustomer] = useState(false);
   const [mobileError, setMobileError] = useState("");
@@ -104,7 +125,6 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
- 
   useEffect(() => {
     axios
       .get(`${BASE_URL}/api/customers`, { headers: getAuthHeader() })
@@ -112,7 +132,6 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
         const payload = res.data;
         let list = payload?.data ?? payload?.customers ?? payload;
 
-      
         if (list && !Array.isArray(list) && Array.isArray(list.data)) {
           list = list.data;
         }
@@ -206,7 +225,6 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     const matches = allCustomers
       .filter((c) => (c.name || "").toLowerCase().includes(q))
       .sort((a, b) => {
-        
         const aStarts = (a.name || "").toLowerCase().startsWith(q) ? 0 : 1;
         const bStarts = (b.name || "").toLowerCase().startsWith(q) ? 0 : 1;
         return aStarts - bStarts;
@@ -238,7 +256,8 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
     setFilteredSuggestions([]);
   };
 
-  const activeValue = isSplit && activeField === "online" ? onlineGiven : cashGiven;
+  const activeValue =
+    isSplit && activeField === "online" ? onlineGiven : cashGiven;
 
   const setActiveValue = (next) => {
     if (isSplit && activeField === "online") {
@@ -253,12 +272,12 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
   };
 
   const keypad = (k) => {
-   
     const prev = String(activeValue ?? "");
 
     if (k === "C") return setActiveValue("");
     if (k === "⌫") return setActiveValue(prev.slice(0, -1));
-    if (k === ".") return setActiveValue(prev.includes(".") ? prev : prev + ".");
+    if (k === ".")
+      return setActiveValue(prev.includes(".") ? prev : prev + ".");
     return setActiveValue(prev + k);
   };
 
@@ -1057,7 +1076,8 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                 {paymentType === "wallet" && (
                   <>
                     <div style={amountStyle} className="text-slate-900">
-                      From Wallet: ₹{Math.min(walletBalance, netTotal).toFixed(2)}
+                      From Wallet: ₹
+                      {Math.min(walletBalance, netTotal).toFixed(2)}
                     </div>
                     {netTotal > walletBalance && (
                       <div style={{ ...amountStyle, color: "#dc2626" }}>
@@ -1122,7 +1142,7 @@ export default function PaymentModal({ total, onClose, onConfirm, cart_data }) {
                         "7",
                         "8",
                         "9",
-                        ".", 
+                        ".",
                         "0",
                         "⌫",
                       ].map((k) => (

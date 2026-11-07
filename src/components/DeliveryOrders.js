@@ -81,6 +81,7 @@ export default function DeliveryOrders() {
   const [tab, setTab] = useState("active"); // active | done
   const [history, setHistory] = useState({ data: [], count: 0, cash_total: 0 });
   const [, setTick] = useState(0);
+  const [sharing, setSharing] = useState("off"); // off | on | denied | unsupported | error
 
   const [banner, setBanner] = useState(null); // { count }
   const [alertsOn, setAlertsOn] = useState(() => localStorage.getItem(LS_ALERTS) === "1");
@@ -257,6 +258,43 @@ export default function DeliveryOrders() {
       }
     };
   }, [onDuty]);
+
+  // Order raste mein hai: apni location har 15 second me bhejte raho, taaki customer "Track" me dekh sake.
+  // (Browser me screen khuli rakhni padti hai; duty par wake lock isi liye pehle se lagta hai.)
+  const hasActive = orders.length > 0;
+  useEffect(() => {
+    if (!hasActive) {
+      setSharing("off");
+      return undefined;
+    }
+    if (!navigator.geolocation) {
+      setSharing("unsupported");
+      return undefined;
+    }
+
+    let last = 0;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setSharing("on");
+        const now = Date.now();
+        if (now - last < 15000) return;
+        last = now;
+        axios
+          .post("/api/delivery/location", {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: Math.round(pos.coords.accuracy || 0),
+          })
+          .catch(() => {
+            /* agli baar phir bhejega */
+          });
+      },
+      (err) => setSharing(err.code === 1 ? "denied" : "error"),
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 },
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [hasActive]);
 
   // Title mein pending count
   useEffect(() => {
@@ -536,6 +574,18 @@ export default function DeliveryOrders() {
         )}
         {onDuty && (
           <p className="dvx-hint">Keep this screen open while on duty to get new orders.</p>
+        )}
+        {sharing === "on" && (
+          <p className="dvx-alert dvx-alert-ok">Sharing your live location with the customer. Keep this screen open.</p>
+        )}
+        {(sharing === "denied" || sharing === "unsupported" || sharing === "error") && (
+          <p className="dvx-alert dvx-alert-warn">
+            {sharing === "denied"
+              ? "Location is blocked, so customers cannot see where you are. Allow location for this site in your browser settings."
+              : sharing === "unsupported"
+                ? "This browser cannot share location, so customers cannot track you."
+                : "Could not get your location right now. Make sure GPS is on."}
+          </p>
         )}
 
         {visibleCancelled.map((c) => (
@@ -839,7 +889,7 @@ export default function DeliveryOrders() {
 }
 
 const CSS = `
-.dvx{position:fixed;inset:0;height:100vh;height:100dvh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;scrollbar-width:thin;background:#f1f5f9;color:#0f172a;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+.dvx{min-height:100vh;background:#f1f5f9;color:#0f172a;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 .dvx *{box-sizing:border-box}
 .dvx p{margin:0}
 .dvx-top{position:sticky;top:0;z-index:20;background:#0f172a;color:#fff;padding-top:env(safe-area-inset-top,0px)}

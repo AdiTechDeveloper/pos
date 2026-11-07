@@ -65,13 +65,32 @@ const CreateStore = () => {
     );
   };
 
-  const featureKeys = Object.keys(featureCatalog);
+  // E-commerce (online_store) ka alag Yes/No card hai, isliye ye neeche ki list se bahar rahega
+  const ECOMMERCE_KEY = "online_store";
+  const ecommerceOn = selectedFeatures.includes(ECOMMERCE_KEY);
+
+  const setEcommerce = (on) => {
+    setSelectedFeatures((prev) => {
+      const without = prev.filter((f) => f !== ECOMMERCE_KEY);
+      return on ? [...without, ECOMMERCE_KEY] : without;
+    });
+  };
+
+  const featureKeys = Object.keys(featureCatalog).filter(
+    (key) => key !== ECOMMERCE_KEY,
+  );
+  const selectedCount = selectedFeatures.filter((key) =>
+    featureKeys.includes(key),
+  ).length;
   const allFeaturesSelected =
     featureKeys.length > 0 &&
     featureKeys.every((key) => selectedFeatures.includes(key));
 
   const toggleAllFeatures = () => {
-    setSelectedFeatures(allFeaturesSelected ? [] : featureKeys);
+    setSelectedFeatures((prev) => {
+      const keepEcom = prev.includes(ECOMMERCE_KEY) ? [ECOMMERCE_KEY] : [];
+      return allFeaturesSelected ? keepEcom : [...featureKeys, ...keepEcom];
+    });
   };
 
   useEffect(() => {
@@ -740,6 +759,94 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
+                  {featureCatalog.online_store && (
+                    <fieldset
+                      style={{
+                        border: "none",
+                        padding: 0,
+                        margin: 0,
+                        gridColumn: "1 / -1",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: "16px",
+                          flexWrap: "wrap",
+                          padding: "16px 18px",
+                          borderRadius: "8px",
+                          border: ecommerceOn
+                            ? "1px solid #86efac"
+                            : "1px solid #e2e8f0",
+                          backgroundColor: ecommerceOn ? "#f0fdf4" : "#f8fafc",
+                        }}
+                      >
+                        <div style={{ minWidth: "240px", flex: 1 }}>
+                          <div
+                            style={{
+                              fontWeight: 600,
+                              fontSize: "16px",
+                              color: "#1f2937",
+                            }}
+                          >
+                            E-commerce (Online Store)
+                          </div>
+                          <div
+                            style={{
+                              marginTop: "4px",
+                              fontSize: "13px",
+                              color: "#64748b",
+                            }}
+                          >
+                            Yes karne par ye store customer app / website par
+                            dikhega aur online orders le sakega. No karne par
+                            store sirf POS ke liye rahega.
+                          </div>
+                        </div>
+
+                        <div style={{ display: "inline-flex", gap: "8px" }}>
+                          {[
+                            { label: "Yes", value: true },
+                            { label: "No", value: false },
+                          ].map((opt) => {
+                            const active = ecommerceOn === opt.value;
+                            return (
+                              <button
+                                key={opt.label}
+                                type="button"
+                                onClick={() => setEcommerce(opt.value)}
+                                aria-pressed={active}
+                                style={{
+                                  minWidth: "84px",
+                                  padding: "9px 18px",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                  border: active
+                                    ? opt.value
+                                      ? "1px solid #16a34a"
+                                      : "1px solid #64748b"
+                                    : "1px solid #cbd5e1",
+                                  backgroundColor: active
+                                    ? opt.value
+                                      ? "#16a34a"
+                                      : "#64748b"
+                                    : "#ffffff",
+                                  color: active ? "#ffffff" : "#374151",
+                                }}
+                              >
+                                {opt.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </fieldset>
+                  )}
+
                   <fieldset
                     style={{
                       border: "none",
@@ -785,7 +892,7 @@ const CreateStore = () => {
                               fontWeight: 500,
                             }}
                           >
-                            {selectedFeatures.length} of {featureKeys.length}{" "}
+                            {selectedCount} of {featureKeys.length}{" "}
                             selected
                           </span>
                         </div>
@@ -835,7 +942,9 @@ const CreateStore = () => {
                           gap: "14px",
                         }}
                       >
-                        {Object.entries(featureCatalog).map(([key, info]) => {
+                        {Object.entries(featureCatalog)
+                          .filter(([key]) => key !== ECOMMERCE_KEY)
+                          .map(([key, info]) => {
                           const isSelected = selectedFeatures.includes(key);
 
                           return (

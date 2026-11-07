@@ -1,3 +1,5 @@
+import { formatStock, getPackInfo } from "../utils/looseStock";
+
 export default function BatchSelectModal({ options, onSelect, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -5,33 +7,48 @@ export default function BatchSelectModal({ options, onSelect, onClose }) {
         <h2 className="text-3xl font-bold mb-6">Select Batch to Sell</h2>
 
         <div className="space-y-3 max-h-[400px] overflow-y-auto">
-          {options.map((o, i) => (
-            <div
-              key={i}
-              onClick={() => onSelect(o)}
-              className="flex justify-between items-center p-4 rounded-xl border cursor-pointer hover:bg-blue-50 transition"
-            >
-              <div>
-                <p className="text-xl font-semibold">Batch: {o.batch_no}</p>
-                <p className="text-gray-500">Stock: {o.qty_available}</p>
-              </div>
+          {options.map((o, i) => {
+            const prod = o.product_ref || o.product;
+            const info = getPackInfo(prod, o.units_per_pack);
 
-              <div className="text-right">
-                <p className="text-gray-500 font-semibold">
-                  Expiry Date: {o.expiry_date}
-                </p>
-                <p className="text-2xl font-bold text-blue-700">
-                  ₹{o.selling_price}
-                </p>
+            return (
+              <div
+                key={i}
+                onClick={() => onSelect(o)}
+                className="flex justify-between items-center p-4 rounded-xl border cursor-pointer hover:bg-blue-50 transition"
+              >
+                <div>
+                  <p className="text-xl font-semibold">Batch: {o.batch_no}</p>
+                  <p className="text-gray-500">
+                    Stock:{" "}
+                    {formatStock(o.qty_available, prod, o.units_per_pack)}
+                  </p>
+                </div>
 
-                {o.is_opening === 1 && (
-                  <span className="text-sm text-green-600 font-bold">
-                    Opening Stock
-                  </span>
-                )}
+                <div className="text-right">
+                  <p className="text-gray-500 font-semibold">
+                    Expiry Date: {o.expiry_date}
+                  </p>
+                  <p className="text-2xl font-bold text-blue-700">
+                    ₹{info.enabled ? o.pack_price : o.selling_price}
+                  </p>
+
+                  {info.enabled && (
+                    <p className="text-gray-500">
+                      per {info.packLabel} · ₹
+                      {Number(o.selling_price).toFixed(2)} per {info.looseLabel}
+                    </p>
+                  )}
+
+                  {o.is_opening === 1 && (
+                    <span className="text-sm text-green-600 font-bold">
+                      Opening Stock
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <button

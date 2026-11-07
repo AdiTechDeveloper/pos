@@ -113,6 +113,9 @@ const ReceiptModal = forwardRef(
                   <span style={{ flex: 1 }}>{format(item.selling ?? "")}</span>
                   <span style={{ flex: 1, textAlign: "center" }}>
                     {item.qty ?? ""}
+                    {item.unit && (
+                      <div style={{ fontSize: 10 }}>{item.unit}</div>
+                    )}
                   </span>
                   <span style={{ flex: 1, textAlign: "right" }}>
                     {format(item.amount)}

@@ -1117,13 +1117,23 @@ const CreateEditPurchaseBill = () => {
       }
 
       const emptyIndex = linesArray.findIndex((l) => !l.product_id);
+
+      // Stock of loose-enabled products is stored per single unit,
+      // but a purchase line is entered per pack.
+      const perPack =
+        Number(inventory.units_per_pack) > 1
+          ? Number(inventory.units_per_pack)
+          : 1;
+      const toPack = (value) =>
+        Math.round(Number(value || 0) * perPack * 100) / 100;
+
       const lineData = {
         product_id: product.id.toString(),
         qty: 1,
         free_qty: 0,
-        purchase_rate: inventory.purchase_rate ?? inventory.cost_price ?? 0,
-        mrp: inventory.mrp || 0,
-        selling_price: inventory.selling_price || 0,
+        purchase_rate: inventory.purchase_rate ?? toPack(inventory.cost_price),
+        mrp: toPack(inventory.mrp),
+        selling_price: toPack(inventory.selling_price),
         hsn_code: product.hsn_code || "",
         gst_rate_id: product.gst_rate?.id || "",
         batch_no: inventory.batch_no || "",
@@ -1549,6 +1559,40 @@ const CreateEditPurchaseBill = () => {
                                       component="div"
                                       className="field-error"
                                     />
+                                    {(() => {
+                                      const lp = products.find(
+                                        (p) =>
+                                          p.id.toString() === line.product_id,
+                                      );
+                                      const perPack = Number(
+                                        lp?.units_per_pack,
+                                      );
+                                      if (
+                                        !lp ||
+                                        lp.allow_loose != 1 ||
+                                        !(perPack >= 2)
+                                      ) {
+                                        return null;
+                                      }
+                                      const unit = lp.loose_unit || "tablet";
+                                      const label =
+                                        unit === "ml" ? "ml" : `${unit}s`;
+                                      const packs = Number(line.qty) || 1;
+                                      return (
+                                        <small
+                                          style={{
+                                            fontSize: 10,
+                                            lineHeight: 1.2,
+                                            marginTop: 3,
+                                            color: "#16a34a",
+                                            fontWeight: 600,
+                                          }}
+                                        >
+                                          {Number(line.qty) ? "=" : "1 pack ="}{" "}
+                                          {packs * perPack} {label}
+                                        </small>
+                                      );
+                                    })()}
                                   </div>
 
                                   <div className="field-col">

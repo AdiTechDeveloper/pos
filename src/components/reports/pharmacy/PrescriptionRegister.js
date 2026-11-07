@@ -155,8 +155,8 @@ export default function PrescriptionRegister() {
       r.drug_schedule,
       r.batch_no || "",
       r.expiry_date || "",
-      r.qty,
-      r.returned_qty,
+      r.qty_label ?? r.qty,
+      r.returned_label ?? r.returned_qty,
       r.patient_name,
       r.patient_age ?? "",
       r.patient_address || "",
@@ -230,7 +230,9 @@ export default function PrescriptionRegister() {
         r.product_name,
         r.drug_schedule === "none" ? "Rx" : r.drug_schedule,
         r.batch_no || "-",
-        r.returned_qty > 0 ? `${r.qty} (ret. ${r.returned_qty})` : r.qty,
+        r.returned_qty > 0
+          ? `${r.qty_label ?? r.qty} (ret. ${r.returned_label ?? r.returned_qty})`
+          : (r.qty_label ?? r.qty),
       ]),
     });
 
@@ -291,12 +293,14 @@ export default function PrescriptionRegister() {
       selector: (r) => r.qty,
       sortable: true,
       right: true,
+      minWidth: "180px",
+      wrap: true,
       cell: (r) => (
         <div className="text-right">
-          <div className="font-semibold">{r.qty}</div>
+          <div className="font-semibold">{r.qty_label ?? r.qty}</div>
           {r.returned_qty > 0 && (
             <div className="text-2xl text-red-600">
-              ↩ {r.returned_qty} returned
+              ↩ {r.returned_label ?? r.returned_qty} returned
             </div>
           )}
         </div>
@@ -509,7 +513,7 @@ export default function PrescriptionRegister() {
               "bg-blue-50 text-blue-700 border-blue-200",
             ],
             [
-              "Total Qty",
+              "Total Units",
               summary.total_qty ?? 0,
               "bg-emerald-50 text-emerald-700 border-emerald-200",
             ],
