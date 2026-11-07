@@ -13,15 +13,18 @@ const CreateEditPurchaseReturn = () => {
   const navigate = useNavigate();
   const appData = useAppData();
   const branches = appData?.branches || [];
- 
+
   const suppliers = appData?.suppliers || [];
   const purchaseBills = appData?.purchaseBills || [];
   const purchaseLines = appData?.purchaseLines || [];
   const [supplierId, setSupplierId] = useState("");
   const [purchaseBillId, setPurchaseBillId] = useState("");
   const [newPurchaseBill, setNewPurchaseBill] = useState("");
+  const [billLines, setBillLines] = useState([]);
+  const lineOf = (lineId) =>
+    billLines.find((b) => String(b.id) === String(lineId));
   const [error, setError] = useState("");
-  const [fieldValue, setFieldValue] = useState(() => () => { });
+  const [fieldValue, setFieldValue] = useState(() => () => {});
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_purchase_return_bill = localStorage.getItem(
@@ -36,6 +39,8 @@ const CreateEditPurchaseReturn = () => {
     supplier_id: "",
     branch_id: "",
     return_date: "",
+    reason: "",
+    notes: "",
     lines: [
       {
         purchase_line_id: "",
@@ -53,15 +58,14 @@ const CreateEditPurchaseReturn = () => {
         return_date: incomingReturnBill.return_date || "",
         lines: incomingReturnBill.lines?.length
           ? incomingReturnBill.lines.map((line) => ({
-            purchase_bill_line_id: line.purchase_line_id?.toString() || "",
-            qty: line.qty || "",
-          }))
+              purchase_bill_line_id: line.purchase_line_id?.toString() || "",
+              qty: line.qty || "",
+            }))
           : initialValues.lines,
       });
     }
   }, []);
 
-  
   useEffect(() => {
     appData?.loadBranches();
     appData?.loadSuppliers();
@@ -69,42 +73,46 @@ const CreateEditPurchaseReturn = () => {
     appData?.loadPurchaseLines();
   }, []);
 
-  
-
-  const handlePurchaseBillSelection = async (
-    selectedBillId,
-    setFieldValue
-  ) => {
+  const handlePurchaseBillSelection = async (selectedBillId, setFieldValue) => {
     try {
       const billDetails = purchaseBills.find(
         (b) => b.id === parseInt(selectedBillId),
       );
 
       if (billDetails) {
-        setFieldValue(
-          "branch_id",
-          billDetails.branch_id?.toString() || ""
-        );
-
-        setFieldValue(
-          "supplier_id",
-          billDetails.supplier_id?.toString() || ""
-        );
-
-        const filteredLines = purchaseLines.filter(
-          (line) =>
-            line.purchase_bill_id == selectedBillId ||
-            line.purchase_id == selectedBillId,
-        );
-
-        const formattedLines = filteredLines.map((line) => ({
-          purchase_bill_line_id: line.id.toString(),
-          qty: line.qty,
-          product_id: line.product_id,
-        }));
-
-        setFieldValue("lines", formattedLines);
+        setFieldValue("branch_id", billDetails.branch_id?.toString() || "");
+        setFieldValue("supplier_id", billDetails.supplier_id?.toString() || "");
       }
+
+      const res = await axios.get(
+        `${BASE_URL}/api/purchase-return/bill/${selectedBillId}/lines`,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${user_data.token}`,
+          },
+        },
+      );
+
+      const lines = res.data?.data || [];
+      setBillLines(lines);
+
+      const returnable = lines.filter((l) => l.max_packs > 0);
+
+      if (returnable.length === 0) {
+        toast.info(
+          "Nothing can be returned from this bill (no stock left, or already returned).",
+        );
+      }
+
+      setFieldValue(
+        "lines",
+        returnable.map((l) => ({
+          purchase_bill_line_id: String(l.id),
+          product_id: l.product_id,
+          qty: l.max_packs,
+        })),
+      );
     } catch (error) {
       console.error("Error loading bill lines:", error);
       toast.error("Failed to load bill items");
@@ -120,7 +128,7 @@ const CreateEditPurchaseReturn = () => {
       .required("Return Date is required")
       .matches(
         /^\d{4}-\d{2}-\d{2}$/,
-        "Return Date must be in YYYY-MM-DD format"
+        "Return Date must be in YYYY-MM-DD format",
       ),
 
     lines: Yup.array()
@@ -130,7 +138,6 @@ const CreateEditPurchaseReturn = () => {
           purchase_bill_line_id: Yup.string().required(
             "Purchase Bill Product name and batch no. is required",
           ),
-          product_id: Yup.string().required("Product is required"),
           qty: Yup.number()
             .required("Quantity is required")
             .positive("Must be positive")
@@ -159,8 +166,6 @@ const CreateEditPurchaseReturn = () => {
 
       actions.resetForm();
       navigate("/purchase-return-bill");
-
-      navigate("/purchase-return-bill");
     } catch (error) {
       console.error("API Error:", error.response?.data);
       const errorMessage =
@@ -182,7 +187,7 @@ const CreateEditPurchaseReturn = () => {
               validationSchema={validationSchema}
               onSubmit={(values, actions) => handleSubmit(values, actions)}
             >
-              {({ values, setFieldValue }) => (
+              {({ values, setFieldValue, isSubmitting }) => (
                 <Form>
                   <div className="container">
                     <div className="row mb-20">
@@ -267,6 +272,27 @@ const CreateEditPurchaseReturn = () => {
                           component="div"
                         />
                       </div>
+
+                      <div className="mb-20 col-md-2">
+                        <label className="mb-8 purchase-label">Reason</label>
+                        <Field as="select" name="reason">
+                          <option value="">Select reason</option>
+                          <option value="near_expiry">Near expiry</option>
+                          <option value="expired">Expired</option>
+                          <option value="damaged">Damaged</option>
+                          <option value="wrong_item">Wrong item</option>
+                          <option value="other">Other</option>
+                        </Field>
+                      </div>
+                      <div className="mb-20 col-md-4">
+                        <label className="mb-8 purchase-label">Notes</label>
+                        <Field
+                          type="text"
+                          name="notes"
+                          maxLength={500}
+                          placeholder="Optional note for this return"
+                        />
+                      </div>
                     </div>
                   </div>
                   <FieldArray name="lines">
@@ -297,9 +323,18 @@ const CreateEditPurchaseReturn = () => {
                                   name={`lines.${index}.purchase_bill_line_id`}
                                 >
                                   <option value="">Select Purchase Line</option>
-                                  {purchaseLines.map((p) => (
-                                    <option value={p.id} key={p.id}>
-                                      {p.batch_no} ({p.product?.name})
+                                  {billLines.map((p) => (
+                                    <option
+                                      value={p.id}
+                                      key={p.id}
+                                      disabled={p.max_packs <= 0}
+                                    >
+                                      {p.product_name} ·{" "}
+                                      {p.batch_no || "No batch"}
+                                      {p.expiry_date
+                                        ? ` · Exp ${p.expiry_date.slice(5, 7)}/${p.expiry_date.slice(2, 4)}`
+                                        : ""}
+                                      {` · Max ${p.max_packs} ${p.pack_unit}`}
                                     </option>
                                   ))}
                                 </Field>
@@ -314,9 +349,35 @@ const CreateEditPurchaseReturn = () => {
                                 <label style={{ fontSize: "15px" }}>Qty</label>
                                 <Field
                                   type="number"
+                                  min="1"
+                                  max={
+                                    lineOf(line.purchase_bill_line_id)
+                                      ?.max_packs
+                                  }
                                   name={`lines.${index}.qty`}
-                                  placeholder="Enter quantity to return"
+                                  placeholder="Packs to return"
                                 />
+                                {lineOf(line.purchase_bill_line_id) && (
+                                  <div className="text-2xl" style={{ color: "#64748b" }}>
+                                    Max{" "}
+                                    {
+                                      lineOf(line.purchase_bill_line_id)
+                                        .max_packs
+                                    }{" "}
+                                    {
+                                      lineOf(line.purchase_bill_line_id)
+                                        .pack_unit
+                                    }{" "}
+                                    · In stock:{" "}
+                                    {
+                                      lineOf(line.purchase_bill_line_id)
+                                        .stock_label
+                                    }
+                                    {lineOf(line.purchase_bill_line_id)
+                                      .is_loose &&
+                                      ` · 1 ${lineOf(line.purchase_bill_line_id).pack_unit} = ${lineOf(line.purchase_bill_line_id).units_per_pack} ${lineOf(line.purchase_bill_line_id).loose_unit}s`}
+                                  </div>
+                                )}
                                 <ErrorMessage
                                   name={`lines.${index}.qty`}
                                   className="error-text"
@@ -346,14 +407,13 @@ const CreateEditPurchaseReturn = () => {
                             </div>
                           </div>
                         ))}
-
-                       
                       </>
                     )}
                   </FieldArray>
                   <div className="flex">
                     <button
                       type="submit"
+                      disabled={isSubmitting}
                       className="ml-5 tf-button style-1"
                       style={{ color: "inherit", textDecoration: "none" }}
                     >

@@ -1,4 +1,3 @@
-
 import React, { useMemo } from "react";
 import { useField, useFormikContext } from "formik";
 import DatePicker from "react-datepicker";
@@ -52,7 +51,7 @@ const FormikDatePicker = ({
 
   const selectedDate = useMemo(
     () => getValueAsDate(field.value),
-    [field.value]
+    [field.value],
   );
 
   const formatDateToYYYYMMDD = (date) => {
@@ -76,7 +75,10 @@ const FormikDatePicker = ({
       }}
       onChangeRaw={(event) => {
         const input = event?.target;
-        if (!input) return;
+
+        // A click on a calendar day also fires this handler, with no typed text.
+        // Only handle real typing in the text box.
+        if (!input || typeof input.value !== "string") return;
 
         // Allow only digits and hyphen
         let value = input.value.replace(/[^\d-]/g, "");
