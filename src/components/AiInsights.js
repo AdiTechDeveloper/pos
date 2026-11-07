@@ -364,7 +364,7 @@ const CSS = `
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
   font-size: 15px; line-height: 1.5; letter-spacing: normal;
 }
-.aic-panel * { text-transform: none !important; letter-spacing: normal; }
+.aic-panel * { text-transform: lowercase !important; letter-spacing: normal; }
 .aic-panel button, .aic-panel select, .aic-panel textarea {
   font-family: inherit; min-width: 0; min-height: 0; margin: 0; box-shadow: none; text-shadow: none;
 }
@@ -1311,6 +1311,7 @@ useEffect(() => {
                 rows={1}
                 readOnly={sending || loadingBranches}
                 aria-invalid={!!inputError}
+                data-no-uppercase
               />
               <button type="submit" className="aic-send" disabled={!canSend} aria-label="Send message">
                 {sending ? (

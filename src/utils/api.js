@@ -1,6 +1,8 @@
 import axios from "axios";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+console.log("BASE_URL:", BASE_URL);
+console.log("LOGIN URL:", `${BASE_URL}/api/login`);
 
 const getAuthHeader = () => {
   const user_detail = localStorage.getItem("user_detail");
