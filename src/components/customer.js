@@ -36,7 +36,7 @@ const Customer = () => {
         "Loyalty Points",
         "Created",
       ]],
-      body: customers.map((customer) => [
+      body: filteredData.map((customer) => [
         customer.name || "-",
         customer.mobile || "-",
         [customer.add1, customer.add2].filter(Boolean).join(", ") || "-",
@@ -55,7 +55,7 @@ const Customer = () => {
     doc.save("customers.pdf");
   };
   const exportExcel = () => {
-    const data = customers.map((customer) => ({
+    const data = filteredData.map((customer) => ({
       Name: customer.name || "-",
       Mobile: customer.mobile || "-",
       Address: [customer.add1, customer.add2].filter(Boolean).join(", ") || "-",
