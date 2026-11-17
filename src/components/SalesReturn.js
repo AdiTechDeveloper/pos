@@ -198,7 +198,7 @@ export default function ProcessSalesReturn() {
       if (!bill) throw new Error("Invoice record not found.");
 
       setBillData(bill);
-      setRefundType(bill.customer_id ? "store_credit" : "cash");
+      setRefundType("cash");
 
       const initialLines = {};
       bill.lines.forEach((line) => {
@@ -307,7 +307,12 @@ export default function ProcessSalesReturn() {
       //   setSelectedLines({});
       // }
       if (response.data.status) {
-        toast.success("Sales return processed successfully.");
+        const credited = Number(response.data?.wallet_credited) || 0;
+        toast.success(
+          credited > 0
+            ? `Sales return processed. ${formatCurrency(credited)} added to the customer's wallet.`
+            : "Sales return processed successfully.",
+        );
 
         appData?.invalidate("saleReturns");
         await appData?.loadSaleReturns();
@@ -645,6 +650,10 @@ export default function ProcessSalesReturn() {
                     <button
                       key={method.value}
                       type="button"
+                      disabled={
+                        method.value === "store_credit" &&
+                        !billData?.customer_id
+                      }
                       className={`sr-method-btn ${
                         refundType === method.value ? "is-active" : ""
                       }`}
@@ -657,6 +666,14 @@ export default function ProcessSalesReturn() {
                     </button>
                   ))}
                 </div>
+                {refundType === "store_credit" && (
+                  <p
+                    className="sr-hint"
+                    style={{ justifyContent: "flex-start", color: "#1d4ed8" }}
+                  >
+                    The refund will be added to the customer's wallet balance.
+                  </p>
+                )}
               </div>
 
               <div className="sr-field">
@@ -1149,6 +1166,11 @@ export default function ProcessSalesReturn() {
           border-color: var(--Main, #2275fc);
           background: #eff6ff;
           color: #1d4ed8;
+        }
+
+        .sr-method-btn:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
         }
 
         .sr-field textarea {

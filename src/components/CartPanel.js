@@ -167,10 +167,17 @@ export default function CartPanel({
   }, [cart.length, showPayment, showRx, needsRx, rxData]);
 
   const increaseQty = (item) => {
+    const max = maxQtyFor(item);
+
+    if (Number(item.qty) >= max) {
+      toast.info(`Only ${max} in stock.`);
+      return;
+    }
+
     setCart(
       cart.map((i) =>
         i.cart_key === item.cart_key
-          ? { ...i, qty: Math.min(i.qty + 1, maxQtyFor(i)) }
+          ? { ...i, qty: Math.min(i.qty + 1, max) }
           : i,
       ),
     );
@@ -186,14 +193,25 @@ export default function CartPanel({
     );
   };
 
-  // Max quantity (in the selected sale unit) allowed by stock. Normal products have no limit here.
-  const maxQtyFor = (i) =>
-    i.allow_loose
-      ? Math.floor(
-          Number(i.total_stock) /
-            (i.sale_unit === "pack" ? i.units_per_pack : 1),
-        )
-      : Infinity;
+  // Maximum quantity (in the selected sale unit) allowed by the available stock.
+  const maxQtyFor = (i) => {
+    const stock = Number(i.total_stock);
+
+    // Stock unknown: do not block here, the server still validates stock.
+    if (!Number.isFinite(stock)) return Infinity;
+
+    if (i.is_weight_item) return stock;
+
+    let max = stock;
+
+    if (i.allow_loose) {
+      const perPack = Number(i.units_per_pack);
+      max = stock / (i.sale_unit === "pack" ? perPack : 1);
+    }
+
+    // Never return NaN: an unknown pack size must not break the quantity field.
+    return Number.isFinite(max) ? Math.floor(max) : Infinity;
+  };
 
   const setSaleUnit = (item, unit) => {
     setCart((prev) =>
@@ -753,6 +771,13 @@ export default function CartPanel({
                         type="button"
                         onClick={() => setSaleUnit(item, unit)}
                         className="touch-manipulation flex-1"
+                        disabled={
+                          unit === "pack" &&
+                          Math.floor(
+                            Number(item.total_stock) /
+                              Number(item.units_per_pack),
+                          ) < 1
+                        }
                         style={{
                           minHeight: 44,
                           borderRadius: 10,
@@ -763,6 +788,14 @@ export default function CartPanel({
                           background:
                             item.sale_unit === unit ? "#2563eb" : "#fff",
                           color: item.sale_unit === unit ? "#fff" : "#2563eb",
+                          opacity:
+                            unit === "pack" &&
+                            Math.floor(
+                              Number(item.total_stock) /
+                                Number(item.units_per_pack),
+                            ) < 1
+                              ? 0.4
+                              : 1,
                         }}
                       >
                         {label}
@@ -966,25 +999,25 @@ export default function CartPanel({
                             if (val === "") {
                               setCart((prev) =>
                                 prev.map((i) =>
-                                  i.inventory_id === item.inventory_id
+                                  i.cart_key === item.cart_key
                                     ? { ...i, qty: "" }
                                     : i,
                                 ),
                               );
                               return;
                             }
-                            const newQty = Math.max(
-                              1,
-                              Math.min(
-                                item.allow_loose
-                                  ? Math.floor(Number(val))
-                                  : Number(val),
-                                maxQtyFor(item),
-                              ),
-                            );
+                            const typed = Math.floor(Number(val));
+                            if (Number.isNaN(typed)) return;
+
+                            const max = maxQtyFor(item);
+                            if (typed > max)
+                              toast.info(`Only ${max} in stock.`);
+
+                            const newQty = Math.max(1, Math.min(typed, max));
+
                             setCart((prev) =>
                               prev.map((i) =>
-                                i.inventory_id === item.inventory_id
+                                i.cart_key === item.cart_key
                                   ? { ...i, qty: newQty }
                                   : i,
                               ),
@@ -1004,6 +1037,7 @@ export default function CartPanel({
                         <button
                           onClick={() => increaseQty(item)}
                           title="Increase"
+                          disabled={Number(item.qty) >= maxQtyFor(item)}
                           style={{
                             width: 26,
                             height: 26,
@@ -1014,6 +1048,12 @@ export default function CartPanel({
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
+                            opacity:
+                              Number(item.qty) >= maxQtyFor(item) ? 0.4 : 1,
+                            cursor:
+                              Number(item.qty) >= maxQtyFor(item)
+                                ? "not-allowed"
+                                : "pointer",
                           }}
                         >
                           <Plus size={13} />
