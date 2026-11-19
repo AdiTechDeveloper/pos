@@ -22,7 +22,7 @@ const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 const ROUTES = {
   newSale: "/sales-bill",
   addExpense: "/expenses",
-  addProduct: "/create-product",
+  addProduct: "/create-product",                                   
   products: "/product",
   expiry: "/reports/stock-expiry-report",
   newPurchase: "/purchase-bill",
