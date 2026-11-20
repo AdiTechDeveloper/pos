@@ -11,6 +11,25 @@ import { hasFeature } from "../utils/hasFeature";
 
 const MAX_IMAGE_SIDE = 800;
 const MAX_PICK_MB = 10;
+const MAX_IMAGES = 4; // ek product ki max photos
+const MAX_INFO_ROWS = 20; // Blinkit jaisi product details ki max rows
+// Quick-add buttons (user apna koi bhi label bhi likh sakta hai)
+const INFO_SUGGESTIONS = [
+  "Unit",
+  "Shelf Life",
+  "Storage Tips",
+  "Country of Origin",
+  "FSSAI License",
+  "Nutrition Information",
+  "Allergen Information",
+  "Ingredients",
+  "Taste Profile",
+  "Return Policy",
+  "Customer Care Details",
+  "Seller",
+  "Seller FSSAI",
+  "Disclaimer",
+];
 
 const shrinkImage = (file) =>
   new Promise((resolve, reject) => {
@@ -75,12 +94,35 @@ const CreateEditProduct = () => {
   // true when the product already has purchase / sales history (loose selling can no longer change)
   const [looseLocked, setLooseLocked] = useState(false);
 
-  // Product image
+  // Product images (max MAX_IMAGES)
   const fileInputRef = useRef(null);
-  const [imageFile, setImageFile] = useState(null); // naya chuna hua (chhota kiya hua) file
-  const [imagePreview, setImagePreview] = useState(""); // dikhne wali photo: server ka URL ya naye file ka blob URL
-  const [serverImage, setServerImage] = useState(""); // abhi server par jo photo hai
-  const [removeImage, setRemoveImage] = useState(false);
+  // server par abhi jo photos hain: [{ id, url, legacy? }]
+  const [existingImages, setExistingImages] = useState([]);
+  // naye chune hue (chhote kiye hue) files: [{ key, file, preview }]
+  const [newImages, setNewImages] = useState([]);
+  // save par server se hatane wali purani photos
+  const [removedImages, setRemovedImages] = useState([]);
+  const newImagesRef = useRef([]);
+  const totalImages = existingImages.length + newImages.length;
+
+  // Online store product details (Blinkit jaisi): [{ key, label, value }]
+  const [infoRows, setInfoRows] = useState([]);
+  const newInfoKey = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const addInfoRow = (label = "") => {
+    setInfoRows((prev) =>
+      prev.length >= MAX_INFO_ROWS
+        ? prev
+        : [...prev, { key: newInfoKey(), label, value: "" }],
+    );
+  };
+  const updateInfoRow = (key, field, val) => {
+    setInfoRows((prev) =>
+      prev.map((r) => (r.key === key ? { ...r, [field]: val } : r)),
+    );
+  };
+  const removeInfoRow = (key) => {
+    setInfoRows((prev) => prev.filter((r) => r.key !== key));
+  };
 
   const PHARMACY_KEYS = [
     "salt_composition",
@@ -97,6 +139,7 @@ const CreateEditProduct = () => {
   const [initialValues, setInitialValues] = useState({
     sku: "",
     name: "",
+    description: "",
     brand_id: "",
     category_id: "",
     hsn_code: "",
@@ -137,12 +180,32 @@ const CreateEditProduct = () => {
 
         setBrandId(product.brand_id || "");
         setCategoryId(product.category_id || "");
-        setServerImage(product.image_url || "");
-        setImagePreview(product.image_url || "");
+        // Naya API: product.images = [{id, url}]. Purana API: sirf product.image_url.
+        let imgs = [];
+        if (Array.isArray(product.images) && product.images.length) {
+          imgs = product.images
+            .map((img) => ({ id: img.id, url: img.url || img.image_url }))
+            .filter((img) => img.url);
+        } else if (product.image_url) {
+          imgs = [{ id: null, url: product.image_url, legacy: true }];
+        }
+        setExistingImages(imgs.slice(0, MAX_IMAGES));
+        setInfoRows(
+          (Array.isArray(product.product_info) ? product.product_info : [])
+            .slice(0, MAX_INFO_ROWS)
+            .map((r) => ({
+              key: newInfoKey(),
+              label: r.label || "",
+              value: r.value || "",
+            })),
+        );
+        setNewImages([]);
+        setRemovedImages([]);
 
         setInitialValues({
           sku: product.sku || "",
           name: product.name || "",
+          description: product.description || "",
           brand_id: product.brand_id || "",
           category_id: product.category_id || "",
           hsn_code: product.hsn_code || "",
@@ -176,41 +239,66 @@ const CreateEditProduct = () => {
 
   // Blob URL band karo, warna memory bhari rehti hai
   useEffect(() => {
+    newImagesRef.current = newImages;
+  }, [newImages]);
+
+  useEffect(() => {
     return () => {
-      if (imagePreview && imagePreview.startsWith("blob:")) {
-        URL.revokeObjectURL(imagePreview);
-      }
+      newImagesRef.current.forEach((img) => URL.revokeObjectURL(img.preview));
     };
-  }, [imagePreview]);
+  }, []);
 
-  const onPickImage = async (e) => {
-    const file = e.target.files?.[0];
+  const onPickImages = async (e) => {
+    const files = Array.from(e.target.files || []);
     e.target.value = ""; // wahi file dobara chunne par bhi onChange chale
-    if (!file) return;
+    if (!files.length) return;
 
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      toast.error("Please choose a JPG, PNG or WebP image");
+    const slots = MAX_IMAGES - totalImages;
+    if (slots <= 0) {
+      toast.error(`You can add up to ${MAX_IMAGES} images per product`);
       return;
     }
-    if (file.size > MAX_PICK_MB * 1024 * 1024) {
-      toast.error(`Image is too large (max ${MAX_PICK_MB} MB)`);
-      return;
+    if (files.length > slots) {
+      toast.info(
+        `Only ${slots} more image${slots > 1 ? "s" : ""} can be added. Extra files were skipped.`,
+      );
     }
 
-    try {
-      const small = await shrinkImage(file);
-      setImageFile(small);
-      setImagePreview(URL.createObjectURL(small));
-      setRemoveImage(false);
-    } catch (err) {
-      toast.error(err.message || "Could not use this image");
+    const added = [];
+    for (const file of files.slice(0, slots)) {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        toast.error(`${file.name}: please choose a JPG, PNG or WebP image`);
+        continue;
+      }
+      if (file.size > MAX_PICK_MB * 1024 * 1024) {
+        toast.error(`${file.name}: image is too large (max ${MAX_PICK_MB} MB)`);
+        continue;
+      }
+      try {
+        const small = await shrinkImage(file);
+        added.push({
+          key: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          file: small,
+          preview: URL.createObjectURL(small),
+        });
+      } catch (err) {
+        toast.error(err.message || "Could not use this image");
+      }
     }
+    if (added.length) setNewImages((prev) => [...prev, ...added]);
   };
 
-  const onRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview("");
-    setRemoveImage(Boolean(serverImage)); // server par photo thi to save par hatao
+  const onRemoveExisting = (img) => {
+    setExistingImages((prev) => prev.filter((i) => i !== img));
+    setRemovedImages((prev) => [...prev, img]); // save par server se hategi
+  };
+
+  const onRemoveNew = (key) => {
+    setNewImages((prev) => {
+      const target = prev.find((i) => i.key === key);
+      if (target) URL.revokeObjectURL(target.preview);
+      return prev.filter((i) => i.key !== key);
+    });
   };
 
   useEffect(() => {
@@ -272,6 +360,10 @@ const CreateEditProduct = () => {
       const method = isEdit ? "put" : "post";
 
       const payload = { ...values };
+      payload.description = (values.description || "").trim();
+      payload.product_info = infoRows
+        .map((r) => ({ label: r.label.trim(), value: r.value.trim() }))
+        .filter((r) => r.label && r.value);
       if (hasFeature("pharmacy")) {
         payload.units_per_pack =
           payload.units_per_pack === "" ? null : payload.units_per_pack;
@@ -297,66 +389,60 @@ const CreateEditProduct = () => {
         throw new Error("Product saved, but product ID was not returned by API.");
       }
 
-      // Step 2: Upload/remove image through its dedicated API endpoint.
-      // Do not set Content-Type manually; browser adds multipart boundary.
-      if (imageFile) {
-        const formData = new FormData();
-        formData.append("image", imageFile, imageFile.name || "product.jpg");
+      const authHeaders = {
+        Accept: "application/json",
+        Authorization: `Bearer ${user_data.token}`,
+      };
 
-        console.log("Uploading product image:", {
-          productId,
-          fileName: imageFile.name,
-          fileType: imageFile.type,
-          fileSize: imageFile.size,
-          formDataFile: formData.get("image"),
+      // Step 2: Hatayi gayi purani photos server se delete karo.
+      for (const img of removedImages) {
+        const deleteUrl = img.legacy
+          ? `${BASE_URL}/api/products/${productId}/image`
+          : `${BASE_URL}/api/products/${productId}/images/${img.id}`;
+        const deleteResponse = await axios.delete(deleteUrl, {
+          headers: authHeaders,
+        });
+        if (deleteResponse.data?.status === false) {
+          throw new Error(deleteResponse.data.message || "Image removal failed");
+        }
+      }
+      setRemovedImages([]);
+
+      // Step 3: Nayi photos ek saath upload karo (images[]).
+      // Content-Type manually set mat karo; browser multipart boundary khud lagata hai.
+      if (newImages.length) {
+        const formData = new FormData();
+        newImages.forEach((img, index) => {
+          formData.append("images[]", img.file, `product-${index + 1}.jpg`);
         });
 
         const uploadResponse = await fetch(
-          `${BASE_URL}/api/products/${productId}/image`,
+          `${BASE_URL}/api/products/${productId}/images`,
           {
             method: "POST",
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${user_data.token}`,
-            },
+            headers: authHeaders,
             body: formData,
-          }
+          },
         );
 
         const uploadData = await uploadResponse.json().catch(() => ({}));
-        console.log("Product image upload response:", uploadResponse.status, uploadData);
 
         if (!uploadResponse.ok || uploadData.status === false) {
           throw new Error(
             uploadData.message ||
-              uploadData.errors?.image?.[0] ||
-              `Image upload failed (${uploadResponse.status})`
+              uploadData.errors?.images?.[0] ||
+              uploadData.errors?.["images.0"]?.[0] ||
+              `Image upload failed (${uploadResponse.status})`,
           );
         }
 
-        // Keep the returned image URL in state in case the page remains mounted.
-        if (uploadData.image_url) {
-          setServerImage(uploadData.image_url);
-          setImagePreview(uploadData.image_url);
+        newImages.forEach((img) => URL.revokeObjectURL(img.preview));
+        setNewImages([]);
+        if (Array.isArray(uploadData.images)) {
+          setExistingImages(
+            uploadData.images.map((img) => ({ id: img.id, url: img.url })),
+          );
         }
-        setImageFile(null);
-        setRemoveImage(false);
-      } else if (removeImage && isEdit) {
-        const deleteResponse = await axios.delete(
-          `${BASE_URL}/api/products/${productId}/image`,
-          {
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${user_data.token}`,
-            },
-          }
-        );
-        if (deleteResponse.data?.status === false) {
-          throw new Error(deleteResponse.data.message || "Image removal failed");
-        }
-        setServerImage("");
-        setImagePreview("");
-        setRemoveImage(false);
       }
 
       appData?.invalidate("products");
@@ -1169,96 +1255,279 @@ const CreateEditProduct = () => {
                       </fieldset>
                     </div>
 
-                    {/* Product Image */}
+                    {/* Product Images (max 4) */}
                     <div className="row mb-20">
                       <fieldset className="col-md-12">
                         <div className="body-title">
-                          Product Image{" "}
+                          Product Images{" "}
+                          <span style={{ fontWeight: 400, color: "#64748b" }}>
+                            (up to {MAX_IMAGES}, shown on your online store)
+                          </span>
+                        </div>
+                        <div className="body-content">
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            multiple
+                            accept="image/png,image/jpeg,image/webp"
+                            onChange={onPickImages}
+                            style={{ display: "none" }}
+                          />
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "12px",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            {[
+                              ...existingImages.map((img) => ({
+                                key: `old-${img.id ?? "legacy"}`,
+                                src: img.url,
+                                onRemove: () => onRemoveExisting(img),
+                              })),
+                              ...newImages.map((img) => ({
+                                key: img.key,
+                                src: img.preview,
+                                onRemove: () => onRemoveNew(img.key),
+                              })),
+                            ].map((item, index) => (
+                              <div
+                                key={item.key}
+                                style={{
+                                  position: "relative",
+                                  width: 120,
+                                  height: 120,
+                                  border: "2px solid #cbd5e1",
+                                  borderRadius: 12,
+                                  overflow: "hidden",
+                                  background: "#f8fafc",
+                                }}
+                              >
+                                <img
+                                  src={item.src}
+                                  alt={`Product ${index + 1}`}
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                  }}
+                                />
+                                {index === 0 && (
+                                  <span
+                                    style={{
+                                      position: "absolute",
+                                      left: 6,
+                                      bottom: 6,
+                                      background: "rgba(15,23,42,0.75)",
+                                      color: "#fff",
+                                      fontSize: 11,
+                                      padding: "2px 8px",
+                                      borderRadius: 999,
+                                    }}
+                                  >
+                                    Main
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={item.onRemove}
+                                  aria-label="Remove image"
+                                  style={{
+                                    position: "absolute",
+                                    top: 6,
+                                    right: 6,
+                                    width: 24,
+                                    height: 24,
+                                    lineHeight: "22px",
+                                    padding: 0,
+                                    border: "none",
+                                    borderRadius: "50%",
+                                    background: "rgba(15,23,42,0.75)",
+                                    color: "#fff",
+                                    fontSize: 16,
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+
+                            {totalImages < MAX_IMAGES && (
+                              <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                style={{
+                                  width: 120,
+                                  height: 120,
+                                  border: "2px dashed #cbd5e1",
+                                  borderRadius: 12,
+                                  background: "#f8fafc",
+                                  color: "#64748b",
+                                  cursor: "pointer",
+                                  fontSize: 13,
+                                }}
+                              >
+                                <div style={{ fontSize: 28, lineHeight: 1 }}>
+                                  +
+                                </div>
+                                Add Image
+                              </button>
+                            )}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: "#64748b",
+                              marginTop: 8,
+                            }}
+                          >
+                            {totalImages}/{MAX_IMAGES} images. JPG, PNG or WebP,
+                            resized to 800px automatically. First image is the
+                            main one. A square photo looks best.
+                          </div>
+                        </div>
+                      </fieldset>
+                    </div>
+
+                    {/* Product Details for online store (Blinkit jaisa) */}
+                    <div className="row mb-20">
+                      <fieldset className="col-md-12">
+                        <div className="body-title">
+                          Description{" "}
                           <span style={{ fontWeight: 400, color: "#64748b" }}>
                             (shown on your online store)
                           </span>
                         </div>
-                        <div
-                          className="body-content"
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "16px",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: 120,
-                              height: 120,
-                              flexShrink: 0,
-                              border: "2px dashed #cbd5e1",
-                              borderRadius: 12,
-                              overflow: "hidden",
-                              display: "grid",
-                              placeItems: "center",
-                              background: "#f8fafc",
-                            }}
-                          >
-                            {imagePreview ? (
-                              <img
-                                src={imagePreview}
-                                alt="Product"
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "cover",
-                                }}
-                              />
-                            ) : (
-                              <span
-                                style={{
-                                  fontSize: 12,
-                                  color: "#94a3b8",
-                                  textAlign: "center",
-                                  padding: 8,
-                                }}
-                              >
-                                No image
-                              </span>
-                            )}
-                          </div>
+                        <div className="body-content">
+                          <Field
+                            as="textarea"
+                            name="description"
+                            rows={4}
+                            maxLength={5000}
+                            placeholder="e.g. Rich and creamy full cream milk, an excellent source of vitamin A and D..."
+                            className="mb-5"
+                          />
+                        </div>
+                      </fieldset>
 
-                          <div>
-                            <input
-                              ref={fileInputRef}
-                              type="file"
-                              accept="image/png,image/jpeg,image/webp"
-                              onChange={onPickImage}
-                              style={{ display: "none" }}
-                            />
-                            <button
-                              type="button"
-                              className="tf-button style-1"
-                              onClick={() => fileInputRef.current?.click()}
-                            >
-                              {imagePreview ? "Change Image" : "Upload Image"}
-                            </button>
-                            {imagePreview && (
-                              <button
-                                type="button"
-                                className="tf-button style-1 ml-5"
-                                onClick={onRemoveImage}
-                              >
-                                Remove
-                              </button>
-                            )}
+                      <fieldset className="col-md-12">
+                        <div className="body-title">
+                          Product Information{" "}
+                          <span style={{ fontWeight: 400, color: "#64748b" }}>
+                            (up to {MAX_INFO_ROWS} rows, optional)
+                          </span>
+                        </div>
+                        <div className="body-content">
+                          <datalist id="info-label-suggestions">
+                            {INFO_SUGGESTIONS.map((label) => (
+                              <option key={label} value={label} />
+                            ))}
+                          </datalist>
+
+                          {infoRows.map((row) => (
                             <div
+                              key={row.key}
                               style={{
-                                fontSize: 12,
-                                color: "#64748b",
-                                marginTop: 8,
+                                display: "flex",
+                                gap: 8,
+                                alignItems: "flex-start",
+                                marginBottom: 8,
+                                flexWrap: "wrap",
                               }}
                             >
-                              JPG, PNG or WebP. Resized to 800px automatically.
-                              A square photo looks best.
+                              <input
+                                type="text"
+                                list="info-label-suggestions"
+                                value={row.label}
+                                maxLength={60}
+                                placeholder="Label (e.g. Shelf Life)"
+                                onChange={(e) =>
+                                  updateInfoRow(row.key, "label", e.target.value)
+                                }
+                                style={{ flex: "1 1 200px", minWidth: 160 }}
+                              />
+                              <textarea
+                                rows={2}
+                                value={row.value}
+                                maxLength={1500}
+                                placeholder="Value (e.g. 2 days)"
+                                onChange={(e) =>
+                                  updateInfoRow(row.key, "value", e.target.value)
+                                }
+                                style={{ flex: "3 1 320px", minWidth: 200 }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeInfoRow(row.key)}
+                                aria-label="Remove row"
+                                style={{
+                                  width: 32,
+                                  height: 32,
+                                  border: "1px solid #cbd5e1",
+                                  borderRadius: 8,
+                                  background: "#fff",
+                                  cursor: "pointer",
+                                  fontSize: 18,
+                                  lineHeight: 1,
+                                }}
+                              >
+                                ×
+                              </button>
                             </div>
-                          </div>
+                          ))}
+
+                          {infoRows.length < MAX_INFO_ROWS && (
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 6,
+                                flexWrap: "wrap",
+                                marginTop: 6,
+                              }}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => addInfoRow("")}
+                                style={{
+                                  padding: "4px 12px",
+                                  border: "1px dashed #94a3b8",
+                                  borderRadius: 999,
+                                  background: "#fff",
+                                  cursor: "pointer",
+                                  fontSize: 13,
+                                }}
+                              >
+                                + Add row
+                              </button>
+                              {INFO_SUGGESTIONS.filter(
+                                (label) =>
+                                  !infoRows.some(
+                                    (r) =>
+                                      r.label.trim().toLowerCase() ===
+                                      label.toLowerCase(),
+                                  ),
+                              ).map((label) => (
+                                <button
+                                  key={label}
+                                  type="button"
+                                  onClick={() => addInfoRow(label)}
+                                  style={{
+                                    padding: "4px 12px",
+                                    border: "1px solid #e2e8f0",
+                                    borderRadius: 999,
+                                    background: "#f8fafc",
+                                    color: "#475569",
+                                    cursor: "pointer",
+                                    fontSize: 13,
+                                  }}
+                                >
+                                  + {label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </fieldset>
                     </div>
