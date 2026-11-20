@@ -11,6 +11,7 @@ import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import {
   IoHomeOutline,
   IoCubeOutline,
+  IoImagesOutline,
   IoReceiptOutline,
   IoCartOutline,
   IoBarChartOutline,
@@ -222,6 +223,12 @@ const Navbar = () => {
       name: "Products",
       path: "/product",
       icon: <IoCubeOutline size={20} />,
+      feature: "products",
+    },
+    {
+      name: "Bulk Images & Details",
+      path: "/product-bulk-details",
+      icon: <IoImagesOutline size={20} />,
       feature: "products",
     },
     {
