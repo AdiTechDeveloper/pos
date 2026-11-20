@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { Clock, Users, Sparkles , TrendingUp , Megaphone , ClipboardX , IndianRupee , ReceiptText, SquareExclamationPoint  } from "lucide-react";
+import { Clock, Users, Sparkles , TrendingUp , Megaphone , ClipboardX , IndianRupee , ReceiptText, SquareExclamationPoint ,SquareSplitHorizontal  } from "lucide-react";
 import { BadgeIndianRupee , HandCoins , Wallet , Van   } from "lucide-react";
 import { useCachedApi, invalidateDashboardCache } from "./Dashboardcache";
 import Layout from "./layout";
@@ -1834,6 +1834,7 @@ const Home = () => {
                 )}
                 {canSales && pay && payTotal > 0 && (
                   <Mini
+                    icon = {SquareSplitHorizontal}
                     label="Payment split"
                     value={`${Math.round((pay.cash / payTotal) * 100)}% cash`}
                     sub={`UPI/Bank ${Math.round((pay.online / payTotal) * 100)}% · ${fmt(pay.online)}`}
