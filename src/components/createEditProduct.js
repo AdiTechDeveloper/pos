@@ -311,46 +311,97 @@ const CreateEditProduct = () => {
     }
   }, [id]);
 
-  const validationSchema = Yup.object({
-    name: Yup.string()
-      .required("Name is required")
-      .min(3, "Name must be at least 3 characters") // Changed from 2 to 3 to catch 2-letter names
-      .max(100, "Name cannot exceed 100 characters"),
+ const validationSchema = Yup.object({
+  name: Yup.string()
+    .trim()
+    .required("Product name is required")
+    .min(3, "Product name must be at least 3 characters")
+    .max(100, "Product name cannot exceed 100 characters")
+    .matches(
+      /^[A-Za-z0-9\s.&'()/-]+$/,
+      "Product name contains invalid characters"
+    )
+    .test(
+      "not-only-spaces",
+      "Product name cannot contain only spaces",
+      (value) => !!value && value.trim().length > 0
+    ),
 
-    sku: Yup.string()
-      .min(8, "SKU must be at least 8 letter long.")
-      .max(12, "SKU cannot exceed 12 characters"),
-    brand_id: Yup.string().required("Brand is required"),
-    category_id: Yup.string().required("Category  is required"),
-    plu_code: Yup.string().when("sale_type", {
-      is: "weight",
-      then: (schema) =>
-        schema
-          .required("PLU code is required for weight-type products")
-          .matches(/^\d{5}$/, "PLU code must be exactly 5 digits"),
-      otherwise: (schema) => schema.nullable(),
+  hsn_code: Yup.string()
+    .nullable()
+    .transform((value) => (value?.trim() === "" ? null : value?.trim()))
+    .matches(/^\d{8}$/, {
+      message: "HSN code must contain exactly 8 digits",
+      excludeEmptyString: true,
     }),
-    price_per_kg: Yup.number().when("sale_type", {
+
+  barcode: Yup.string()
+    .nullable()
+    .transform((value) => (value?.trim() === "" ? null : value?.trim()))
+    .matches(/^\d{13}$/, {
+      message: "Barcode must contain exactly 13 digits",
+      excludeEmptyString: true,
+    }),
+
+  sku: Yup.string()
+    .nullable()
+    .transform((value) => (value?.trim() === "" ? null : value?.trim()))
+    .min(8, "SKU must be at least 8 characters")
+    .max(12, "SKU cannot exceed 12 characters")
+    .matches(/^[A-Za-z0-9-]+$/, "SKU can only contain letters, digits and hyphens")
+    .test(
+      "not-only-spaces",
+      "SKU cannot contain only spaces",
+      (value) => !value || value.trim().length > 0
+    ),
+
+  brand_id: Yup.string()
+    .required("Brand is required"),
+
+  category_id: Yup.string()
+    .required("Category is required"),
+
+  plu_code: Yup.string().when("sale_type", {
+    is: "weight",
+    then: (schema) =>
+      schema
+        .transform((value) => (value?.trim() === "" ? undefined : value))
+        .required("PLU code is required for weight-type products")
+        .matches(/^\d{5}$/, "PLU code must be exactly 5 digits"),
+    otherwise: (schema) => schema.nullable(),
+  }),
+
+  price_per_kg: Yup.number()
+    .transform((value, originalValue) =>
+      originalValue === "" || originalValue === null ? null : value
+    )
+    .nullable()
+    .when("sale_type", {
       is: "weight",
       then: (schema) =>
         schema
+          .typeError("Price per kg must be a number")
           .required("Price per kg is required for weight-type products")
           .min(0.01, "Price per kg must be greater than 0"),
       otherwise: (schema) => schema.nullable(),
     }),
-    units_per_pack: Yup.number()
-      .transform((value, original) => (original === "" ? null : value))
-      .nullable()
-      .integer("Must be a whole number")
-      .min(1, "Must be at least 1")
-      .when("allow_loose", {
-        is: true,
-        then: (schema) =>
-          schema
-            .required("Units per pack is required for loose selling")
-            .min(2, "Must be at least 2 for loose selling"),
-      }),
-  });
+
+  units_per_pack: Yup.number()
+    .transform((value, originalValue) =>
+      originalValue === "" || originalValue === null ? null : value
+    )
+    .nullable()
+    .typeError("Units per pack must be a number")
+    .integer("Units per pack must be a whole number")
+    .min(1, "Units per pack must be at least 1")
+    .when("allow_loose", {
+      is: true,
+      then: (schema) =>
+        schema
+          .required("Units per pack is required for loose selling")
+          .min(2, "Units per pack must be at least 2 for loose selling"),
+    }),
+});
 
   const handleSubmit = async (values) => {
     try {
@@ -554,6 +605,7 @@ const CreateEditProduct = () => {
                           <Field
                             type="text"
                             name="name"
+                            maxLength={30}
                             placeholder="Enter product name"
                             className="mb-5"
                           />
@@ -996,7 +1048,7 @@ const CreateEditProduct = () => {
 
                     {/* Category / GST Rate / HSN */}
                     <div className="row mb-20">
-                      <fieldset className="col-md-1">
+                      <fieldset className="col-md-2">
                         <div className="body-title">Gst Rate *</div>
                         <div className="body-content mb-15">
                           <Field
@@ -1025,6 +1077,7 @@ const CreateEditProduct = () => {
                           <Field
                             type="text"
                             name="hsn_code"
+                            maxlength={8}
                             placeholder="Enter HSN code"
                             className="mb-5"
                           />
@@ -1044,6 +1097,7 @@ const CreateEditProduct = () => {
                                 {...field}
                                 type="text"
                                 placeholder="Scan Barcode"
+                                maxLength={13}
                                 autoFocus
                                 className="mb-5"
                                 onChange={(e) => {

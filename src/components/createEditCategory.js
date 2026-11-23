@@ -111,11 +111,15 @@ const CreateEditCategory = () => {
     name: Yup.string()
       .required("Name is required")
       .min(3, "Name must be at least 3 characters long")
-      .max(50, "Name cannot exceed 50 characters"),
+      .max(30, "Name cannot exceed 30 characters")
+       .matches(
+      /^[A-Za-z0-9\s.&'-]+$/,
+      "Category name can only contain letters, numbers, spaces, &, ., ' and -"
+    ),
 
     description: Yup.string()
       .required("Description is required")
-      .min(10, "Description must be at least 10 characters long")
+      .min(3, "Description must be at least 3 characters long")
       .max(255, "Description cannot exceed 255 characters"),
   });
 
@@ -269,7 +273,7 @@ const CreateEditCategory = () => {
                         <Field
                           type="text"
                           name="name"
-                          maxLength={50} 
+                          maxLength={30} 
                           placeholder="Enter category name"
                           className="mb-5"
                         />

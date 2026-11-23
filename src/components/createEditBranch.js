@@ -10,7 +10,7 @@ import { useAppData } from "../context/AppDataContext";
 const CreateEditBranch = () => {
   const appData = useAppData();
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-  const { id } = useParams(); 
+  const { id } = useParams();
   const navigate = useNavigate();
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
@@ -43,22 +43,36 @@ const CreateEditBranch = () => {
 
   const validationSchema = Yup.object({
     name: Yup.string()
-        .required("Name is required")
-        .min(3, "Name must be at least 3 characters")
-        .max(100, "Name cannot exceed 100 characters"),
-  
-   address: Yup.string()
-        .required("Address is required")
-        .max(255, "Address cannot exceed 255 characters"),
-  
+    .trim()
+    .required("Branch name is required")
+    .min(3, "Branch name must be at least 3 characters")
+    .max(30, "Branch name cannot exceed 30 characters")
+    .matches(
+      /^[A-Za-z0-9\s.&'-]+$/,
+      "Branch name can only contain letters, numbers, spaces, &, ., ' and -"
+    ),
+
+    address: Yup.string()
+      .required("Address is required")
+      .max(255, "Address cannot exceed 255 characters")
+      .matches(
+        /^[A-Za-z0-9\s,./#'()&-]+$/,
+        "Address not  contains invalid characters"
+      )
+      .test(
+        "not-empty",
+        "Address cannot contain only spaces",
+        (value) => !!value && value.trim().length > 0
+      ),
+
     state: Yup.string().required("State is required"),
-  
-      phone: Yup.string()
-        .required("phone number is required")
-        .matches(/^[0-9]{10}$/, "phone number must be exactly 10 digits"),
+
+    phone: Yup.string()
+      .required("phone number is required")
+      .matches(/^[0-9]{10}$/, "phone number must be exactly 10 digits"),
   });
 
-  
+
 
   const handleSubmit = async (values) => {
     try {
@@ -83,8 +97,8 @@ const CreateEditBranch = () => {
           Authorization: `Bearer ${user_data.token}`,
         },
       });
-       appData?.invalidate("branches");
-    await appData?.loadBranches();
+      appData?.invalidate("branches");
+      await appData?.loadBranches();
       toast.success(isEdit ? "Branch Updated!" : "Branch Created!");
       navigate("/branch");
     } catch (error) {
@@ -103,6 +117,7 @@ const CreateEditBranch = () => {
               enableReinitialize
               initialValues={initialValues}
               validationSchema={validationSchema}
+              validateOnChange={true}
               onSubmit={handleSubmit}
             >
               {() => (
@@ -112,13 +127,20 @@ const CreateEditBranch = () => {
                     <fieldset className="col-md-3">
                       <div className="body-title">Name *</div>
                       <div className="body-content mb-15">
-                        <Field
-                          type="text"
-                          name="name"
-                          placeholder="Enter branch name"
-                          className="mb-5"
-                          maxLength={30}  
-                        />
+                        <Field name="name">
+                          {({ field, form }) => (
+                            <input
+                              {...field}
+                              type="text"
+                              placeholder="Branch Name"
+                              maxLength={30}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                form.setFieldTouched("name", true, false);
+                              }}
+                            />
+                          )}
+                        </Field>
                         <ErrorMessage
                           name="name"
                           className="error-text"
@@ -129,12 +151,19 @@ const CreateEditBranch = () => {
                     <fieldset className="col-md-3">
                       <div className="body-title">Address *</div>
                       <div className="body-content">
-                        <Field
-                          type="text"
-                          name="address"
-                          placeholder="Enter branch adrress"
-                          className="mb-5"
-                        />
+                        <Field  name="address">
+                         {({ field, form }) => (
+                           <input
+                              {...field}
+                              type="text"
+                              placeholder="Enter branch adrress"
+                              onChange={(e) => {
+                                field.onChange(e);
+                                form.setFieldTouched("address", true, false);
+                              }}
+                            />
+                          )}
+                      </Field>
                         <ErrorMessage
                           name="address"
                           className="error-text"
@@ -142,7 +171,7 @@ const CreateEditBranch = () => {
                         />
                       </div>
                     </fieldset>
-                     <fieldset className="col-md-2 mb-12">
+                    <fieldset className="col-md-2 mb-12">
                       <div className="body-title">State *</div>
                       <div className="body-content">
                         <Field as="select" name="state" className="mb-5">
@@ -214,7 +243,7 @@ const CreateEditBranch = () => {
                           className="mb-5"
                           placeholder="Enter branch phone no."
                           maxLength={10}
-                            onInput={(e) => {
+                          onInput={(e) => {
                             e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
                           }}
                         />
@@ -226,17 +255,17 @@ const CreateEditBranch = () => {
                       </div>
                     </fieldset>
                   </div>
-                
-                  
+
+
                   <div className="flex col">
-                  <button className="tf-button w208" type="submit">
-                    {isEdit ? "Update Branch" : "Create Branch"}
-                  </button>
+                    <button className="tf-button w208" type="submit">
+                      {isEdit ? "Update Branch" : "Create Branch"}
+                    </button>
 
                     <button type="button" className="ml-5 tf-button style-1">
-                      <a href="/branch"  style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
+                      <a href="/branch" style={{ color: "inherit", textDecoration: "none" }}> Cancel</a>
                     </button>
-                    </div>
+                  </div>
                 </Form>
               )}
             </Formik>

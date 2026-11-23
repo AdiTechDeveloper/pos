@@ -49,7 +49,11 @@ const CreateEditSupplier = () => {
     name: Yup.string()
       .required("Name is required")
       .min(3, "Name must be at least 3 characters")
-      .max(100, "Name cannot exceed 100 characters"),
+      .max(30, "Name cannot exceed 30 characters")
+       .matches(
+      /^[A-Za-z0-9\s.&'-]+$/, 
+      "Name can only contain letters, numbers, spaces, &, ., ' and -"
+    ),
 
     gstin: Yup.string()
       .required("GSTIN is required")

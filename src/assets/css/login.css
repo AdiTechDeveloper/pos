@@ -464,3 +464,58 @@ body {
     margin-left: auto;
   }
 }
+
+
+/* Login form wrapper */
+.vakaro-form-login {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 18px;
+}
+
+/* Login button */
+.vakaro-login-btn {
+  width: 100%;
+  min-height: 50px;
+  padding: 14px 20px;
+  margin-top: 8px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: linear-gradient(135deg, #0b3b70, #1763a6);
+  color: #ffffff;
+
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 5px 14px rgba(11, 59, 112, 0.18);
+}
+
+.vakaro-login-btn:hover {
+  background: linear-gradient(135deg, #082e58, #124e85);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(11, 59, 112, 0.24);
+  color: white;
+}
+
+.vakaro-login-btn:active {
+  transform: scale(0.98);
+}
+
+.vakaro-login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Cashier text */
+.vakaro-cashier-text {
+  margin-top: 4px;
+  text-align: center;
+}
