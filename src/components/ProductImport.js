@@ -218,10 +218,9 @@ export default function ProductImport({ onImported }) {
       <p style={styles.hint}>
         1) Download the template.
         <br />
-        2) Fill in the supplier details. (The <b>name</b> and <b>state</b> fields are
-        required. If a valid GSTIN is provided, the state will be detected automatically)
+        2) Fill in the product details.
         <br />
-        3) Upload the complete file, You can import up to <b>2,000</b> suppliers at a time.
+        3) Upload the complete file, You can import up to <b>2,000</b> products at a time.
       </p>
 
       <div style={styles.row}>
