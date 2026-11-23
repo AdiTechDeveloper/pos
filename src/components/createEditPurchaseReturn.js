@@ -290,7 +290,7 @@ const CreateEditPurchaseReturn = () => {
                         <Field
                           type="text"
                           name="notes"
-                          maxLength={500}
+                          maxLength={255}
                           placeholder="Optional note for this return"
                         />
                       </div>

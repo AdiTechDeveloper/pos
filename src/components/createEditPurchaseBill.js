@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-import { Formik, Form, Field, ErrorMessage, FieldArray , useField , useFormikContext } from "formik";
+import { Formik, Form, Field, ErrorMessage, FieldArray, useField, useFormikContext } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
@@ -692,20 +692,20 @@ const CreateEditPurchaseBill = () => {
   };
 
   const LiveFormikField = ({ name, ...props }) => {
-  const [field] = useField(name);
-  const { setFieldTouched } = useFormikContext();
+    const [field] = useField(name);
+    const { setFieldTouched } = useFormikContext();
 
-  return (
-    <input
-      {...field}
-      {...props}
-      onChange={(e) => {
-        setFieldTouched(name, true, false);
-        field.onChange(e);
-      }}
-    />
-  );
-};
+    return (
+      <input
+        {...field}
+        {...props}
+        onChange={(e) => {
+          setFieldTouched(name, true, false);
+          field.onChange(e);
+        }}
+      />
+    );
+  };
 
   const validationSchema = Yup.object().shape({
     branch_id: Yup.string().required("Branch is required"),
@@ -1834,7 +1834,12 @@ const CreateEditPurchaseBill = () => {
                                   <div className="field-col">
                                     <small className="field-label">HSN</small>
                                     <LiveFormikField
+                                      onChange={(e) => {
+                                        const value = e.target.value.replace(/\D/g, "");
+                                        setFieldValue("hsn_code", value);
+                                      }}
                                       type="text"
+                                      maxlength={8}
                                       name={`lines.${index}.hsn_code`}
                                     />
                                     <ErrorMessage

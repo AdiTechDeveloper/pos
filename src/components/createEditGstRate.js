@@ -155,6 +155,7 @@ const CreateEditGstRates = () => {
                             <textarea
                               {...field}
                               className="mb-5 form-control small-textarea"
+                              maxLength={255}
                               placeholder="Enter description"
                               onChange={(e) => {
                                 const value = e.target.value;

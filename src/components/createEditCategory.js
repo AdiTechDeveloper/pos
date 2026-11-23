@@ -112,10 +112,10 @@ const CreateEditCategory = () => {
       .required("Name is required")
       .min(3, "Name must be at least 3 characters long")
       .max(30, "Name cannot exceed 30 characters")
-       .matches(
-      /^[A-Za-z0-9\s.&'-]+$/,
-      "Category name can only contain letters, numbers, spaces, &, ., ' and -"
-    ),
+      .matches(
+        /^[A-Za-z0-9\s.&'-]+$/,
+        "Category name can only contain letters, numbers, spaces, &, ., ' and -"
+      ),
 
     description: Yup.string()
       .required("Description is required")
@@ -141,7 +141,7 @@ const CreateEditCategory = () => {
           setServerImage(url);
           setImagePreview(url);
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, []);
 
@@ -232,8 +232,8 @@ const CreateEditCategory = () => {
         console.error("Error saving category image:", imgErr);
         toast.error(
           imgErr.response?.data?.message ||
-            imgErr.message ||
-            "Category saved, but the image could not be uploaded. Edit the category to try again.",
+          imgErr.message ||
+          "Category saved, but the image could not be uploaded. Edit the category to try again.",
         );
       }
 
@@ -270,13 +270,22 @@ const CreateEditCategory = () => {
                     <fieldset className="col-md-4 mb-15">
                       <div className="body-title">Name *</div>
                       <div className="body-content">
-                        <Field
-                          type="text"
-                          name="name"
-                          maxLength={30} 
-                          placeholder="Enter category name"
-                          className="mb-5"
-                        />
+                        <Field name="name">
+                          {({ field, form }) => (
+                            <input
+                              {...field}
+                              type="text"
+                              maxLength={30}
+                              placeholder="Enter category name"
+                              className="mb-5"
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/[^a-zA-Z0-9\s]/g, "");
+                                form.setFieldValue("name", value);
+                              }}
+                            />
+                          )}
+                        </Field>
+
                         <ErrorMessage
                           name="name"
                           className="error-text"
@@ -295,7 +304,7 @@ const CreateEditCategory = () => {
                             </option>
                           ))}
                         </Field>
-                      
+
                       </div>
                     </fieldset>
                     <fieldset className="col-md-4 mb-15">
@@ -305,7 +314,7 @@ const CreateEditCategory = () => {
                           as="textarea"
                           rows={1}
                           name="description"
-                          maxLength={255} 
+                          maxLength={255}
                           className="mb-5 form-control small-textarea"
                           placeholder="Enter description"
 

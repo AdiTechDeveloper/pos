@@ -50,10 +50,10 @@ const CreateEditSupplier = () => {
       .required("Name is required")
       .min(3, "Name must be at least 3 characters")
       .max(30, "Name cannot exceed 30 characters")
-       .matches(
-      /^[A-Za-z0-9\s.&'-]+$/, 
-      "Name can only contain letters, numbers, spaces, &, ., ' and -"
-    ),
+      .matches(
+        /^[A-Za-z0-9\s.&'-]+$/,
+        "Name can only contain letters, numbers, spaces, &, ., ' and -"
+      ),
 
     gstin: Yup.string()
       .required("GSTIN is required")
@@ -137,14 +137,23 @@ const CreateEditSupplier = () => {
                   <div className="row mb-12">
                     <fieldset className="col-md-3">
                       <div className="body-title">Name *</div>
-                      <div className="body-content mb-15">
-                        <Field
-                          type="text"
-                          name="name"
-                          className="mb-5"
-                          placeholder="Enter supplier name"
-                          maxLength={30}
-                        />
+                      <div className="body-content">
+                        <Field name="name">
+                          {({ field, form }) => (
+                            <input
+                              {...field}
+                              type="text"
+                              maxLength={30}
+                              placeholder="Enter Supplier name"
+                              className="mb-5"
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/[^a-zA-Z0-9\s]/g, "");
+                                form.setFieldValue("name", value);
+                              }}
+                            />
+                          )}
+                        </Field>
+
                         <ErrorMessage
                           name="name"
                           className="error-text"
@@ -155,19 +164,29 @@ const CreateEditSupplier = () => {
                     <fieldset className="col-md-3">
                       <div className="body-title">GstIn *</div>
                       <div className="body-content">
-                        <Field
-                          type="text"
-                          name="gstin"
-                          className="mb-5"
-                          placeholder="Enter GST no."
-                          maxLength={15}
-                        />
+                        <Field name="gstin">
+                          {({ field, form }) => (
+                            <input
+                              {...field}
+                              type="text"
+                              name="gstin"
+                              className="mb-5"
+                              placeholder="Enter GST no."
+                              maxLength={15}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/[^a-zA-Z0-9\s]/g, "");
+                                form.setFieldValue("gstin", value);
+                              }}
+                            />
+                          )}
+                        </Field>
                         <ErrorMessage
                           name="gstin"
                           className="error-text"
                           component="div"
                         />
                       </div>
+
                     </fieldset>
                     <fieldset className="col-md-2">
                       <div className="body-title">Contact *</div>

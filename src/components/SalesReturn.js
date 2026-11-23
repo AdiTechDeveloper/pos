@@ -379,8 +379,11 @@ export default function ProcessSalesReturn() {
             <input
               type="text"
               placeholder="Scan or enter invoice / bill number..."
+              maxLength={20}
               value={billNoInput}
-              onChange={(e) => setBillNoInput(e.target.value)}
+              onChange={(e) =>
+    setBillNoInput(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))
+  }
               autoFocus
             />
             <button

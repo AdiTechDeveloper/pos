@@ -1473,7 +1473,7 @@ const CreateEditProduct = () => {
                             as="textarea"
                             name="description"
                             rows={4}
-                            maxLength={5000}
+                            maxLength={500}
                             placeholder="e.g. Rich and creamy full cream milk, an excellent source of vitamin A and D..."
                             className="mb-5"
                           />

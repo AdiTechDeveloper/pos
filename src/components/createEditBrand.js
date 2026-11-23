@@ -43,10 +43,10 @@ const CreateEditBrand = () => {
       .required("Name is required")
       .min(3, "Name must be at least 3 characters long")
       .max(25, "Name cannot exceed 25 characters")
-       .matches(
-      /^[A-Za-z0-9\s.&'-]+$/, 
-      "Brand name can only contain letters, numbers, spaces, &, ., ' and -"
-    ),
+      .matches(
+        /^[A-Za-z0-9\s.&'-]+$/,
+        "Brand name can only contain letters, numbers, spaces, &, ., ' and -"
+      ),
 
     description: Yup.string()
       .required("Description is required")
@@ -54,7 +54,7 @@ const CreateEditBrand = () => {
       .max(255, "Description cannot exceed 255 characters"),
   });
 
- 
+
   const handleSubmit = async (values) => {
     try {
       let url = "";
@@ -114,14 +114,23 @@ const CreateEditBrand = () => {
                   <div className="row mb-20">
                     <fieldset className="col-md-4">
                       <div className="body-title mb-10">Name *</div>
-                      <div className="body-content mb-15">
-                        <Field
-                          type="text"
-                          name="name"
-                          placeholder="Enter brand name"
-                          maxLength={25}
-                          className="mb-5"
-                        />
+                      <div className="body-content">
+                        <Field name="name">
+                          {({ field, form }) => (
+                            <input
+                              {...field}
+                              type="text"
+                              maxLength={30}
+                              placeholder="Enter Brand name"
+                              className="mb-5"
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/[^a-zA-Z0-9\s]/g, "");
+                                form.setFieldValue("name", value);
+                              }}
+                            />
+                          )}
+                        </Field>
+
                         <ErrorMessage
                           name="name"
                           className="error-text"
@@ -135,6 +144,7 @@ const CreateEditBrand = () => {
                         <Field
                           as="textarea"
                           name="description"
+                          maxLength={255}
                           className="mb-5 form-control small-textarea"
                           placeholder="Enter description"
                         />
