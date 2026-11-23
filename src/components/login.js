@@ -10,6 +10,10 @@ const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 const POS_LOGIN_IMAGE = "/assets/images/avatar/pos.png";
 const VAKARO_LOGO = "/assets/images/avatar/logo.png";
 
+// Input limits
+const USERNAME_MAX = 10;
+const PASSWORD_MAX = 12;
+
 const getErrorMessage = (error) => {
   if (error.response) {
     const { status, data } = error.response;
@@ -55,15 +59,29 @@ const Login = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const maxLength = name === "username" ? USERNAME_MAX : PASSWORD_MAX;
+
+    // Limit ke baad extra characters cut (paste ke case mein bhi)
+    const limitedValue = value.slice(0, maxLength);
+
+    setFormData((prev) => ({ ...prev, [name]: limitedValue }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validate = () => {
     const temp = {};
 
-    if (!formData.username.trim()) temp.username = "Username is required";
-    if (!formData.password) temp.password = "Password is required";
+    if (!formData.username.trim()) {
+      temp.username = "Username is required";
+    } else if (formData.username.length > USERNAME_MAX) {
+      temp.username = `Username maximum ${USERNAME_MAX} characters ka hona chahiye`;
+    }
+
+    if (!formData.password) {
+      temp.password = "Password is required";
+    } else if (formData.password.length > PASSWORD_MAX) {
+      temp.password = `Password maximum ${PASSWORD_MAX} characters ka hona chahiye`;
+    }
 
     setErrors(temp);
     return Object.keys(temp).length === 0;
@@ -181,6 +199,7 @@ const Login = () => {
                 value={formData.username}
                 onChange={handleChange}
                 autoComplete="username"
+                maxLength={USERNAME_MAX}
                 autoFocus
               />
 
@@ -204,6 +223,7 @@ const Login = () => {
                 value={formData.password}
                 onChange={handleChange}
                 autoComplete="current-password"
+                maxLength={PASSWORD_MAX}
               />
 
               {errors.password && (
