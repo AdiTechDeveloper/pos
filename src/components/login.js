@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -22,6 +22,14 @@ const Login = () => {
 
   const [errors, setErrors] = useState({});
   const [showForgotModal, setShowForgotModal] = useState(false);
+
+  useEffect(() => {
+    const notice = localStorage.getItem("login_notice");
+    if (notice) {
+      toast.error(notice, { toastId: "login-notice" });
+      localStorage.removeItem("login_notice");
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -54,6 +62,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submittingRef.current) return;
+    if (!validate()) return;
 
     submittingRef.current = true;
     setLoading(true);
@@ -61,27 +70,18 @@ const Login = () => {
     if (!validate()) return;
 
     try {
-      const response = await axios.post(
-        `${BASE_URL}/api/login`,
-        formData,
-        {
-          headers: {
-            accept: "application/json",
-          },
+      const response = await axios.post(`${BASE_URL}/api/login`, formData, {
+        headers: {
+          accept: "application/json",
         },
-      );
+      });
 
       const user_detail = response.data;
 
-      localStorage.setItem(
-        "user_detail",
-        JSON.stringify(user_detail),
-      );
+      localStorage.setItem("user_detail", JSON.stringify(user_detail));
 
       if (response.data) {
-        toast.success(
-          user_detail.message || "Login successful!",
-        );
+        toast.success(user_detail.message || "Login successful!");
 
         if (user_detail.must_change_credentials) {
           navigate("/change-password");
@@ -92,16 +92,13 @@ const Login = () => {
         }
       }
     } catch (err) {
-      toast.error(
-        err?.response?.data?.message || "Invalid credentials!",
-      );
+      toast.error(err?.response?.data?.message || "Invalid credentials!");
 
       console.error("LOGIN ERROR:", err);
     } finally {
       submittingRef.current = false;
       setLoading(false);
     }
-
   };
 
   return (
@@ -109,13 +106,11 @@ const Login = () => {
       {/* LEFT SIDE IMAGE PANEL */}
       <section className="vakaro-login-visual">
         <div className="vakaro-visual-content">
-          <div className="vakaro-eyebrow">
-            Your business
-          </div>
+          <div className="vakaro-eyebrow">Your business</div>
 
           <p className="vakaro-visual-description">
-            See sales, stock, payments, customers and business
-            performance from one connected POS dashboard.
+            See sales, stock, payments, customers and business performance from
+            one connected POS dashboard.
           </p>
 
           <div className="vakaro-image-frame">
@@ -125,7 +120,6 @@ const Login = () => {
               alt="Vakaro POS dashboard"
             />
           </div>
-
         </div>
 
         <div className="vakaro-visual-footer">
@@ -137,15 +131,9 @@ const Login = () => {
 
       <section className="vakaro-login-form-side">
         <div className="vakaro-login-card">
-          <img
-            className="vakaro-form-logo"
-            src={VAKARO_LOGO}
-            alt="Vakaro"
-          />
+          <img className="vakaro-form-logo" src={VAKARO_LOGO} alt="Vakaro" />
 
-          <p className="vakaro-form-eyebrow">
-            Welcome to Vakaro
-          </p>
+          <p className="vakaro-form-eyebrow">Welcome to Vakaro</p>
 
           <h2>Login to your account</h2>
 
@@ -153,14 +141,10 @@ const Login = () => {
             Enter your details to continue to the store dashboard.
           </p>
 
-          <form
-            className="vakaro-form-login"
-            onSubmit={handleSubmit}
-          >
+          <form className="vakaro-form-login" onSubmit={handleSubmit}>
             <fieldset className="vakaro-field">
               <label htmlFor="username">
-                Username{" "}
-                <span className="vakaro-required">*</span>
+                Username <span className="vakaro-required">*</span>
               </label>
 
               <input
@@ -174,16 +158,13 @@ const Login = () => {
               />
 
               {errors.username && (
-                <small className="vakaro-error">
-                  {errors.username}
-                </small>
+                <small className="vakaro-error">{errors.username}</small>
               )}
             </fieldset>
 
             <fieldset className="vakaro-field">
               <label htmlFor="password">
-                Password{" "}
-                <span className="vakaro-required">*</span>
+                Password <span className="vakaro-required">*</span>
               </label>
 
               <input
@@ -197,27 +178,18 @@ const Login = () => {
               />
 
               {errors.password && (
-                <small className="vakaro-error">
-                  {errors.password}
-                </small>
+                <small className="vakaro-error">{errors.password}</small>
               )}
             </fieldset>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="vakaro-submit"
-            >
+            <button type="submit" disabled={loading} className="vakaro-submit">
               {loading ? "Logging in..." : "Login to Pos"}
               <span aria-hidden="true">→</span>
             </button>
 
             <p className="vakaro-cashier-text">
               Please Cashier Login here{" "}
-              <Link
-                to="/cashier_login"
-                className="vakaro-cashier-link"
-              >
+              <Link to="/cashier_login" className="vakaro-cashier-link">
                 Cashier Login
               </Link>
             </p>
@@ -243,9 +215,7 @@ const Login = () => {
           </div>
 
           {showForgotModal && (
-            <ForgotPasswordModal
-              onClose={() => setShowForgotModal(false)}
-            />
+            <ForgotPasswordModal onClose={() => setShowForgotModal(false)} />
           )}
         </div>
       </section>

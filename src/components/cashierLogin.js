@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -12,9 +11,7 @@ const POS_LOGIN_IMAGE = "../../assets/images/avatar/vakaro-pos-login-hero1.png";
 const VAKARO_LOGO = "../../assets/images/avatar/logo.png";
 
 const setCookie = (name, value, days) => {
-  const expires = new Date(
-    Date.now() + days * 864e5,
-  ).toUTCString();
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
 
   document.cookie = `${name}=${encodeURIComponent(
     value,
@@ -22,9 +19,7 @@ const setCookie = (name, value, days) => {
 };
 
 const getCookie = (name) => {
-  const match = document.cookie.match(
-    new RegExp(`(?:^|; )${name}=([^;]*)`),
-  );
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
 
   return match ? decodeURIComponent(match[1]) : null;
 };
@@ -58,9 +53,16 @@ const CashierLogin = () => {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
+    const notice = localStorage.getItem("login_notice");
+    if (notice) {
+      toast.error(notice, { toastId: "login-notice" });
+      localStorage.removeItem("login_notice");
+    }
+  }, []);
+
+  useEffect(() => {
     const resolveTerminal = async () => {
-      const token =
-        localStorage.getItem(TOKEN_KEY) || getCookie(TOKEN_KEY);
+      const token = localStorage.getItem(TOKEN_KEY) || getCookie(TOKEN_KEY);
 
       if (!token) {
         setSetupMode(true);
@@ -69,12 +71,9 @@ const CashierLogin = () => {
       }
 
       try {
-        const res = await axios.post(
-          `${BASE_URL}/api/pos-terminals/resolve`,
-          {
-            device_token: token,
-          },
-        );
+        const res = await axios.post(`${BASE_URL}/api/pos-terminals/resolve`, {
+          device_token: token,
+        });
 
         const { branch_id, branch_name } = res.data;
 
@@ -116,45 +115,31 @@ const CashierLogin = () => {
     setAuthLoading(true);
 
     try {
-      const res = await axios.post(
-        `${BASE_URL}/api/login`,
-        authData,
-        {
-          headers: {
-            accept: "application/json",
-          },
+      const res = await axios.post(`${BASE_URL}/api/login`, authData, {
+        headers: {
+          accept: "application/json",
         },
-      );
+      });
 
       const { token, user } = res.data;
 
       if (!["admin", "manager"].includes(user.role)) {
-        toast.error(
-          "Only admin/manager can setup this device.",
-        );
+        toast.error("Only admin/manager can setup this device.");
 
         setAuthLoading(false);
         return;
       }
 
       const endpoint =
-        user.role === "admin"
-          ? "/api/branches"
-          : "/api/manager/branches";
+        user.role === "admin" ? "/api/branches" : "/api/manager/branches";
 
-      const branchRes = await axios.get(
-        `${BASE_URL}${endpoint}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const branchRes = await axios.get(`${BASE_URL}${endpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
-      const list =
-        branchRes.data?.data ||
-        branchRes.data?.branches ||
-        [];
+      const list = branchRes.data?.data || branchRes.data?.branches || [];
 
       setBranches(list);
 
@@ -164,10 +149,7 @@ const CashierLogin = () => {
         storeId: user.store_id,
       });
     } catch (err) {
-      toast.error(
-        err?.response?.data?.message ||
-        "Verification failed",
-      );
+      toast.error(err?.response?.data?.message || "Verification failed");
     } finally {
       setAuthLoading(false);
     }
@@ -193,11 +175,7 @@ const CashierLogin = () => {
         },
       );
 
-      const {
-        device_token,
-        branch_id,
-        branch_name,
-      } = res.data;
+      const { device_token, branch_id, branch_name } = res.data;
 
       localStorage.setItem(TOKEN_KEY, device_token);
       setCookie(TOKEN_KEY, device_token, 3650);
@@ -219,14 +197,9 @@ const CashierLogin = () => {
 
       setSetupMode(false);
 
-      toast.success(
-        `Device set to "${branch_name}" branch`,
-      );
+      toast.success(`Device set to "${branch_name}" branch`);
     } catch (err) {
-      toast.error(
-        err?.response?.data?.message ||
-        "Could not register device",
-      );
+      toast.error(err?.response?.data?.message || "Could not register device");
     }
   };
 
@@ -291,31 +264,17 @@ const CashierLogin = () => {
 
       const user_detail = response.data;
 
-      localStorage.setItem(
-        "user_detail",
-        JSON.stringify(user_detail),
-      );
+      localStorage.setItem("user_detail", JSON.stringify(user_detail));
 
-      toast.success(
-        user_detail.message || "Login successful!",
-      );
+      toast.success(user_detail.message || "Login successful!");
 
       navigate("/pos");
     } catch (err) {
-      toast.error(
-        err?.response?.data?.message ||
-        "Invalid credentials",
-      );
+      toast.error(err?.response?.data?.message || "Invalid credentials");
     }
   };
 
-  const activeStep = resolving
-    ? 0
-    : setupMode
-      ? tempSession
-        ? 2
-        : 1
-      : 3;
+  const activeStep = resolving ? 0 : setupMode ? (tempSession ? 2 : 1) : 3;
 
   const stepClass = (step) => {
     const classes = ["vakaro-cashier-step"];
@@ -348,9 +307,7 @@ const CashierLogin = () => {
       </div>
 
       <div className={stepClass(3)}>
-        <span className="vakaro-cashier-step-bubble">
-          3
-        </span>
+        <span className="vakaro-cashier-step-bubble">3</span>
         <span>Cashier PIN</span>
       </div>
     </div>
@@ -381,19 +338,13 @@ const CashierLogin = () => {
         <div className="vakaro-cashier-card">
           <div className="vakaro-cashier-card-top">
             <div>
-              <p className="vakaro-cashier-eyebrow">
-                Secure device setup
-              </p>
+              <p className="vakaro-cashier-eyebrow">Secure device setup</p>
 
               <h2>Cashier Login</h2>
             </div>
 
             <div className="vakaro-cashier-lock">
-              <svg
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                focusable="false"
-              >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M7 10V8a5 5 0 0 1 10 0v2" />
                 <rect x="5" y="10" width="14" height="10" rx="2" />
                 <path d="M12 14v2" />
@@ -402,8 +353,8 @@ const CashierLogin = () => {
           </div>
 
           <p className="vakaro-cashier-description">
-            Complete these three quick steps to connect this
-            terminal to the right branch.
+            Complete these three quick steps to connect this terminal to the
+            right branch.
           </p>
 
           {renderStepProgress()}
@@ -414,18 +365,13 @@ const CashierLogin = () => {
               <h3>Verify manager access</h3>
 
               <p className="vakaro-cashier-step-subtitle">
-                An admin or manager needs to authorize this
-                device before cashier access can be enabled.
+                An admin or manager needs to authorize this device before
+                cashier access can be enabled.
               </p>
 
-              <form
-                className="vakaro-cashier-form"
-                onSubmit={handleAuthSubmit}
-              >
+              <form className="vakaro-cashier-form" onSubmit={handleAuthSubmit}>
                 <fieldset className="vakaro-cashier-field">
-                  <label htmlFor="manager-username">
-                    Manager username
-                  </label>
+                  <label htmlFor="manager-username">Manager username</label>
 
                   <input
                     id="manager-username"
@@ -438,9 +384,7 @@ const CashierLogin = () => {
                 </fieldset>
 
                 <fieldset className="vakaro-cashier-field">
-                  <label htmlFor="manager-password">
-                    Password
-                  </label>
+                  <label htmlFor="manager-password">Password</label>
 
                   <input
                     id="manager-password"
@@ -457,13 +401,9 @@ const CashierLogin = () => {
                   className="vakaro-cashier-button"
                   disabled={authLoading}
                 >
-                  {authLoading
-                    ? "Verifying..."
-                    : "Verify manager access"}
+                  {authLoading ? "Verifying..." : "Verify manager access"}
 
-                  {!authLoading && (
-                    <span aria-hidden="true">→</span>
-                  )}
+                  {!authLoading && <span aria-hidden="true">→</span>}
                 </button>
               </form>
             </section>
@@ -475,32 +415,22 @@ const CashierLogin = () => {
               <h3>Choose your branch</h3>
 
               <p className="vakaro-cashier-step-subtitle">
-                Select the store location where this POS
-                terminal will be used.
+                Select the store location where this POS terminal will be used.
               </p>
 
               <div className="vakaro-cashier-form">
                 <fieldset className="vakaro-cashier-field">
-                  <label htmlFor="branch">
-                    Branch location
-                  </label>
+                  <label htmlFor="branch">Branch location</label>
 
                   <select
                     id="branch"
                     value={selectedBranch}
-                    onChange={(e) =>
-                      setSelectedBranch(e.target.value)
-                    }
+                    onChange={(e) => setSelectedBranch(e.target.value)}
                   >
-                    <option value="">
-                      Select a branch
-                    </option>
+                    <option value="">Select a branch</option>
 
                     {branches.map((branch) => (
-                      <option
-                        key={branch.id}
-                        value={branch.id}
-                      >
+                      <option key={branch.id} value={branch.id}>
                         {branch.name}
                       </option>
                     ))}
@@ -533,8 +463,8 @@ const CashierLogin = () => {
               <h3>Enter cashier PIN</h3>
 
               <p className="vakaro-cashier-step-subtitle">
-                This terminal is connected. Enter your cashier
-                PIN to open the POS workspace.
+                This terminal is connected. Enter your cashier PIN to open the
+                POS workspace.
               </p>
 
               <div className="vakaro-cashier-branch-preview">
@@ -548,14 +478,9 @@ const CashierLogin = () => {
                 </div>
               </div>
 
-              <form
-                className="vakaro-cashier-form"
-                onSubmit={handleSubmit}
-              >
+              <form className="vakaro-cashier-form" onSubmit={handleSubmit}>
                 <fieldset className="vakaro-cashier-field">
-                  <label htmlFor="cashier-pin">
-                    Cashier PIN
-                  </label>
+                  <label htmlFor="cashier-pin">Cashier PIN</label>
 
                   <input
                     id="cashier-pin"
@@ -569,16 +494,11 @@ const CashierLogin = () => {
                   />
 
                   {errors.pin && (
-                    <small className="vakaro-cashier-error">
-                      {errors.pin}
-                    </small>
+                    <small className="vakaro-cashier-error">{errors.pin}</small>
                   )}
                 </fieldset>
 
-                <button
-                  type="submit"
-                  className="vakaro-cashier-button"
-                >
+                <button type="submit" className="vakaro-cashier-button">
                   Login to POS
                   <span aria-hidden="true">→</span>
                 </button>
@@ -595,8 +515,7 @@ const CashierLogin = () => {
           )}
 
           <p className="vakaro-cashier-card-footer">
-            Need manager access?{" "}
-            <Link to="/login">Manager Login</Link>
+            Need manager access? <Link to="/login">Manager Login</Link>
           </p>
         </div>
       </section>
@@ -611,9 +530,7 @@ const CashierVisualPanel = () => (
         <img src={VAKARO_LOGO} alt="Vakaro" />
       </div>
 
-      <div className="vakaro-cashier-visual-kicker">
-        Cashier workspace
-      </div>
+      <div className="vakaro-cashier-visual-kicker">Cashier workspace</div>
 
       <h1>
         Fast, focused
@@ -621,14 +538,12 @@ const CashierVisualPanel = () => (
       </h1>
 
       <p className="vakaro-cashier-visual-copy">
-        Set up this device once, choose the correct branch,
-        and give your cashier a simple PIN login for every
-        shift.
+        Set up this device once, choose the correct branch, and give your
+        cashier a simple PIN login for every shift.
       </p>
     </div>
     <div className="vakaro-cashier-visual-footer">
-      Ready for the next sale.{" "}
-      <strong>Stay in control.</strong>
+      Ready for the next sale. <strong>Stay in control.</strong>
     </div>
   </section>
 );

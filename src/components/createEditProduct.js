@@ -294,7 +294,9 @@ const CreateEditProduct = () => {
 
       const productId = isEdit ? id : productResponse.data?.product?.id;
       if (!productId) {
-        throw new Error("Product saved, but product ID was not returned by API.");
+        throw new Error(
+          "Product saved, but product ID was not returned by API.",
+        );
       }
 
       // Step 2: Upload/remove image through its dedicated API endpoint.
@@ -320,17 +322,21 @@ const CreateEditProduct = () => {
               Authorization: `Bearer ${user_data.token}`,
             },
             body: formData,
-          }
+          },
         );
 
         const uploadData = await uploadResponse.json().catch(() => ({}));
-        console.log("Product image upload response:", uploadResponse.status, uploadData);
+        console.log(
+          "Product image upload response:",
+          uploadResponse.status,
+          uploadData,
+        );
 
         if (!uploadResponse.ok || uploadData.status === false) {
           throw new Error(
             uploadData.message ||
               uploadData.errors?.image?.[0] ||
-              `Image upload failed (${uploadResponse.status})`
+              `Image upload failed (${uploadResponse.status})`,
           );
         }
 
@@ -349,10 +355,12 @@ const CreateEditProduct = () => {
               Accept: "application/json",
               Authorization: `Bearer ${user_data.token}`,
             },
-          }
+          },
         );
         if (deleteResponse.data?.status === false) {
-          throw new Error(deleteResponse.data.message || "Image removal failed");
+          throw new Error(
+            deleteResponse.data.message || "Image removal failed",
+          );
         }
         setServerImage("");
         setImagePreview("");
@@ -369,7 +377,7 @@ const CreateEditProduct = () => {
       toast.error(
         submitError.response?.data?.message ||
           submitError.message ||
-          "Failed to save product"
+          "Failed to save product",
       );
     }
   };
@@ -761,6 +769,8 @@ const CreateEditProduct = () => {
                               display: "flex",
                               alignItems: "center",
                               gap: "8px",
+                              fontSize: "16px",
+                              fontWeight: "500",
                             }}
                           >
                             <Field

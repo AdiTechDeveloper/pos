@@ -5,12 +5,9 @@ import "./utils/axiosConfig";
 import "./utils/forceUppercase";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
+import "./utils/storeSuspendedInterceptor";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(
-
-    <App />
-
-);
+root.render(<App />);
 
 reportWebVitals();
