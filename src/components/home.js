@@ -1840,7 +1840,7 @@ const Home = () => {
                     sub={`UPI/Bank ${Math.round((pay.online / payTotal) * 100)}% · ${fmt(pay.online)}`}
                   />
                 )}
-                {/* {canStock &&
+                {canStock &&
                   ins?.expiry &&
                   (ins.expiry.soon > 0 || ins.expiry.expired > 0) && (
                     <Mini
@@ -1849,7 +1849,7 @@ const Home = () => {
                       value={ins.expiry.soon}
                       sub={`Expiring in 30 days · ${ins.expiry.expired} expired`}
                     />
-                  )} */}
+                  )}
               </div>
 
               {/* 2. Kya karna hai */}
