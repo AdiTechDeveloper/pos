@@ -43,14 +43,14 @@ const CreateEditBranch = () => {
 
   const validationSchema = Yup.object({
     name: Yup.string()
-    .trim()
-    .required("Branch name is required")
-    .min(3, "Branch name must be at least 3 characters")
-    .max(30, "Branch name cannot exceed 30 characters")
-    .matches(
-      /^[A-Za-z0-9\s.&'-]+$/,
-      "Branch name can only contain letters, numbers, spaces, &, ., ' and -"
-    ),
+      .trim()
+      .required("Branch name is required")
+      .min(3, "Branch name must be at least 3 characters")
+      .max(30, "Branch name cannot exceed 30 characters")
+      .matches(
+        /^[A-Za-z0-9\s.&'-]+$/,
+        "Branch name can only contain letters, numbers, spaces, &, ., ' and -"
+      ),
 
     address: Yup.string()
       .required("Address is required")
@@ -135,7 +135,9 @@ const CreateEditBranch = () => {
                               placeholder="Branch Name"
                               maxLength={30}
                               onChange={(e) => {
-                                field.onChange(e);
+                                const value = e.target.value.replace(/[^a-zA-Z0-9\s]/g, "");
+
+                                form.setFieldValue("name", value);
                                 form.setFieldTouched("name", true, false);
                               }}
                             />
@@ -151,19 +153,22 @@ const CreateEditBranch = () => {
                     <fieldset className="col-md-3">
                       <div className="body-title">Address *</div>
                       <div className="body-content">
-                        <Field  name="address">
-                         {({ field, form }) => (
-                           <input
+                        <Field name="address">
+                          {({ field, form }) => (
+                            <input
                               {...field}
                               type="text"
                               placeholder="Enter branch adrress"
-                              onChange={(e) => {
-                                field.onChange(e);
+                              maxLength={100}
+                                onChange={(e) => {
+                                const value = e.target.value.replace(/[^a-zA-Z0-9\s]/g, "");
+
+                                form.setFieldValue("address", value);
                                 form.setFieldTouched("address", true, false);
                               }}
                             />
                           )}
-                      </Field>
+                        </Field>
                         <ErrorMessage
                           name="address"
                           className="error-text"

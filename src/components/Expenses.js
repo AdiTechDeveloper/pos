@@ -30,6 +30,47 @@ const RANGES = [
   { value: "custom", label: "Custom dates" },
 ];
 
+/* ---------- validation limits ---------- */
+const MAX_AMOUNT = 99999999.99; // DECIMAL(10,2) safe
+const MIN_DATE = "2000-01-01";
+const MAX_RANGE_DAYS = 366;
+const PAID_TO_MAX = 120;
+const REF_MAX = 60;
+const NOTE_MAX = 300;
+const CATEGORY_MIN = 3;
+const CATEGORY_MAX = 50;
+const SEARCH_MAX = 100;
+
+const REF_PATTERN = /^[A-Za-z0-9][A-Za-z0-9\s\-/_.#]*$/;
+// Category name: sirf letters aur beech me single space (number / special character nahi)
+const CATEGORY_PATTERN = /^\p{L}+(?: \p{L}+)*$/u;
+const sanitizeCategoryInput = (v) =>
+  String(v ?? "").replace(/[^\p{L}\s]/gu, "").replace(/^\s+/, "").replace(/\s{2,}/g, " ");
+const HAS_LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;
+
+// Form field order = screen order (pehla error wahi focus hoga)
+const FIELD_ORDER = [
+  "amount",
+  "expense_date",
+  "category_id",
+  "payment_mode",
+  "paid_to",
+  "reference_no",
+  "branch_id",
+  "note",
+];
+
+const FOCUS_ID = {
+  amount: "exp-amount",
+  expense_date: "exp-date",
+  category_id: "exp-category",
+  payment_mode: "exp-pay-first",
+  paid_to: "exp-paid-to",
+  reference_no: "exp-ref",
+  branch_id: "exp-branch",
+  note: "exp-note",
+};
+
 const inr = (n) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -44,6 +85,24 @@ const iso = (d) =>
   ).padStart(2, "0")}`;
 
 const todayStr = () => iso(new Date());
+
+const parseISO = (s) => {
+  const [y, m, d] = String(s).split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+
+// Sirf format nahi, asli date bhi check hoti hai (2026-02-31 reject)
+const isValidDate = (s) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s || "")) return false;
+  const [y, m, d] = s.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  return (
+    dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d
+  );
+};
+
+const daysBetween = (from, to) =>
+  Math.round((parseISO(to) - parseISO(from)) / 86400000) + 1;
 
 const prettyDate = (value) => {
   if (!value) return "-";
@@ -108,6 +167,20 @@ const errorText = (err, fallback) => {
   return err?.response?.data?.message || fallback;
 };
 
+// Backend (422) ke field-wise errors ko form fields se map karta hai
+const serverFieldErrors = (err) => {
+  const raw = err?.response?.data?.errors;
+  const out = {};
+  if (raw && typeof raw === "object") {
+    Object.entries(raw).forEach(([key, val]) => {
+      if (FIELD_ORDER.includes(key)) {
+        out[key] = Array.isArray(val) ? val[0] : String(val);
+      }
+    });
+  }
+  return out;
+};
+
 const emptyForm = () => ({
   expense_date: todayStr(),
   category_id: "",
@@ -118,6 +191,142 @@ const emptyForm = () => ({
   note: "",
   branch_id: "",
 });
+
+/* ---------- input cleaning ---------- */
+
+const cleanText = (v) => String(v ?? "").replace(/\s+/g, " ").trim();
+
+// Sirf digits + ek dot + max 2 decimals; e, -, + sab hat jaate hain
+const sanitizeAmount = (raw) => {
+  let v = String(raw ?? "").replace(/[^\d.]/g, "");
+  const dot = v.indexOf(".");
+  if (dot !== -1) {
+    v = v.slice(0, dot + 1) + v.slice(dot + 1).replace(/\./g, "").slice(0, 2);
+  }
+  v = v.replace(/^0+(?=\d)/, "");
+  return v.slice(0, 11);
+};
+
+const normalizeForm = (f) => ({
+  ...f,
+  amount: String(f.amount ?? "").trim(),
+  expense_date: String(f.expense_date ?? "").trim(),
+  paid_to: cleanText(f.paid_to),
+  reference_no: cleanText(f.reference_no),
+  note: String(f.note ?? "").trim(),
+});
+
+/* ---------- expense validation ---------- */
+
+function validateExpense(rawForm, { categories, branches, showBranch }) {
+  const f = normalizeForm(rawForm);
+  const errors = {};
+
+  // Amount
+  if (!f.amount) {
+    errors.amount = "Amount is required.";
+  } else if (!/^(\d+(\.\d{0,2})?|\.\d{1,2})$/.test(f.amount)) {
+    errors.amount = "Enter a valid amount (max 2 decimal places).";
+  } else {
+    const n = Number(f.amount);
+    if (!(n > 0)) errors.amount = "Amount must be greater than zero.";
+    else if (n > MAX_AMOUNT) {
+      errors.amount = `Amount cannot be more than ${inr(MAX_AMOUNT)}.`;
+    }
+  }
+
+  // Date
+  if (!f.expense_date) {
+    errors.expense_date = "Please choose the expense date.";
+  } else if (!isValidDate(f.expense_date)) {
+    errors.expense_date = "Enter a valid date.";
+  } else if (f.expense_date > todayStr()) {
+    errors.expense_date = "Expense date cannot be in the future.";
+  } else if (f.expense_date < MIN_DATE) {
+    errors.expense_date = `Date cannot be before ${prettyDate(MIN_DATE)}.`;
+  }
+
+  // Category
+  if (!f.category_id) {
+    errors.category_id = "Please select a category.";
+  } else if (!categories.some((c) => String(c.id) === String(f.category_id))) {
+    errors.category_id = "This category is not available. Select another one.";
+  }
+
+  // Payment mode
+  if (!PAYMENT_MODES.some((m) => m.value === f.payment_mode)) {
+    errors.payment_mode = "Choose how this was paid (Cash or UPI / Bank).";
+  }
+
+  // Paid to (optional)
+  if (f.paid_to) {
+    if (f.paid_to.length < 2) {
+      errors.paid_to = "Paid To must be at least 2 characters.";
+    } else if (f.paid_to.length > PAID_TO_MAX) {
+      errors.paid_to = `Paid To can be at most ${PAID_TO_MAX} characters.`;
+    } else if (!HAS_LETTER_OR_DIGIT.test(f.paid_to)) {
+      errors.paid_to = "Paid To must contain letters or numbers.";
+    }
+  }
+
+  // Reference no (optional)
+  if (f.reference_no) {
+    if (f.reference_no.length > REF_MAX) {
+      errors.reference_no = `Reference no. can be at most ${REF_MAX} characters.`;
+    } else if (!REF_PATTERN.test(f.reference_no)) {
+      errors.reference_no =
+        "Use only letters, numbers, spaces and - / _ . # in the reference no.";
+    }
+  }
+
+  // Branch (sirf jab branch dropdown dikh raha ho)
+  if (showBranch && f.branch_id) {
+    if (!branches.some((b) => String(b.id) === String(f.branch_id))) {
+      errors.branch_id = "Select a valid branch.";
+    }
+  }
+
+  // Note (optional)
+  if (f.note.length > NOTE_MAX) {
+    errors.note = `Note can be at most ${NOTE_MAX} characters.`;
+  }
+
+  // Errors hamesha screen ke order me
+  const ordered = {};
+  FIELD_ORDER.forEach((k) => {
+    if (errors[k]) ordered[k] = errors[k];
+  });
+  return ordered;
+}
+
+/* ---------- category name validation ---------- */
+
+function validateCategoryName(raw, categories, excludeId = null) {
+  const value = cleanText(raw);
+  if (!value) return "Category name is required.";
+  if (value.length < CATEGORY_MIN) {
+    return `Category name must be at least ${CATEGORY_MIN} characters.`;
+  }
+  if (value.length > CATEGORY_MAX) {
+    return `Category name can be at most ${CATEGORY_MAX} characters.`;
+  }
+  if (!CATEGORY_PATTERN.test(value)) {
+    return "Category name can contain only letters and spaces (no numbers or special characters).";
+  }
+  const duplicate = categories.some(
+    (c) =>
+      String(c.id) !== String(excludeId) &&
+      cleanText(c.name).toLowerCase() === value.toLowerCase(),
+  );
+  if (duplicate) return "A category with this name already exists.";
+  return "";
+}
+
+const focusField = (key) => {
+  requestAnimationFrame(() => {
+    document.getElementById(FOCUS_ID[key])?.focus();
+  });
+};
 
 /* ------------------------------------------------------------------ */
 /*  Modal (same markup as the Category / Brand modals in other pages)   */
@@ -164,6 +373,15 @@ function ModeBadge({ mode }) {
   );
 }
 
+function FieldError({ id, message }) {
+  if (!message) return null;
+  return (
+    <div id={id} className="exp-field-error" role="alert">
+      {message}
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /*  Add / Edit expense                                                 */
 /* ------------------------------------------------------------------ */
@@ -180,19 +398,63 @@ function ExpenseFormModal({
   onClose,
 }) {
   const [form, setForm] = useState(initial);
+  const [errors, setErrors] = useState({});
   const amountRef = useRef(null);
+  const ctx = { categories, branches, showBranch };
 
   useEffect(() => {
     amountRef.current?.focus();
   }, []);
 
-  const set = (key) => (e) =>
-    setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const setFieldError = (key, message) =>
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (message) next[key] = message;
+      else delete next[key];
+      return next;
+    });
+
+  // Value badalte hi us field ka purana error hat jaata hai / dobara check hota hai
+  const update = (key, value) => {
+    const next = { ...form, [key]: value };
+    setForm(next);
+    if (errors[key]) setFieldError(key, validateExpense(next, ctx)[key]);
+  };
+
+  // Blur par check, par khaali field par nahi (Cancel dabate waqt error na chamke)
+  const onBlurCheck = (key) => () => {
+    if (!String(form[key] ?? "").trim()) return;
+    setFieldError(key, validateExpense(form, ctx)[key]);
+  };
+
+  const field = (key, id) => ({
+    id,
+    className: `exp-input ${errors[key] ? "invalid" : ""}`,
+    "aria-invalid": errors[key] ? "true" : undefined,
+    "aria-describedby": errors[key] ? `${id}-err` : undefined,
+  });
 
   const submit = async (addAnother) => {
-    const ok = await onSubmit(form, addAnother);
+    if (saving) return;
+
+    const found = validateExpense(form, ctx);
+    setErrors(found);
+    const firstKey = Object.keys(found)[0];
+    if (firstKey) {
+      focusField(firstKey);
+      return;
+    }
+
+    const result = await onSubmit(normalizeForm(form), addAnother);
+
+    if (result?.fieldErrors && Object.keys(result.fieldErrors).length) {
+      setErrors(result.fieldErrors);
+      focusField(Object.keys(result.fieldErrors)[0]);
+      return;
+    }
+
     // "Save & add another": date, category, mode wahi rehte hain, baaki saaf
-    if (ok && addAnother) {
+    if (result?.ok && addAnother) {
       setForm((prev) => ({
         ...prev,
         amount: "",
@@ -200,6 +462,7 @@ function ExpenseFormModal({
         reference_no: "",
         note: "",
       }));
+      setErrors({});
       amountRef.current?.focus();
     }
   };
@@ -208,6 +471,7 @@ function ExpenseFormModal({
     <Modal title={isEdit ? "Edit Expense" : "Add Expense"} onClose={onClose}>
       <form
         className="exp-modal-form"
+        noValidate
         onSubmit={(e) => {
           e.preventDefault();
           submit(false);
@@ -222,18 +486,18 @@ function ExpenseFormModal({
                 Amount (₹) *
               </label>
               <input
-                id="exp-amount"
+                {...field("amount", "exp-amount")}
                 ref={amountRef}
-                type="number"
-                min="0.01"
-                step="0.01"
+                type="text"
                 inputMode="decimal"
-                className="exp-input"
+                autoComplete="off"
                 placeholder="0.00"
                 value={form.amount}
-                onChange={set("amount")}
+                onChange={(e) => update("amount", sanitizeAmount(e.target.value))}
+                onBlur={onBlurCheck("amount")}
                 required
               />
+              <FieldError id="exp-amount-err" message={errors.amount} />
             </div>
 
             <div className="exp-field">
@@ -241,14 +505,16 @@ function ExpenseFormModal({
                 Date *
               </label>
               <input
-                id="exp-date"
+                {...field("expense_date", "exp-date")}
                 type="date"
-                className="exp-input"
                 value={form.expense_date}
+                min={MIN_DATE}
                 max={todayStr()}
-                onChange={set("expense_date")}
+                onChange={(e) => update("expense_date", e.target.value)}
+                onBlur={onBlurCheck("expense_date")}
                 required
               />
+              <FieldError id="exp-date-err" message={errors.expense_date} />
             </div>
           </div>
 
@@ -257,10 +523,9 @@ function ExpenseFormModal({
               Category *
             </label>
             <select
-              id="exp-category"
-              className="exp-input"
+              {...field("category_id", "exp-category")}
               value={form.category_id}
-              onChange={set("category_id")}
+              onChange={(e) => update("category_id", e.target.value)}
               required
             >
               <option value="">Select Category</option>
@@ -270,25 +535,29 @@ function ExpenseFormModal({
                 </option>
               ))}
             </select>
+            <FieldError id="exp-category-err" message={errors.category_id} />
           </div>
 
           <div className="exp-field">
             <div className="exp-label" id="exp-paidby">
               Paid By *
             </div>
-            <div className="exp-pay" role="radiogroup" aria-labelledby="exp-paidby">
-              {PAYMENT_MODES.map((m) => {
+            <div
+              className={`exp-pay ${errors.payment_mode ? "invalid" : ""}`}
+              role="radiogroup"
+              aria-labelledby="exp-paidby"
+            >
+              {PAYMENT_MODES.map((m, i) => {
                 const on = form.payment_mode === m.value;
                 return (
                   <button
                     key={m.value}
+                    id={i === 0 ? "exp-pay-first" : undefined}
                     type="button"
                     role="radio"
                     aria-checked={on}
                     className={`exp-pay-opt ${on ? "on" : ""}`}
-                    onClick={() =>
-                      setForm((prev) => ({ ...prev, payment_mode: m.value }))
-                    }
+                    onClick={() => update("payment_mode", m.value)}
                   >
                     <span className="exp-pay-dot" />
                     <span>
@@ -299,6 +568,7 @@ function ExpenseFormModal({
                 );
               })}
             </div>
+            <FieldError id="exp-pay-err" message={errors.payment_mode} />
           </div>
 
           <div className="exp-grid-2">
@@ -307,14 +577,15 @@ function ExpenseFormModal({
                 Paid To
               </label>
               <input
-                id="exp-paid-to"
+                {...field("paid_to", "exp-paid-to")}
                 type="text"
-                className="exp-input"
                 placeholder="Person or shop"
-                maxLength={120}
+                maxLength={PAID_TO_MAX}
                 value={form.paid_to}
-                onChange={set("paid_to")}
+                onChange={(e) => update("paid_to", e.target.value)}
+                onBlur={onBlurCheck("paid_to")}
               />
+              <FieldError id="exp-paid-to-err" message={errors.paid_to} />
             </div>
 
             <div className="exp-field">
@@ -322,14 +593,15 @@ function ExpenseFormModal({
                 Bill / Reference No.
               </label>
               <input
-                id="exp-ref"
+                {...field("reference_no", "exp-ref")}
                 type="text"
-                className="exp-input"
                 placeholder="Optional"
-                maxLength={60}
+                maxLength={REF_MAX}
                 value={form.reference_no}
-                onChange={set("reference_no")}
+                onChange={(e) => update("reference_no", e.target.value)}
+                onBlur={onBlurCheck("reference_no")}
               />
+              <FieldError id="exp-ref-err" message={errors.reference_no} />
             </div>
           </div>
 
@@ -339,10 +611,9 @@ function ExpenseFormModal({
                 Branch
               </label>
               <select
-                id="exp-branch"
-                className="exp-input"
+                {...field("branch_id", "exp-branch")}
                 value={form.branch_id}
-                onChange={set("branch_id")}
+                onChange={(e) => update("branch_id", e.target.value)}
               >
                 <option value="">Default Branch</option>
                 {branches.map((b) => (
@@ -351,6 +622,7 @@ function ExpenseFormModal({
                   </option>
                 ))}
               </select>
+              <FieldError id="exp-branch-err" message={errors.branch_id} />
             </div>
           )}
 
@@ -359,14 +631,18 @@ function ExpenseFormModal({
               Note
             </label>
             <textarea
-              id="exp-note"
+              {...field("note", "exp-note")}
               rows={2}
-              className="exp-input"
               placeholder="What was this for?"
-              maxLength={300}
+              maxLength={NOTE_MAX}
               value={form.note}
-              onChange={set("note")}
+              onChange={(e) => update("note", e.target.value)}
+              onBlur={onBlurCheck("note")}
             />
+            <div className="exp-counter">
+              {form.note.length}/{NOTE_MAX}
+            </div>
+            <FieldError id="exp-note-err" message={errors.note} />
           </div>
         </div>
 
@@ -402,30 +678,40 @@ function CategoryManagerModal({ categories, onClose, onChanged }) {
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [addError, setAddError] = useState("");
+  const [listError, setListError] = useState("");
+  const lock = useRef(false); // double click / blur + Enter se double request na jaye
 
   const run = async (fn, fallback) => {
+    if (lock.current) return false;
+    lock.current = true;
     setBusy(true);
-    setError("");
+    setListError("");
     try {
       await fn();
       await onChanged();
       return true;
     } catch (err) {
-      setError(errorText(err, fallback));
+      setListError(errorText(err, fallback));
       return false;
     } finally {
+      lock.current = false;
       setBusy(false);
     }
   };
 
   const add = async (e) => {
     e.preventDefault();
-    const value = name.trim();
-    if (value.length < 3) {
-      setError("Category name must be at least 3 characters.");
+    if (lock.current) return;
+
+    const value = cleanText(name);
+    const problem = validateCategoryName(value, categories);
+    if (problem) {
+      setAddError(problem);
       return;
     }
+
+    setAddError("");
     const ok = await run(
       () => axios.post("/api/expense-categories", { name: value }),
       "Could not add the category.",
@@ -437,11 +723,21 @@ function CategoryManagerModal({ categories, onClose, onChanged }) {
   };
 
   const rename = async (cat) => {
-    const value = editName.trim();
+    if (lock.current) return;
+
+    const value = cleanText(editName);
     if (!value || value === cat.name) {
       setEditingId(null);
+      setListError("");
       return;
     }
+
+    const problem = validateCategoryName(value, categories, cat.id);
+    if (problem) {
+      setListError(problem);
+      return;
+    }
+
     const ok = await run(
       () =>
         axios.put(`/api/expense-categories/${cat.id}`, {
@@ -464,6 +760,7 @@ function CategoryManagerModal({ categories, onClose, onChanged }) {
     );
 
   const remove = (cat) => {
+    if (lock.current) return;
     if (!window.confirm(`Delete "${cat.name}"?`)) return;
     run(
       () => axios.delete(`/api/expense-categories/${cat.id}`),
@@ -474,18 +771,19 @@ function CategoryManagerModal({ categories, onClose, onChanged }) {
   return (
     <Modal title="Expense Categories" onClose={onClose} width={480}>
       <div className="modal-body exp-modal-form">
-        <form className="exp-inline-form" onSubmit={add}>
+        <form className="exp-inline-form" onSubmit={add} noValidate>
           <input
             type="text"
-            className={`form-control model-form-control ${error ? "is-invalid" : ""}`}
-            placeholder="New category, e.g. Tea & Coffee"
-            maxLength={80}
+            className={`form-control model-form-control ${addError ? "is-invalid" : ""}`}
+            placeholder="New category, e.g. Tea Coffee"
+            maxLength={CATEGORY_MAX}
             value={name}
             onChange={(e) => {
-              setName(e.target.value);
-              if (error) setError("");
+              setName(sanitizeCategoryInput(e.target.value));
+              if (addError) setAddError("");
             }}
             aria-label="New category name"
+            aria-invalid={addError ? "true" : undefined}
           />
           <button
             type="submit"
@@ -496,12 +794,21 @@ function CategoryManagerModal({ categories, onClose, onChanged }) {
           </button>
         </form>
 
-        {error && <div className="error-text mb-15">{error}</div>}
+        {addError && (
+          <div className="error-text mb-15" role="alert">
+            {addError}
+          </div>
+        )}
+        {listError && (
+          <div className="error-text mb-15" role="alert">
+            {listError}
+          </div>
+        )}
 
         <ul className="exp-cat-list">
           {categories.length === 0 && (
             <li className="exp-sub">
-              No categories yet. Add Electricity, Rent, Salary, Tea &amp; Coffee
+              No categories yet. Add Electricity, Rent, Salary, Tea Coffee
               to begin.
             </li>
           )}
@@ -515,11 +822,22 @@ function CategoryManagerModal({ categories, onClose, onChanged }) {
                     autoFocus
                     type="text"
                     className="form-control model-form-control"
+                    maxLength={CATEGORY_MAX}
                     value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
+                    onChange={(e) => {
+                      setEditName(sanitizeCategoryInput(e.target.value));
+                      if (listError) setListError("");
+                    }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") rename(cat);
-                      if (e.key === "Escape") setEditingId(null);
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        rename(cat);
+                      }
+                      if (e.key === "Escape") {
+                        e.stopPropagation(); // modal band na ho, sirf edit cancel ho
+                        setEditingId(null);
+                        setListError("");
+                      }
                     }}
                     onBlur={() => rename(cat)}
                     aria-label={`Rename ${cat.name}`}
@@ -540,6 +858,7 @@ function CategoryManagerModal({ categories, onClose, onChanged }) {
                     onClick={() => {
                       setEditingId(cat.id);
                       setEditName(cat.name);
+                      setListError("");
                     }}
                   >
                     Rename
@@ -568,11 +887,7 @@ function CategoryManagerModal({ categories, onClose, onChanged }) {
       </div>
 
       <div className="exp-modal-foot">
-        <button
-          type="button"
-          className="exp-btn"
-          onClick={onClose}
-        >
+        <button type="button" className="exp-btn" onClick={onClose}>
           Close
         </button>
       </div>
@@ -590,8 +905,15 @@ const Expenses = () => {
   const expenseCategories = appData?.expenseCategories || [];
   const branches = appData?.branches || [];
 
-  const user_data = JSON.parse(localStorage.getItem("user_detail") || "null");
-  const role = user_data?.user?.role;
+  // localStorage kharab ho to page crash na ho
+  const role = useMemo(() => {
+    try {
+      const data = JSON.parse(localStorage.getItem("user_detail") || "null");
+      return data?.user?.role;
+    } catch {
+      return undefined;
+    }
+  }, []);
   const showBranch = role === "admin" && hasFeature("branch_management");
 
   // filters
@@ -618,11 +940,30 @@ const Expenses = () => {
   const [deleteBusy, setDeleteBusy] = useState(false);
 
   const requestId = useRef(0);
+  const savingLock = useRef(false);
 
   const range = useMemo(
     () => getRange(rangeKey, customFrom, customTo),
     [rangeKey, customFrom, customTo],
   );
+
+  // Custom date range ki validation
+  const rangeError = useMemo(() => {
+    if (rangeKey !== "custom") return "";
+    if (!customFrom || !customTo) return "Select both the start and end date.";
+    if (!isValidDate(customFrom) || !isValidDate(customTo)) {
+      return "Enter valid dates.";
+    }
+    if (customFrom > customTo) return "The start date is after the end date.";
+    if (customTo > todayStr()) return "The end date cannot be in the future.";
+    if (customFrom < MIN_DATE) {
+      return `The start date cannot be before ${prettyDate(MIN_DATE)}.`;
+    }
+    if (daysBetween(customFrom, customTo) > MAX_RANGE_DAYS) {
+      return `Please select a range of up to ${MAX_RANGE_DAYS} days.`;
+    }
+    return "";
+  }, [rangeKey, customFrom, customTo]);
 
   /* ---------- categories / branches (context cache) ---------- */
   useEffect(() => {
@@ -633,10 +974,11 @@ const Expenses = () => {
 
   /* ---------- expenses (date, payment mode, branch -> server) ---------- */
   const fetchExpenses = useCallback(async () => {
-    if (!range.from || !range.to || range.from > range.to) {
+    if (rangeError || !range.from || !range.to || range.from > range.to) {
+      requestId.current += 1; // koi purana response ab apply na ho
       setRows([]);
       setLoading(false);
-      setLoadError("The start date is after the end date.");
+      setLoadError(rangeError || "The start date is after the end date.");
       return;
     }
 
@@ -658,7 +1000,7 @@ const Expenses = () => {
     } finally {
       if (id === requestId.current) setLoading(false);
     }
-  }, [range.from, range.to, branchId]);
+  }, [range.from, range.to, branchId, rangeError]);
 
   useEffect(() => {
     fetchExpenses();
@@ -735,6 +1077,8 @@ const Expenses = () => {
 
   const clearFilters = () => {
     setRangeKey("this_month");
+    setCustomFrom(todayStr());
+    setCustomTo(todayStr());
     setMode("");
     setCategoryId("");
     setBranchId("");
@@ -754,7 +1098,14 @@ const Expenses = () => {
 
   const formInitial = useMemo(() => {
     const e = formState?.expense;
-    if (!e) return { ...emptyForm(), category_id: categoryId || "" };
+    if (!e) {
+      // Filter wali category tabhi pre-select ho jab wo active ho
+      const preset = expenseCategories.find(
+        (c) =>
+          String(c.id) === String(categoryId) && (c.is_active ?? true),
+      );
+      return { ...emptyForm(), category_id: preset ? String(preset.id) : "" };
+    }
     return {
       expense_date: String(e.expense_date || todayStr()).slice(0, 10),
       category_id: String(e.category_id ?? ""),
@@ -782,30 +1133,32 @@ const Expenses = () => {
     invalidateDashboardCache();
   };
 
+  // Returns { ok, fieldErrors? } taaki modal field-wise error dikha sake
   const saveExpense = async (form, addAnother) => {
-    const amount = Number(form.amount);
+    if (savingLock.current) return { ok: false };
 
-    if (!form.category_id) {
-      setFormError("Please select a category.");
-      return false;
-    }
-    if (!amount || amount <= 0) {
-      setFormError("Enter an amount greater than zero.");
-      return false;
-    }
-    if (!form.expense_date) {
-      setFormError("Please choose the expense date.");
-      return false;
+    // Dobara validation (defensive): modal ke bahar se call ho to bhi safe
+    const found = validateExpense(form, {
+      categories: formCategories,
+      branches,
+      showBranch,
+    });
+    if (Object.keys(found).length) {
+      return { ok: false, fieldErrors: found };
     }
 
     const payload = {
       ...form,
       category_id: Number(form.category_id),
-      amount,
+      amount: Number(Number(form.amount).toFixed(2)),
     };
-    if (!payload.branch_id) delete payload.branch_id;
+    if (!showBranch || !payload.branch_id) delete payload.branch_id;
+    if (!payload.paid_to) payload.paid_to = null;
+    if (!payload.reference_no) payload.reference_no = null;
+    if (!payload.note) payload.note = null;
 
     const editing = formState?.expense;
+    savingLock.current = true;
     setSaving(true);
     setFormError("");
 
@@ -820,18 +1173,24 @@ const Expenses = () => {
       await fetchExpenses();
       toast.success(editing ? "Expense Updated!" : "Expense Saved!");
       if (!addAnother) setFormState(null);
-      return true;
+      return { ok: true };
     } catch (err) {
+      const fieldErrors = serverFieldErrors(err);
+      if (Object.keys(fieldErrors).length) {
+        setFormError("");
+        return { ok: false, fieldErrors };
+      }
       setFormError(errorText(err, "Failed to save expense"));
-      return false;
+      return { ok: false };
     } finally {
+      savingLock.current = false;
       setSaving(false);
     }
   };
 
   /* ---------- delete ---------- */
   const confirmDelete = async () => {
-    if (!deleting) return;
+    if (!deleting || deleteBusy) return;
     setDeleteBusy(true);
     try {
       await axios.delete(`/api/expenses/${deleting.id}`);
@@ -968,9 +1327,14 @@ const Expenses = () => {
         .exp-modal-form textarea.exp-input { height: auto; min-height: 76px; padding: 10px 14px; resize: vertical; }
         .exp-modal-form .exp-input::placeholder { color: #9ca3af; }
         .exp-modal-form .exp-input:focus { outline: 0; border-color: #2f63f6; box-shadow: 0 0 0 3px rgba(47, 99, 246, .15); }
+        .exp-modal-form .exp-input.invalid { border-color: #dc2626; background: #fffafa; }
+        .exp-modal-form .exp-input.invalid:focus { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220, 38, 38, .15); }
         .exp-error { margin-bottom: 14px; padding: 10px 14px; border-radius: 10px; background: #fef2f2; color: #b91c1c; font-size: 13.5px; }
+        .exp-field-error { margin-top: 5px; font-size: 12.5px; font-weight: 500; color: #dc2626; }
+        .exp-counter { margin-top: 3px; text-align: right; font-size: 11.5px; color: #9ca3af; }
 
         .exp-pay { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .exp-pay.invalid .exp-pay-opt { border-color: #dc2626; }
         .exp-pay-opt { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff; color: #111827; font: inherit; text-align: left; cursor: pointer; }
         .exp-pay-opt:hover { border-color: #93a8f4; }
         .exp-pay-opt.on { border-color: #2f63f6; background: rgba(47, 99, 246, .07); }
@@ -1144,6 +1508,7 @@ const Expenses = () => {
                     <input
                       type="text"
                       placeholder="Search paid to, note, bill no..."
+                      maxLength={SEARCH_MAX}
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                     />
@@ -1199,7 +1564,9 @@ const Expenses = () => {
                       <input
                         type="date"
                         value={customFrom}
-                        max={customTo || undefined}
+                        min={MIN_DATE}
+                        max={customTo || todayStr()}
+                        aria-invalid={rangeError ? "true" : undefined}
                         onChange={(e) => setCustomFrom(e.target.value)}
                       />
                     </div>
@@ -1210,7 +1577,9 @@ const Expenses = () => {
                       <input
                         type="date"
                         value={customTo}
-                        min={customFrom || undefined}
+                        min={customFrom || MIN_DATE}
+                        max={todayStr()}
+                        aria-invalid={rangeError ? "true" : undefined}
                         onChange={(e) => setCustomTo(e.target.value)}
                       />
                     </div>
@@ -1276,7 +1645,11 @@ const Expenses = () => {
               </button>
             )}
 
-            {loadError && <div className="error-text mb-15">{loadError}</div>}
+            {loadError && (
+              <div className="error-text mb-15" role="alert">
+                {loadError}
+              </div>
+            )}
 
             <DataTable
               columns={columns}

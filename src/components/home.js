@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Clock, Users, Sparkles , TrendingUp , Megaphone , ClipboardX , IndianRupee , ReceiptText, SquareExclamationPoint ,SquareSplitHorizontal  } from "lucide-react";
-import { BadgeIndianRupee , HandCoins , Wallet , Van   } from "lucide-react";
+import { BadgeIndianRupee , HandCoins , Wallet , Van , ShoppingBasket  } from "lucide-react";
 import { useCachedApi, invalidateDashboardCache } from "./Dashboardcache";
 import Layout from "./layout";
 import ProfitLossWidget from "./ProfitLossWidget";
@@ -1980,6 +1980,7 @@ const Home = () => {
                 {canSales && ins?.top_profit && ins.top_profit.length > 0 && (
                   <div>
                     <Card
+                     icon={ShoppingBasket }
                       title="Most Profitable Products"
                       hint="Last 30 days (approximate)"
                     >

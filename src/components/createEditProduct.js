@@ -14,6 +14,82 @@ const MAX_PICK_MB = 10;
 const MAX_IMAGES = 4;
 const MAX_INFO_ROWS = 20;
 
+// Input-level validation: reject invalid typing and pasted values.
+const DECIMAL_INPUT_RE = /^\d*(?:\.\d{0,2})?$/;
+const DIGITS_INPUT_RE = /^\d*$/;
+const MAX_PRODUCT_AMOUNT = 999999.99;
+
+const isValidDecimalInput = (value, max = MAX_PRODUCT_AMOUNT) =>
+  value === "" ||
+  (DECIMAL_INPUT_RE.test(value) &&
+    value !== "." &&
+    value.length <= 9 &&
+    Number(value) <= max);
+
+const isValidIntegerInput = (value, min = 0, max = 999999, allowEmpty = true) => {
+  if (allowEmpty && value === "") return true;
+  if (!DIGITS_INPUT_RE.test(value) || value.length > String(max).length) return false;
+  const number = Number(value);
+  return number >= min && number <= max;
+};
+
+const isAllowedProductName = (value) => /^[A-Za-z0-9 ]*$/.test(value);
+const isAllowedSimpleName = (value) => /^[A-Za-z0-9 ]*$/.test(value);
+const isAllowedSku = (value) => /^[A-Za-z0-9-]*$/.test(value);
+
+// Product Information: filter values according to their selected label.
+const normalizeInfoLabel = (label) => String(label || "").trim().toLowerCase();
+
+const getInfoValuePattern = (label) => {
+  const key = normalizeInfoLabel(label);
+  if (key === "unit") return /^[A-Za-z0-9 .-]*$/;
+  if (key === "shelf life") return /^\d{0,4}(?:\.\d{0,2})?(?:\s?(?:hours?|days?|weeks?|months?|years?))?$/i;
+  if (key === "country of origin") return /^[A-Za-z ]{0,30}$/;
+  if (key === "fssai license" || key === "seller fssai") return /^\d{0,14}$/;
+  if (key === "customer care details") return /^[A-Za-z0-9+@().,\-:/ ]*$/;
+  if (key === "nutrition information") return /^[A-Za-z0-9 %.,()/:-]*$/;
+  if (key === "allergen information" || key === "ingredients") return /^[A-Za-z0-9 ,()./%:+-]*$/;
+  if (key === "seller") return /^[A-Za-z0-9 ]*$/;
+  return /^[A-Za-z0-9 ,.!?'"()/%:+&-]*$/;
+};
+
+const getInfoValueError = (label, value) => {
+  const key = normalizeInfoLabel(label);
+  const text = String(value || "").trim();
+  if (!text) return "Value is required when a label is entered.";
+
+  if (key === "unit" &&
+      !/^(?:\d+(?:\.\d{1,2})?\s*)?(?:kg|g|mg|l|ml|pcs?|pieces?|units?|packs?|boxes?|bottles?|strips?|tablets?|capsules?|dozen|pair|set)$/i.test(text)) {
+    return "Enter a valid unit such as 1 kg, 500 ml, 1 piece, or 1 pack.";
+  }
+  if (key === "shelf life" &&
+      !/^\d{1,4}(?:\.\d{1,2})?\s?(?:hours?|days?|weeks?|months?|years?)$/i.test(text)) {
+    return "Enter shelf life like 7 days, 6 months, or 1 year.";
+  }
+  if (key === "country of origin" && !/^[A-Za-z]{2,30}(?:[ -][A-Za-z]{1,30})*$/.test(text)) {
+    return "Country name must contain 2–30 letters and spaces or hyphens only.";
+  }
+  if (key === "country of origin" && text.length > 30) {
+    return "Country name cannot exceed 30 characters.";
+  }
+  if ((key === "fssai license" || key === "seller fssai") && !/^\d{14}$/.test(text)) {
+    return "FSSAI license number must contain exactly 14 digits.";
+  }
+  if (key === "customer care details" &&
+      !(/^[+]?\d[\d\s().-]{7,14}$/.test(text) ||
+        /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(text))) {
+    return "Enter a valid customer care phone number or email address.";
+  }
+  if (key === "seller" && text.length < 2) {
+    return "Seller name must contain at least 2 characters.";
+  }
+  return "";
+};
+
+const isValidInfoLabel = (value) => /^[A-Za-z0-9 ]*$/.test(value);
+
+
+
 // Quick-add buttons
 const INFO_SUGGESTIONS = [
   "Unit",
@@ -320,8 +396,8 @@ const CreateEditProduct = () => {
       .min(3, "Product name must be at least 3 characters")
       .max(100, "Product name cannot exceed 100 characters")
       .matches(
-        /^[A-Za-z0-9\s.&'()/-]+$/,
-        "Product name contains invalid characters",
+        /^[A-Za-z0-9 ]+$/,
+        "Product name can contain only letters, numbers and spaces",
       )
       .test(
         "not-only-spaces",
@@ -374,6 +450,27 @@ const CreateEditProduct = () => {
       otherwise: (schema) => schema.nullable(),
     }),
 
+    mrp: Yup.number()
+      .transform((value, originalValue) => originalValue === "" ? null : value)
+      .nullable()
+      .typeError("MRP must be a valid amount")
+      .min(0, "MRP cannot be negative")
+      .max(MAX_PRODUCT_AMOUNT, "MRP cannot exceed 999999.99"),
+
+    selling_price: Yup.number()
+      .transform((value, originalValue) => originalValue === "" ? null : value)
+      .nullable()
+      .typeError("Selling price must be a valid amount")
+      .min(0, "Selling price cannot be negative")
+      .max(MAX_PRODUCT_AMOUNT, "Selling price cannot exceed 999999.99"),
+
+    cost_price: Yup.number()
+      .transform((value, originalValue) => originalValue === "" ? null : value)
+      .nullable()
+      .typeError("Cost price must be a valid amount")
+      .min(0, "Cost price cannot be negative")
+      .max(MAX_PRODUCT_AMOUNT, "Cost price cannot exceed 999999.99"),
+
     price_per_kg: Yup.number()
       .transform((value, originalValue) =>
         originalValue === "" || originalValue === null ? null : value,
@@ -385,7 +482,8 @@ const CreateEditProduct = () => {
           schema
             .typeError("Price per kg must be a number")
             .required("Price per kg is required for weight-type products")
-            .min(0.01, "Price per kg must be greater than 0"),
+            .min(0.01, "Price per kg must be greater than 0")
+            .max(MAX_PRODUCT_AMOUNT, "Price per kg cannot exceed 999999.99"),
         otherwise: (schema) => schema.nullable(),
       }),
 
@@ -397,6 +495,7 @@ const CreateEditProduct = () => {
       .typeError("Units per pack must be a number")
       .integer("Units per pack must be a whole number")
       .min(1, "Units per pack must be at least 1")
+      .max(999999, "Units per pack cannot exceed 999999")
       .when("allow_loose", {
         is: true,
         then: (schema) =>
@@ -404,6 +503,8 @@ const CreateEditProduct = () => {
             .required("Units per pack is required for loose selling")
             .min(2, "Units per pack must be at least 2 for loose selling"),
       }),
+
+    description: Yup.string().max(5000, "Description cannot exceed 5000 characters"),
   });
 
   const handleSubmit = async (values) => {
@@ -415,6 +516,21 @@ const CreateEditProduct = () => {
 
       const payload = { ...values };
       payload.description = (values.description || "").trim();
+      const invalidInfoRow = infoRows.find((r) => {
+        const label = r.label.trim();
+        const value = r.value.trim();
+        if (r.label.length > 60 || r.value.length > 1500) return true;
+        if (!label && !value) return false;
+        if (!label || !value || !isValidInfoLabel(label)) return true;
+        return Boolean(getInfoValueError(label, value));
+      });
+      if (invalidInfoRow) {
+        const reason = getInfoValueError(invalidInfoRow.label, invalidInfoRow.value);
+        throw new Error(
+          reason ||
+          "Each Product Information row needs a valid label and matching value. Check the field-specific format."
+        );
+      }
       payload.product_info = infoRows
         .map((r) => ({ label: r.label.trim(), value: r.value.trim() }))
         .filter((r) => r.label && r.value);
@@ -525,8 +641,8 @@ const CreateEditProduct = () => {
 
   const saveCategory = async (e) => {
     e.preventDefault();
-    if (newCategory.trim().length < 3) {
-      setError("Category name must be at least 3 characters.");
+    if (!/^[A-Za-z0-9 ]{3,50}$/.test(newCategory.trim())) {
+      setError("Category name must be 3–50 characters and contain only letters, numbers and spaces.");
       return;
     }
     setError("");
@@ -555,8 +671,8 @@ const CreateEditProduct = () => {
 
   const saveBrand = async (e) => {
     e.preventDefault();
-    if (newBrand.trim().length < 3) {
-      setError("Category name must be at least 3 characters.");
+    if (!/^[A-Za-z0-9 ]{3,50}$/.test(newBrand.trim())) {
+      setError("Brand name must be 3–50 characters and contain only letters, numbers and spaces.");
       return;
     }
     setError("");
@@ -614,13 +730,22 @@ const CreateEditProduct = () => {
                       <fieldset className="col-md-3">
                         <div className="body-title">Name *</div>
                         <div className="body-content">
-                          <Field
-                            type="text"
-                            name="name"
-                            maxLength={30}
-                            placeholder="Enter product name"
-                            className="mb-5"
-                          />
+                          <Field name="name">
+                            {({ field, form }) => (
+                              <input
+                                {...field}
+                                type="text"
+                                name="name"
+                                maxLength={100}
+                                placeholder="Enter product name"
+                                className="mb-5"
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (isAllowedProductName(value)) form.setFieldValue("name", value);
+                                }}
+                              />
+                            )}
+                          </Field>
                           <ErrorMessage
                             name="name"
                             className="error-text"
@@ -632,13 +757,21 @@ const CreateEditProduct = () => {
                       <fieldset className="col-md-3">
                         <div className="body-title">SKU</div>
                         <div className="body-content mb-15">
-                          <Field
-                            type="text"
-                            name="sku"
-                            placeholder="Enter SKU"
-                            className="mb-5"
-                            maxlength={12}
-                          />
+                          <Field name="sku">
+                            {({ field, form }) => (
+                              <input
+                                {...field}
+                                type="text"
+                                maxLength={12}
+                                placeholder="Enter SKU"
+                                className="mb-5"
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (isAllowedSku(value)) form.setFieldValue("sku", value);
+                                }}
+                              />
+                            )}
+                          </Field>
                           <ErrorMessage
                             name="sku"
                             className="error-text"
@@ -781,13 +914,10 @@ const CreateEditProduct = () => {
                                           maxLength={5}
                                           className="mb-5"
                                           onChange={(e) => {
-                                            const onlyDigits = e.target.value
-                                              .replace(/\D/g, "")
-                                              .slice(0, 5);
-                                            form.setFieldValue(
-                                              "plu_code",
-                                              onlyDigits,
-                                            );
+                                            const value = e.target.value;
+                                            if (/^\d{0,5}$/.test(value)) {
+                                              form.setFieldValue("plu_code", value);
+                                            }
                                           }}
                                         />
                                       )}
@@ -805,13 +935,23 @@ const CreateEditProduct = () => {
                                     Price per Kg (₹) *
                                   </div>
                                   <div className="body-content">
-                                    <Field
-                                      type="number"
-                                      step="0.01"
-                                      name="price_per_kg"
-                                      placeholder="e.g. 40.00"
-                                      className="mb-5"
-                                    />
+                                    <Field name="price_per_kg">
+                                      {({ field, form }) => (
+                                        <input
+                                          {...field}
+                                          type="text"
+                                          inputMode="decimal"
+                                          maxLength={9}
+                                          name="price_per_kg"
+                                          placeholder="e.g. 40.00"
+                                          className="mb-5"
+                                          onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (isValidDecimalInput(value)) form.setFieldValue("price_per_kg", value);
+                                          }}
+                                        />
+                                      )}
+                                    </Field>
                                     <ErrorMessage
                                       name="price_per_kg"
                                       className="error-text"
@@ -886,14 +1026,26 @@ const CreateEditProduct = () => {
                         <fieldset className="col-md-3">
                           <div className="body-title">Units per Pack</div>
                           <div className="body-content">
-                            <Field
-                              type="number"
-                              min="1"
-                              name="units_per_pack"
-                              placeholder="e.g. 10"
-                              className="mb-5"
-                              disabled={looseLocked && values.allow_loose}
-                            />
+                            <Field name="units_per_pack">
+                              {({ field, form }) => (
+                                <input
+                                  {...field}
+                                  type="text"
+                                  inputMode="numeric"
+                                  maxLength={6}
+                                  name="units_per_pack"
+                                  placeholder="e.g. 10"
+                                  className="mb-5"
+                                  disabled={looseLocked && values.allow_loose}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (isValidIntegerInput(value, 1, 999999, true)) {
+                                      form.setFieldValue("units_per_pack", value);
+                                    }
+                                  }}
+                                />
+                              )}
+                            </Field>
                             <ErrorMessage
                               name="units_per_pack"
                               className="error-text"
@@ -1088,13 +1240,22 @@ const CreateEditProduct = () => {
                       <fieldset className="col-md-2">
                         <div className="body-title">HSN</div>
                         <div className="body-content mb-15">
-                          <Field
-                            type="text"
-                            name="hsn_code"
-                            maxlength={8}
-                            placeholder="Enter HSN code"
-                            className="mb-5"
-                          />
+                          <Field name="hsn_code">
+                            {({ field, form }) => (
+                              <input
+                                {...field}
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={8}
+                                placeholder="Enter HSN code"
+                                className="mb-5"
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (DIGITS_INPUT_RE.test(value)) form.setFieldValue("hsn_code", value);
+                                }}
+                              />
+                            )}
+                          </Field>
                           <ErrorMessage
                             name="hsn_code"
                             className="error-text"
@@ -1119,7 +1280,9 @@ const CreateEditProduct = () => {
                                   const isScanner = now - lastTime < 30;
                                   lastTime = now;
 
-                                  form.setFieldValue("barcode", e.target.value);
+                                  const value = e.target.value;
+                                  if (!/^\d{0,13}$/.test(value)) return;
+                                  form.setFieldValue("barcode", value);
                                   form.setFieldTouched("barcode", true, false);
 
                                   if (isScanner) {
@@ -1473,7 +1636,7 @@ const CreateEditProduct = () => {
                             as="textarea"
                             name="description"
                             rows={4}
-                            maxLength={5000}
+                            maxLength={500}
                             placeholder="e.g. Rich and creamy full cream milk, an excellent source of vitamin A and D..."
                             className="mb-5"
                           />
@@ -1511,29 +1674,42 @@ const CreateEditProduct = () => {
                                 value={row.label}
                                 maxLength={60}
                                 placeholder="Label (e.g. Shelf Life)"
-                                onChange={(e) =>
-                                  updateInfoRow(
-                                    row.key,
-                                    "label",
-                                    e.target.value,
-                                  )
-                                }
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (isValidInfoLabel(value)) {
+                                    updateInfoRow(row.key, "label", value);
+                                    // Clear an old value if it does not match the newly selected information type.
+                                    if (!getInfoValuePattern(value).test(row.value)) {
+                                      updateInfoRow(row.key, "value", "");
+                                    }
+                                  }
+                                }}
                                 style={{ flex: "1 1 200px", minWidth: 160 }}
                               />
                               <textarea
                                 rows={2}
                                 value={row.value}
-                                maxLength={1500}
-                                placeholder="Value (e.g. 2 days)"
-                                onChange={(e) =>
-                                  updateInfoRow(
-                                    row.key,
-                                    "value",
-                                    e.target.value,
-                                  )
-                                }
+                                maxLength={normalizeInfoLabel(row.label) === "country of origin" ? 30 : 1500}
+                                placeholder={normalizeInfoLabel(row.label) === "country of origin" ? "Country name (e.g. India)" : "Value (e.g. 2 days)"}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  const pattern = getInfoValuePattern(row.label);
+                                  if (pattern.test(value)) {
+                                    updateInfoRow(row.key, "value", value);
+                                  }
+                                }}
                                 style={{ flex: "3 1 320px", minWidth: 200 }}
                               />
+                              {normalizeInfoLabel(row.label) === "fssai license" ||
+                              normalizeInfoLabel(row.label) === "seller fssai" ? (
+                                <small style={{ color: "#64748b", width: "100%" }}>Enter exactly 14 digits.</small>
+                              ) : normalizeInfoLabel(row.label) === "shelf life" ? (
+                                <small style={{ color: "#64748b", width: "100%" }}>Example: 7 days, 6 months, 1 year.</small>
+                              ) : normalizeInfoLabel(row.label) === "unit" ? (
+                                <small style={{ color: "#64748b", width: "100%" }}>Example: 1 kg, 500 ml, 1 piece.</small>
+                              ) : normalizeInfoLabel(row.label) === "country of origin" ? (
+                                <small style={{ color: "#64748b", width: "100%" }}>Enter a country name, e.g. India.</small>
+                              ) : null}
                               <button
                                 type="button"
                                 onClick={() => removeInfoRow(row.key)}
@@ -1644,8 +1820,10 @@ const CreateEditProduct = () => {
                     className={`form-control model-form-control ${error ? "is-invalid" : ""}`}
                     placeholder="Category Name"
                     value={newCategory}
+                    maxLength={50}
                     onChange={(e) => {
-                      setNewCategory(e.target.value);
+                      const value = e.target.value;
+                      if (isAllowedSimpleName(value)) setNewCategory(value);
                       if (error) setError("");
                     }}
                   />
@@ -1689,8 +1867,10 @@ const CreateEditProduct = () => {
                     className={`form-control model-form-control ${error ? "is-invalid" : ""}`}
                     placeholder="Brand Name"
                     value={newBrand}
+                    maxLength={50}
                     onChange={(e) => {
-                      setNewBrand(e.target.value);
+                      const value = e.target.value;
+                      if (isAllowedSimpleName(value)) setNewBrand(value);
                       if (error) setError("");
                     }}
                   />

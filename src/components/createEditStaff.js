@@ -210,8 +210,10 @@ const CreateEditStaff = () => {
                               type="text"
                               placeholder="Enter username"
                                 maxLength={25}
-                              onChange={(e) => {
-                                field.onChange(e);
+                                onChange={(e) => {
+                                const value = e.target.value.replace(/[^a-zA-Z0-9\s]/g, "");
+
+                                form.setFieldValue("username", value);
                                 form.setFieldTouched("username", true, false);
                               }}
                             />
