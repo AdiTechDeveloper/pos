@@ -6,6 +6,175 @@ import { toast } from "react-toastify";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 
+/* ------------------------------------------------------------------ */
+/*  Limits + input filters (galat character type hi nahi hoga)         */
+/* ------------------------------------------------------------------ */
+const LIMITS = {
+  name: 50,
+  tagline: 60,
+  address: 150,
+  phone: 10,
+  contact: 40,
+  gstin: 15,
+  username: 10,
+  password: 12,
+  licence: 30,
+  pharmacist: 40,
+  regNo: 20,
+};
+
+const LOGO_MAX_MB = 2;
+const LOGO_TYPES = ["image/jpeg", "image/png", "image/jpg"];
+
+const GSTIN_REGEX = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+
+// GSTIN ke har position ka allowed character: 22AAAAA0000A1Z5
+const GSTIN_POSITIONS = [
+  /\d/,
+  /\d/,
+  /[A-Z]/,
+  /[A-Z]/,
+  /[A-Z]/,
+  /[A-Z]/,
+  /[A-Z]/,
+  /\d/,
+  /\d/,
+  /\d/,
+  /\d/,
+  /[A-Z]/,
+  /[1-9A-Z]/,
+  /Z/,
+  /[0-9A-Z]/,
+];
+
+// leading space hatao + double space ek karo
+const tidy = (v) => v.replace(/^\s+/, "").replace(/\s{2,}/g, " ");
+
+const filters = {
+  name: (v) => tidy(v.replace(/[^A-Za-z0-9 &.'\-]/g, "")).slice(0, LIMITS.name),
+  tagline: (v) =>
+    tidy(v.replace(/[^A-Za-z0-9 &.,'!\-]/g, "")).slice(0, LIMITS.tagline),
+  address: (v) =>
+    tidy(v.replace(/[^A-Za-z0-9 ,.\/#()&'\-]/g, "")).slice(0, LIMITS.address),
+  phone: (v) => {
+    let digits = v.replace(/\D/g, "").slice(0, LIMITS.phone);
+    // Indian mobile number 6-9 se hi shuru hota hai
+    if (digits && !/^[6-9]/.test(digits)) digits = digits.slice(1);
+    return digits;
+  },
+  contact: (v) => tidy(v.replace(/[^A-Za-z .]/g, "")).slice(0, LIMITS.contact),
+  gstin: (v) => {
+    const upper = v.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    let out = "";
+    for (const ch of upper) {
+      if (out.length >= LIMITS.gstin) break;
+      if (GSTIN_POSITIONS[out.length].test(ch)) out += ch;
+    }
+    return out;
+  },
+  username: (v) => v.replace(/[^A-Za-z0-9_]/g, "").slice(0, LIMITS.username),
+  password: (v) => v.replace(/\s/g, "").slice(0, LIMITS.password),
+  licence: (v) =>
+    v
+      .toUpperCase()
+      .replace(/[^A-Z0-9\/\-]/g, "")
+      .slice(0, LIMITS.licence),
+  pharmacist: (v) =>
+    tidy(v.replace(/[^A-Za-z .]/g, "")).slice(0, LIMITS.pharmacist),
+  regNo: (v) =>
+    v
+      .toUpperCase()
+      .replace(/[^A-Z0-9\/\-]/g, "")
+      .slice(0, LIMITS.regNo),
+};
+
+const STATES = [
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+  "Andaman and Nicobar Islands",
+  "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Jammu and Kashmir",
+  "Ladakh",
+  "Lakshadweep",
+  "Puducherry",
+];
+
+const fieldsetStyle = { border: "none", padding: 0, margin: 0, minWidth: 0 };
+const columnStyle = { display: "flex", flexDirection: "column", gap: "8px" };
+
+/* ------------------------------------------------------------------ */
+/*  Reusable text field (filter + maxLength + error)                   */
+/* ------------------------------------------------------------------ */
+const TextField = ({
+  name,
+  label,
+  required,
+  placeholder,
+  filter,
+  maxLength,
+  setFieldValue,
+  value,
+  readOnly,
+  span,
+  inputMode,
+  autoComplete,
+}) => (
+  <fieldset
+    style={{ ...fieldsetStyle, gridColumn: span ? `span ${span}` : undefined }}
+  >
+    <div style={columnStyle}>
+      <div className="body-title">
+        {label} {required && <span className="tf-color-1">*</span>}
+      </div>
+      <Field
+        type="text"
+        name={name}
+        placeholder={placeholder}
+        readOnly={readOnly}
+        maxLength={maxLength}
+        inputMode={inputMode}
+        autoComplete={autoComplete || "off"}
+        style={{ width: "100%" }}
+        onChange={(e) => setFieldValue(name, filter(e.target.value))}
+      />
+      {typeof value === "string" && maxLength ? (
+        <small style={{ color: "#94a3b8", fontSize: "12px", textAlign: "right" }}>
+          {value.length}/{maxLength}
+        </small>
+      ) : null}
+      <ErrorMessage name={name} component="p" className="error-text" />
+    </div>
+  </fieldset>
+);
+
 const CreateStore = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -100,17 +269,55 @@ const CreateStore = () => {
   }, [id]);
 
   const storeSchema = Yup.object().shape({
-    name: Yup.string().required("Store name is required"),
-    address: Yup.string().required("Address is required"),
+    name: Yup.string()
+      .trim()
+      .min(3, "Store name must be at least 3 characters")
+      .max(LIMITS.name, `Maximum ${LIMITS.name} characters allowed`)
+      .required("Store name is required"),
+
+    tagline: Yup.string()
+      .trim()
+      .max(LIMITS.tagline, `Maximum ${LIMITS.tagline} characters allowed`),
+
+    address: Yup.string()
+      .trim()
+      .min(10, "Please enter the full address (at least 10 characters)")
+      .max(LIMITS.address, `Maximum ${LIMITS.address} characters allowed`)
+      .test(
+        "address-has-letters",
+        "Address must contain letters, not only numbers",
+        (v) => !v || /[A-Za-z]/.test(v),
+      )
+      .required("Address is required"),
+
     state: Yup.string().required("State is required"),
+
     phone: Yup.string()
-      .matches(/^[0-9]{10}$/, "Phone must be exactly 10 digits")
+      .matches(
+        /^[6-9][0-9]{9}$/,
+        "Enter a valid 10 digit mobile number starting with 6, 7, 8 or 9",
+      )
       .required("Phone number is required"),
-    contact_person_name: Yup.string().required(
-      "Contact person name is required",
-    ),
-    gstin: Yup.string().required("GSTIN is required"),
-    username: Yup.string().required("Username is required"),
+
+    contact_person_name: Yup.string()
+      .trim()
+      .min(3, "Name must be at least 3 characters")
+      .max(LIMITS.contact, `Maximum ${LIMITS.contact} characters allowed`)
+      .matches(/^[A-Za-z .]+$/, "Only letters are allowed")
+      .required("Contact person name is required"),
+
+    gstin: Yup.string()
+      .matches(GSTIN_REGEX, "Enter a valid 15 character GSTIN (e.g. 24AAAAA0000A1Z5)")
+      .required("GSTIN is required"),
+
+    username: Yup.string()
+      .min(4, "Username must be at least 4 characters")
+      .max(LIMITS.username, `Maximum ${LIMITS.username} characters allowed`)
+      .matches(
+        /^[A-Za-z0-9_]+$/,
+        "Only letters, numbers and underscore are allowed",
+      )
+      .required("Username is required"),
 
     drug_licence_no: Yup.string()
       .nullable()
@@ -130,16 +337,16 @@ const CreateStore = () => {
 
     password: Yup.string().test(
       "password-rules",
-      "Password must be at least 6 characters",
+      `Password must be 6 to ${LIMITS.password} characters`,
       function (value) {
         if (!isEdit) {
           if (!value) {
             return this.createError({ message: "Password is required" });
           }
-          return value.length >= 6;
+          return value.length >= 6 && value.length <= LIMITS.password;
         }
         if (!value) return true;
-        return value.length >= 6;
+        return value.length >= 6 && value.length <= LIMITS.password;
       },
     ),
 
@@ -174,9 +381,14 @@ const CreateStore = () => {
           .test(
             "fileType",
             "The logo must be an image (jpeg, png, jpg)",
+            (value) => value && LOGO_TYPES.includes(value.type),
+          )
+          .test(
+            "fileSize",
+            `Logo must be smaller than ${LOGO_MAX_MB}MB`,
             (value) =>
-              value &&
-              ["image/jpeg", "image/png", "image/jpg"].includes(value.type),
+              !(value instanceof File) ||
+              value.size <= LOGO_MAX_MB * 1024 * 1024,
           ),
       otherwise: () => Yup.mixed().nullable(),
     }),
@@ -205,13 +417,13 @@ const CreateStore = () => {
     try {
       const formData = new FormData();
 
-      formData.append("name", values.name);
-      formData.append("address", values.address);
+      formData.append("name", values.name.trim());
+      formData.append("address", values.address.trim());
       formData.append("state", values.state);
       formData.append("phone", values.phone);
-      formData.append("contact_person_name", values.contact_person_name);
+      formData.append("contact_person_name", values.contact_person_name.trim());
       formData.append("gstin", values.gstin);
-      formData.append("tagline", values.tagline || "");
+      formData.append("tagline", (values.tagline || "").trim());
       formData.append("username", values.username);
       formData.append("drug_licence_no", values.drug_licence_no || "");
       formData.append("pharmacist_name", values.pharmacist_name || "");
@@ -254,7 +466,12 @@ const CreateStore = () => {
       toast.success(response.data?.message || "Store saved successfully!");
       navigate("/store");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong!");
+      const apiErrors = error.response?.data?.errors;
+      toast.error(
+        (apiErrors && Object.values(apiErrors).flat()[0]) ||
+          error.response?.data?.message ||
+          "Something went wrong!",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -309,96 +526,57 @@ const CreateStore = () => {
               {({ isSubmitting, setFieldValue, values }) => (
                 <Form
                   className="form-new-product form-style-1"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(4, 1fr)",
-                    columnGap: "20px",
-                    rowGap: "20px",
-                  }}
+                  style={{ display: "block", width: "100%", maxWidth: "none" }}
                 >
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                      columnGap: "20px",
+                      rowGap: "20px",
+                    }}
+                  >
                   {/* NAME */}
-                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                      }}
-                    >
-                      <div className="body-title">
-                        Store Name <span className="tf-color-1">*</span>
-                      </div>
-                      <Field
-                        type="text"
-                        name="name"
-                        placeholder="Enter store name"
-                        readOnly={isEdit}
-                        style={{ width: "100%" }}
-                      />
-                      <ErrorMessage
-                        name="name"
-                        component="p"
-                        className="error-text"
-                      />
-                    </div>
-                  </fieldset>
+                  <TextField
+                    name="name"
+                    label="Store Name"
+                    required
+                    placeholder="Enter store name"
+                    filter={filters.name}
+                    maxLength={LIMITS.name}
+                    setFieldValue={setFieldValue}
+                    value={values.name}
+                    readOnly={isEdit}
+                  />
 
-                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                      }}
-                    >
-                      <div className="body-title">Tagline</div>
-                      <Field
-                        type="text"
-                        name="tagline"
-                        placeholder="Enter store tagline (optional)"
-                        style={{ width: "100%" }}
-                      />
-                      <ErrorMessage
-                        name="tagline"
-                        component="p"
-                        className="error-text"
-                      />
-                    </div>
-                  </fieldset>
+                  {/* TAGLINE */}
+                  <TextField
+                    name="tagline"
+                    label="Tagline"
+                    placeholder="Enter store tagline (optional)"
+                    filter={filters.tagline}
+                    maxLength={LIMITS.tagline}
+                    setFieldValue={setFieldValue}
+                    value={values.tagline}
+                  />
 
-                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                      }}
-                    >
-                      <div className="body-title">
-                        Address <span className="tf-color-1">*</span>
-                      </div>
-                      <Field
-                        type="text"
-                        name="address"
-                        placeholder="Enter address"
-                        style={{ width: "100%" }}
-                      />
-                      <ErrorMessage
-                        name="address"
-                        component="p"
-                        className="error-text"
-                      />
-                    </div>
-                  </fieldset>
+                  {/* ADDRESS (full address, 2 column wide) */}
+                  <TextField
+                    name="address"
+                    label="Address"
+                    required
+                    placeholder="Shop no., building, area, city, pincode"
+                    filter={filters.address}
+                    maxLength={LIMITS.address}
+                    setFieldValue={setFieldValue}
+                    value={values.address}
+                    span={2}
+                    autoComplete="street-address"
+                  />
 
-                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                      }}
-                    >
+                  {/* STATE */}
+                  <fieldset style={fieldsetStyle}>
+                    <div style={columnStyle}>
                       <div className="body-title">
                         State <span className="tf-color-1">*</span>
                       </div>
@@ -412,52 +590,11 @@ const CreateStore = () => {
                           style={{ width: "100%" }}
                         >
                           <option value="">Select state</option>
-                          <option value="Andhra Pradesh">Andhra Pradesh</option>
-                          <option value="Arunachal Pradesh">
-                            Arunachal Pradesh
-                          </option>
-                          <option value="Assam">Assam</option>
-                          <option value="Bihar">Bihar</option>
-                          <option value="Chhattisgarh">Chhattisgarh</option>
-                          <option value="Goa">Goa</option>
-                          <option value="Gujarat">Gujarat</option>
-                          <option value="Haryana">Haryana</option>
-                          <option value="Himachal Pradesh">
-                            Himachal Pradesh
-                          </option>
-                          <option value="Jharkhand">Jharkhand</option>
-                          <option value="Karnataka">Karnataka</option>
-                          <option value="Kerala">Kerala</option>
-                          <option value="Madhya Pradesh">Madhya Pradesh</option>
-                          <option value="Maharashtra">Maharashtra</option>
-                          <option value="Manipur">Manipur</option>
-                          <option value="Meghalaya">Meghalaya</option>
-                          <option value="Mizoram">Mizoram</option>
-                          <option value="Nagaland">Nagaland</option>
-                          <option value="Odisha">Odisha</option>
-                          <option value="Punjab">Punjab</option>
-                          <option value="Rajasthan">Rajasthan</option>
-                          <option value="Sikkim">Sikkim</option>
-                          <option value="Tamil Nadu">Tamil Nadu</option>
-                          <option value="Telangana">Telangana</option>
-                          <option value="Tripura">Tripura</option>
-                          <option value="Uttar Pradesh">Uttar Pradesh</option>
-                          <option value="Uttarakhand">Uttarakhand</option>
-                          <option value="West Bengal">West Bengal</option>
-                          <option value="Andaman and Nicobar Islands">
-                            Andaman and Nicobar Islands
-                          </option>
-                          <option value="Chandigarh">Chandigarh</option>
-                          <option value="Dadra and Nagar Haveli and Daman and Diu">
-                            Dadra and Nagar Haveli and Daman and Diu
-                          </option>
-                          <option value="Delhi">Delhi</option>
-                          <option value="Jammu and Kashmir">
-                            Jammu and Kashmir
-                          </option>
-                          <option value="Ladakh">Ladakh</option>
-                          <option value="Lakshadweep">Lakshadweep</option>
-                          <option value="Puducherry">Puducherry</option>
+                          {STATES.map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
                         </Field>
                       </div>
                       <ErrorMessage
@@ -469,275 +606,155 @@ const CreateStore = () => {
                   </fieldset>
 
                   {/* PHONE */}
-                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                      }}
-                    >
-                      <div className="body-title">
-                        Phone <span className="tf-color-1">*</span>
-                      </div>
-                      <Field
-                        type="text"
-                        name="phone"
-                        placeholder="Enter phone number"
-                        maxLength={10}
-                        style={{ width: "100%" }}
-                      />
-                      <ErrorMessage
-                        name="phone"
-                        component="p"
-                        className="error-text"
-                      />
-                    </div>
-                  </fieldset>
+                  <TextField
+                    name="phone"
+                    label="Phone"
+                    required
+                    placeholder="10 digit mobile number"
+                    filter={filters.phone}
+                    maxLength={LIMITS.phone}
+                    setFieldValue={setFieldValue}
+                    value={values.phone}
+                    inputMode="numeric"
+                  />
 
-                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                      }}
-                    >
-                      <div className="body-title">
-                        Contact Person <span className="tf-color-1">*</span>
-                      </div>
-                      <Field
-                        type="text"
-                        name="contact_person_name"
-                        placeholder="Enter contact person name"
-                        style={{ width: "100%" }}
-                      />
-                      <ErrorMessage
-                        name="contact_person_name"
-                        component="p"
-                        className="error-text"
-                      />
-                    </div>
-                  </fieldset>
+                  {/* CONTACT PERSON */}
+                  <TextField
+                    name="contact_person_name"
+                    label="Contact Person"
+                    required
+                    placeholder="Enter contact person name"
+                    filter={filters.contact}
+                    maxLength={LIMITS.contact}
+                    setFieldValue={setFieldValue}
+                    value={values.contact_person_name}
+                  />
 
-                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                      }}
-                    >
-                      <div className="body-title">
-                        GSTIN <span className="tf-color-1">*</span>
-                      </div>
-                      <Field
-                        type="text"
-                        name="gstin"
-                        placeholder="Enter GSTIN"
-                        style={{ width: "100%" }}
-                      />
-                      <ErrorMessage
-                        name="gstin"
-                        component="p"
-                        className="error-text"
-                      />
-                    </div>
-                  </fieldset>
+                  {/* GSTIN */}
+                  <TextField
+                    name="gstin"
+                    label="GSTIN"
+                    required
+                    placeholder="e.g. 24AAAAA0000A1Z5"
+                    filter={filters.gstin}
+                    maxLength={LIMITS.gstin}
+                    setFieldValue={setFieldValue}
+                    value={values.gstin}
+                  />
 
                   {selectedFeatures.includes("pharmacy") && (
                     <>
-                      <fieldset
-                        style={{ border: "none", padding: 0, margin: 0 }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "8px",
-                          }}
-                        >
-                          <div className="body-title">
-                            Drug Licence No.{" "}
-                            <span className="tf-color-1">*</span>
-                          </div>
-                          <Field
-                            type="text"
-                            name="drug_licence_no"
-                            placeholder="Enter drug licence number"
-                            style={{ width: "100%" }}
-                          />
-                          <ErrorMessage
-                            name="drug_licence_no"
-                            component="p"
-                            className="error-text"
-                          />
-                        </div>
-                      </fieldset>
+                      <TextField
+                        name="drug_licence_no"
+                        label="Drug Licence No."
+                        required
+                        placeholder="Enter drug licence number"
+                        filter={filters.licence}
+                        maxLength={LIMITS.licence}
+                        setFieldValue={setFieldValue}
+                        value={values.drug_licence_no}
+                      />
 
-                      <fieldset
-                        style={{ border: "none", padding: 0, margin: 0 }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "8px",
-                          }}
-                        >
-                          <div className="body-title">
-                            Pharmacist Name{" "}
-                            <span className="tf-color-1">*</span>
-                          </div>
-                          <Field
-                            type="text"
-                            name="pharmacist_name"
-                            placeholder="Enter pharmacist name"
-                            style={{ width: "100%" }}
-                          />
-                          <ErrorMessage
-                            name="pharmacist_name"
-                            component="p"
-                            className="error-text"
-                          />
-                        </div>
-                      </fieldset>
+                      <TextField
+                        name="pharmacist_name"
+                        label="Pharmacist Name"
+                        required
+                        placeholder="Enter pharmacist name"
+                        filter={filters.pharmacist}
+                        maxLength={LIMITS.pharmacist}
+                        setFieldValue={setFieldValue}
+                        value={values.pharmacist_name}
+                      />
 
-                      <fieldset
-                        style={{ border: "none", padding: 0, margin: 0 }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "8px",
-                          }}
-                        >
-                          <div className="body-title">Pharmacist Reg. No.</div>
-                          <Field
-                            type="text"
-                            name="pharmacist_reg_no"
-                            placeholder="Enter registration number"
-                            style={{ width: "100%" }}
-                          />
-                          <ErrorMessage
-                            name="pharmacist_reg_no"
-                            component="p"
-                            className="error-text"
-                          />
-                        </div>
-                      </fieldset>
+                      <TextField
+                        name="pharmacist_reg_no"
+                        label="Pharmacist Reg. No."
+                        placeholder="Enter registration number"
+                        filter={filters.regNo}
+                        maxLength={LIMITS.regNo}
+                        setFieldValue={setFieldValue}
+                        value={values.pharmacist_reg_no}
+                      />
                     </>
                   )}
 
-                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                      }}
-                    >
-                      <div className="body-title">
-                        Username <span className="tf-color-1">*</span>
-                      </div>
-                      <Field
-                        type="text"
-                        name="username"
-                        placeholder="Enter username"
-                        style={{ width: "100%" }}
-                      />
-                      <ErrorMessage
-                        name="username"
-                        component="p"
-                        className="error-text"
-                      />
-                    </div>
-                  </fieldset>
+                  {/* USERNAME */}
+                  <TextField
+                    name="username"
+                    label="Username"
+                    required
+                    placeholder="Letters, numbers, underscore"
+                    filter={filters.username}
+                    maxLength={LIMITS.username}
+                    setFieldValue={setFieldValue}
+                    value={values.username}
+                  />
 
-                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                      }}
-                    >
-                      <div className="body-title">
-                        Password{" "}
-                        {!isEdit && <span className="tf-color-1">*</span>}
-                      </div>
-                      <Field
-                        type="text"
-                        name="password"
-                        placeholder={
-                          isEdit
-                            ? "Leave blank to keep current password"
-                            : "Enter password"
-                        }
-                        style={{ width: "100%" }}
-                      />
-                      <ErrorMessage
-                        name="password"
-                        component="p"
-                        className="error-text"
-                      />
-                    </div>
-                  </fieldset>
+                  {/* PASSWORD */}
+                  <TextField
+                    name="password"
+                    label="Password"
+                    required={!isEdit}
+                    placeholder={
+                      isEdit
+                        ? "Leave blank to keep current password"
+                        : "6 to 12 characters"
+                    }
+                    filter={filters.password}
+                    maxLength={LIMITS.password}
+                    setFieldValue={setFieldValue}
+                    value={values.password}
+                    autoComplete="new-password"
+                  />
 
-                  <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                      }}
-                    >
-                      <div className="body-title">
-                        Confirm Password{" "}
-                        {!isEdit && <span className="tf-color-1">*</span>}
-                      </div>
-                      <Field
-                        type="text"
-                        name="password_confirmation"
-                        placeholder="Re-enter password"
-                        style={{ width: "100%" }}
-                      />
-                      <ErrorMessage
-                        name="password_confirmation"
-                        component="p"
-                        className="error-text"
-                      />
-                    </div>
-                  </fieldset>
+                  {/* CONFIRM PASSWORD */}
+                  <TextField
+                    name="password_confirmation"
+                    label="Confirm Password"
+                    required={!isEdit}
+                    placeholder="Re-enter password"
+                    filter={filters.password}
+                    maxLength={LIMITS.password}
+                    setFieldValue={setFieldValue}
+                    value={values.password_confirmation}
+                    autoComplete="new-password"
+                  />
 
-                  <fieldset
-                    style={{
-                      border: "none",
-                      padding: 0,
-                      margin: 0,
-                      gridColumn: "1 / -1",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                      }}
-                    >
+                  </div>
+
+                  {/* LOGO */}
+                  <fieldset style={{ ...fieldsetStyle, width: "100%", marginTop: "20px" }}>
+                    <div style={columnStyle}>
                       <div className="body-title">
                         Logo {!isEdit && <span className="tf-color-1">*</span>}
                       </div>
                       <input
                         type="file"
                         name="logo"
-                        accept="image/*"
+                        accept="image/png, image/jpeg, image/jpg"
                         onChange={(event) => {
-                          setFieldValue("logo", event.currentTarget.files[0]);
+                          const file = event.currentTarget.files[0];
+                          if (!file) return;
+
+                          if (!LOGO_TYPES.includes(file.type)) {
+                            toast.error("Only jpeg, jpg or png image allowed.");
+                            event.currentTarget.value = "";
+                            return;
+                          }
+                          if (file.size > LOGO_MAX_MB * 1024 * 1024) {
+                            toast.error(
+                              `Logo must be smaller than ${LOGO_MAX_MB}MB.`,
+                            );
+                            event.currentTarget.value = "";
+                            return;
+                          }
+                          setFieldValue("logo", file);
                         }}
                         style={{ width: "100%" }}
                       />
+                      <small style={{ color: "#94a3b8", fontSize: "12px" }}>
+                        JPG or PNG, maximum {LOGO_MAX_MB}MB
+                      </small>
                       <ErrorMessage
                         name="logo"
                         component="p"
@@ -759,14 +776,10 @@ const CreateStore = () => {
                     </div>
                   </fieldset>
 
+                  {/* E-COMMERCE YES / NO */}
                   {featureCatalog.online_store && (
                     <fieldset
-                      style={{
-                        border: "none",
-                        padding: 0,
-                        margin: 0,
-                        gridColumn: "1 / -1",
-                      }}
+                      style={{ ...fieldsetStyle, width: "100%", marginTop: "20px" }}
                     >
                       <div
                         style={{
@@ -847,21 +860,9 @@ const CreateStore = () => {
                     </fieldset>
                   )}
 
-                  <fieldset
-                    style={{
-                      border: "none",
-                      padding: 0,
-                      margin: 0,
-                      gridColumn: "1 / -1",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                      }}
-                    >
+                  {/* FEATURES */}
+                  <fieldset style={{ ...fieldsetStyle, width: "100%", marginTop: "20px" }}>
+                    <div style={columnStyle}>
                       <div
                         style={{
                           display: "flex",
@@ -892,8 +893,7 @@ const CreateStore = () => {
                               fontWeight: 500,
                             }}
                           >
-                            {selectedCount} of {featureKeys.length}{" "}
-                            selected
+                            {selectedCount} of {featureKeys.length} selected
                           </span>
                         </div>
 
@@ -935,65 +935,88 @@ const CreateStore = () => {
                         </label>
                       </div>
 
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(10, 1fr)",
-                          gap: "14px",
-                        }}
-                      >
+                      {/* Desktop par 1 line mein 3, tablet par 2, mobile par 1 */}
+                      <style>{`
+                        .feature-grid {
+                          display: grid;
+                          grid-template-columns: repeat(3, minmax(0, 1fr));
+                          gap: 14px;
+                          width: 50vw;
+                        }
+                        @media (max-width: 991px) {
+                          .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                        }
+                        @media (max-width: 575px) {
+                          .feature-grid { grid-template-columns: minmax(0, 1fr); }
+                        }
+                      `}</style>
+                      <div className="feature-grid">
                         {Object.entries(featureCatalog)
                           .filter(([key]) => key !== ECOMMERCE_KEY)
                           .map(([key, info]) => {
-                          const isSelected = selectedFeatures.includes(key);
+                            const isSelected = selectedFeatures.includes(key);
 
-                          return (
-                            <label
-                              key={key}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "10px",
-                                padding: "13px 14px",
-                                borderRadius: "6px",
-                                border: isSelected
-                                  ? "1px solid #60a5fa"
-                                  : "1px solid #e2e8f0",
-                                backgroundColor: isSelected
-                                  ? "#eff6ff"
-                                  : "#ffffff",
-                                color: isSelected ? "#1d4ed8" : "#374151",
-                                cursor: "pointer",
-                                fontWeight: isSelected ? 600 : 400,
-                                transition: "all 0.2s ease",
-                                boxShadow: isSelected
-                                  ? "0 4px 10px rgba(37, 99, 235, 0.12)"
-                                  : "0 2px 5px rgba(15, 23, 42, 0.05)",
-                              }}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => toggleFeature(key)}
+                            return (
+                              <label
+                                key={key}
                                 style={{
-                                  width: "16px",
-                                  height: "16px",
-                                  accentColor: "#3b82f6",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "10px",
+                                  padding: "13px 14px",
+                                  minHeight: "56px",
+                                  minWidth: 0,
+                                  borderRadius: "6px",
+                                  border: isSelected
+                                    ? "1px solid #60a5fa"
+                                    : "1px solid #e2e8f0",
+                                  backgroundColor: isSelected
+                                    ? "#eff6ff"
+                                    : "#ffffff",
+                                  color: isSelected ? "#1d4ed8" : "#374151",
                                   cursor: "pointer",
+                                  fontWeight: isSelected ? 600 : 400,
+                                  transition: "all 0.2s ease",
+                                  boxShadow: isSelected
+                                    ? "0 4px 10px rgba(37, 99, 235, 0.12)"
+                                    : "0 2px 5px rgba(15, 23, 42, 0.05)",
                                 }}
-                              />
-                              {info.icon && <span>{info.icon}</span>}
-                              <span style={{ fontSize: "14px" }}>
-                                {info.label}
-                              </span>
-                            </label>
-                          );
-                        })}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => toggleFeature(key)}
+                                  style={{
+                                    width: "16px",
+                                    height: "16px",
+                                    flexShrink: 0,
+                                    accentColor: "#3b82f6",
+                                    cursor: "pointer",
+                                  }}
+                                />
+                                {info.icon && (
+                                  <span style={{ flexShrink: 0 }}>
+                                    {info.icon}
+                                  </span>
+                                )}
+                                <span
+                                  style={{
+                                    fontSize: "14px",
+                                    lineHeight: 1.35,
+                                    wordBreak: "break-word",
+                                    minWidth: 0,
+                                  }}
+                                >
+                                  {info.label}
+                                </span>
+                              </label>
+                            );
+                          })}
                       </div>
                     </div>
                   </fieldset>
 
-                  <div className="bot" style={{ gridColumn: "1 / -1" }}>
+                  <div className="bot" style={{ width: "100%", marginTop: "20px" }}>
                     <button
                       className="tf-button w208"
                       type="submit"

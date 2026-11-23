@@ -451,7 +451,7 @@ const ledgerStyles = `
 
   .payment-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
     margin-bottom: 12px;
   }
@@ -490,15 +490,244 @@ const ledgerStyles = `
   }
 `;
 
+/* ------------------------------------------------------------------ */
+/*  Validation helpers                                                 */
+/* ------------------------------------------------------------------ */
+
+const MIN_BILL_DATE = "2000-01-01";
+const MAX_LINES = 200;
+const MAX_MONEY = 99999999;
+const MAX_QTY = 999999;
+const NEAR_EXPIRY_DAYS = 90;
+
+const BILL_NO_PATTERN = /^[A-Za-z0-9][A-Za-z0-9/\-_. ]*$/;
+const BATCH_PATTERN = /^[A-Za-z0-9][A-Za-z0-9/\-_. ]*$/;
+const REF_PATTERN = /^[A-Za-z0-9][A-Za-z0-9/\-_. #]*$/;
+const SUPPLIER_PATTERN = /^[\p{L}\p{N}][\p{L}\p{N}\s&.,'()/-]*$/u;
+
+const pad = (n) => String(n).padStart(2, "0");
+
+// Local date (toISOString nahi, warna IST me subah date ek din peeche aati hai)
+const daysFromToday = (n = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+const todayISO = () => daysFromToday(0);
+
+// yyyy-mm-dd ya dd-mm-yyyy dono accept; real calendar date ho to "yyyy-mm-dd" lautata hai, warna ""
+const toISODate = (value) => {
+  if (!value) return "";
+  const s = String(value).trim().split("T")[0].replace(/\//g, "-");
+  let y;
+  let mo;
+  let d;
+  const iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  const dmy = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (iso) {
+    y = Number(iso[1]);
+    mo = Number(iso[2]);
+    d = Number(iso[3]);
+  } else if (dmy) {
+    d = Number(dmy[1]);
+    mo = Number(dmy[2]);
+    y = Number(dmy[3]);
+  } else {
+    return "";
+  }
+  const dt = new Date(y, mo - 1, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) {
+    return "";
+  }
+  return `${y}-${pad(mo)}-${pad(d)}`;
+};
+
+const num = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+const round4 = (n) => Math.round((n + Number.EPSILON) * 10000) / 10000;
+
+// Trailing zeros ignore (DB se "45.0000" aaye to galat error na aaye)
+const decimalsOf = (v) => {
+  const s = String(v ?? "");
+  const i = s.indexOf(".");
+  if (i === -1) return 0;
+  return s.slice(i + 1).replace(/0+$/, "").length;
+};
+
+const numField = (
+  label,
+  { required = false, min = 0, moreThan, max, decimals = 2, emptyAs } = {},
+) => {
+  let s = Yup.number()
+    .transform((value, original) => {
+      if (original === "" || original === null || original === undefined) {
+        return emptyAs !== undefined ? emptyAs : undefined;
+      }
+      return value;
+    })
+    .typeError(`${label} must be a number`);
+
+  if (required) s = s.required(`${label} is required`);
+  else s = s.nullable();
+
+  if (moreThan !== undefined) {
+    s = s.moreThan(moreThan, `${label} must be greater than ${moreThan}`);
+  } else {
+    s = s.min(min, `${label} cannot be negative`);
+  }
+  if (max !== undefined) {
+    s = s.max(max, `${label} cannot exceed ${max.toLocaleString("en-IN")}`);
+  }
+  s = s.test(
+    "max-decimals",
+    `${label} can have at most ${decimals} decimal place${decimals === 1 ? "" : "s"}`,
+    function () {
+      return decimalsOf(this.originalValue) <= decimals;
+    },
+  );
+  return s;
+};
+
+const sanitizers = {
+  billNo: (v) =>
+    String(v ?? "")
+      .replace(/[^A-Za-z0-9/\-_. ]/g, "")
+      .replace(/\s{2,}/g, " ")
+      .replace(/^[^A-Za-z0-9]+/, "")
+      .slice(0, 20),
+  hsn: (v) => String(v ?? "").replace(/\D/g, "").slice(0, 8),
+  batch: (v) =>
+    String(v ?? "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9/\-_. ]/g, "")
+      .replace(/\s{2,}/g, " ")
+      .replace(/^[^A-Z0-9]+/, "")
+      .slice(0, 50),
+  reference: (v) =>
+    String(v ?? "")
+      .replace(/[^A-Za-z0-9/\-_. #]/g, "")
+      .replace(/\s{2,}/g, " ")
+      .replace(/^[^A-Za-z0-9]+/, "")
+      .slice(0, 50),
+};
+
+function validateSupplierForm(name, state, suppliers) {
+  const errors = {};
+  const value = String(name || "").replace(/\s+/g, " ").trim();
+  if (!value) errors.name = "Supplier name is required.";
+  else if (value.length < 3) errors.name = "Supplier name must be at least 3 characters.";
+  else if (value.length > 100) errors.name = "Supplier name can be at most 100 characters.";
+  else if (!SUPPLIER_PATTERN.test(value)) {
+    errors.name = "Use only letters, numbers, spaces and & . , ' ( ) / - in the name.";
+  } else if (
+    suppliers.some(
+      (s) =>
+        String(s.name || "").replace(/\s+/g, " ").trim().toLowerCase() ===
+        value.toLowerCase(),
+    )
+  ) {
+    errors.name = "A supplier with this name already exists.";
+  }
+  if (!state) errors.state = "Select the supplier's state (needed for GST).";
+  return { errors, value };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Small form pieces                                                  */
+/* ------------------------------------------------------------------ */
+
+// Number fields: e, +, - block; decimals limit; scroll se value na badle
+function LiveFormikField({ name, decimals = 2, sanitize, ...props }) {
+  const [field] = useField(name);
+  const { setFieldTouched, setFieldValue } = useFormikContext();
+  const isNumber = props.type === "number";
+
+  return (
+    <input
+      {...field}
+      {...props}
+      value={field.value ?? ""}
+      {...(isNumber ? { min: 0, step: "any", inputMode: "decimal" } : {})}
+      onKeyDown={(e) => {
+        if (isNumber && ["e", "E", "+", "-"].includes(e.key)) e.preventDefault();
+        props.onKeyDown?.(e);
+      }}
+      onWheel={(e) => e.target.blur()}
+      onChange={(e) => {
+        const v = e.target.value;
+
+        if (sanitize) {
+          setFieldTouched(name, true, false);
+          setFieldValue(name, sanitize(v));
+          return;
+        }
+
+        if (isNumber && v !== "") {
+          if (decimals === 0 && v.includes(".")) return;
+          const frac = v.split(".")[1];
+          if (frac && frac.length > decimals) return;
+        }
+
+        setFieldTouched(name, true, false);
+        field.onChange(e);
+      }}
+    />
+  );
+}
+
+// Submit galat ho to pehle error tak scroll + toast
+function ScrollToFirstError() {
+  const { submitCount, isValid, isSubmitting } = useFormikContext();
+
+  useEffect(() => {
+    if (submitCount > 0 && !isValid && !isSubmitting) {
+      toast.error("Please fix the highlighted errors before saving.", {
+        toastId: "pb-invalid-form",
+      });
+      setTimeout(() => {
+        document
+          .querySelector(".pb-page .error-text, .pb-page .field-error")
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 60);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submitCount, isSubmitting]);
+
+  return null;
+}
+
+const readUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("user_detail")) || {};
+  } catch {
+    return {};
+  }
+};
+
+const emptyLine = () => ({
+  product_id: "",
+  qty: "",
+  free_qty: "",
+  purchase_rate: "",
+  mrp: "",
+  selling_price: "",
+  discount_type: "",
+  discount: "",
+  hsn_code: "",
+  gst_rate_id: "",
+  batch_no: "",
+  expiry_date: "",
+  is_opening: false,
+});
+
 const CreateEditPurchaseBill = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { id } = useParams();
   const navigate = useNavigate();
   const appData = useAppData();
-  // const branches = appData?.branches || [];
-  // const [suppliers, setSupplierBill] = useState([]);
-  // const [products, setProducts] = useState([]);
-  // const [gstRates, setGstRates] = useState([]);
   const [billImage, setBillImage] = useState(null);
   const [isScanningBill, setIsScanningBill] = useState(false);
   const branches = appData?.branches || [];
@@ -516,7 +745,9 @@ const CreateEditPurchaseBill = () => {
   const [newSupplier, setNewSupplier] = useState("");
   const [supplierState, setSupplierState] = useState("");
   const [error, setError] = useState("");
-  const user_data = JSON.parse(localStorage.getItem("user_detail"));
+  const [stateError, setStateError] = useState("");
+  const [savingSupplier, setSavingSupplier] = useState(false);
+  const user_data = readUser();
   const store_purchase_bill = localStorage.getItem("purchase_bills_create");
   // Parse once per actual localStorage value change, not on every render.
   // This keeps incomingBill's object reference stable and prevents the edit
@@ -544,23 +775,7 @@ const CreateEditPurchaseBill = () => {
     settlement_amount: "",
     notes: "",
     is_lost: 0,
-    lines: [
-      {
-        product_id: "",
-        qty: "",
-        free_qty: "",
-        purchase_rate: "",
-        mrp: "",
-        selling_price: "",
-        discount_type: "",
-        discount: "",
-        hsn_code: "",
-        gst_rate_id: "",
-        batch_no: "",
-        expiry_date: "",
-        is_opening: false,
-      },
-    ],
+    lines: [emptyLine()],
     payments: [],
   });
 
@@ -644,6 +859,9 @@ const CreateEditPurchaseBill = () => {
       }
     } catch (error) {
       console.error("Error fetching purchase bill:", error);
+      toast.error(
+        error.response?.data?.message || "Could not load this purchase bill.",
+      );
     }
   };
 
@@ -680,256 +898,447 @@ const CreateEditPurchaseBill = () => {
       .toFixed(2)
       .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-  const parseDateString = (value, originalValue) => {
-    if (typeof originalValue === "string" && originalValue.trim() !== "") {
-      const parts = originalValue.split("-");
-      if (parts.length === 3) {
-        const [day, month, year] = parts.map(Number);
-        return new Date(year, month - 1, day);
-      }
+  const findProduct = (productId) =>
+    products.find((p) => String(p.id) === String(productId));
+
+  /* ---------- totals (render + validation dono yahi use karte hain) ---------- */
+  const calcGrandTotal = (values) =>
+    (values.lines || []).reduce((sum, line) => {
+      const qty = Number(line.qty) || 0;
+      const purchaseRate = Number(line.purchase_rate) || 0;
+      const discount = Number(line.discount || 0);
+      const discountType = line.discount_type;
+      const gstRate = getGstRate(line.gst_rate_id);
+
+      if (!qty || !purchaseRate) return sum;
+
+      const grossValue =
+        values.tax_type === "inclusive"
+          ? qty * (purchaseRate / (1 + gstRate / 100))
+          : qty * purchaseRate;
+
+      const discountAmount =
+        discountType === "percent" ? grossValue * (discount / 100) : discount;
+
+      const taxable = Math.max(0, grossValue - discountAmount);
+      const totalTax = (taxable * gstRate) / 100;
+
+      return sum + (taxable + totalTax);
+    }, 0);
+
+  const effectiveTotalOf = (values) => {
+    if (
+      values.settlement_amount !== "" &&
+      values.settlement_amount != null &&
+      !isNaN(Number(values.settlement_amount))
+    ) {
+      return Number(values.settlement_amount);
     }
-    return value;
+    if (incomingBill?.total_amount) return Number(incomingBill.total_amount);
+    return calcGrandTotal(values);
   };
 
-  const LiveFormikField = ({ name, ...props }) => {
-  const [field] = useField(name);
-  const { setFieldTouched } = useFormikContext();
+  /* ---------- validation schema ---------- */
+  const validationSchema = Yup.object()
+    .shape({
+      branch_id: Yup.string().required("Branch is required"),
 
-  return (
-    <input
-      {...field}
-      {...props}
-      onChange={(e) => {
-        setFieldTouched(name, true, false);
-        field.onChange(e);
-      }}
-    />
-  );
-};
+      supplier_id: Yup.string()
+        .required("Supplier is required")
+        .test(
+          "not-add-new",
+          "Select a supplier or save the new one first",
+          (value) => value !== "add_new",
+        ),
 
-  const validationSchema = Yup.object().shape({
-    branch_id: Yup.string().required("Branch is required"),
+      bill_no: Yup.string()
+        .trim()
+        .required("Bill No is required")
+        .max(20, "Bill No can be at most 20 characters")
+        .matches(
+          BILL_NO_PATTERN,
+          "Bill No can contain only letters, numbers and / - _ .",
+        ),
 
-    supplier_id: Yup.string().required("Supplier is required"),
+      bill_date: Yup.string()
+        .required("Bill date is required")
+        .test("valid-bill-date", function (value) {
+          const iso = toISODate(value);
+          if (!iso) return this.createError({ message: "Enter a valid bill date" });
+          if (iso > todayISO()) {
+            return this.createError({ message: "Bill date cannot be in the future" });
+          }
+          if (iso < MIN_BILL_DATE) {
+            return this.createError({ message: "Bill date is too old. Check the year" });
+          }
+          return true;
+        }),
 
-    bill_no: Yup.string().required("Bill No is required"),
+      tax_type: Yup.string()
+        .oneOf(["inclusive", "exclusive"], "Select a tax billing type")
+        .required("Select a tax billing type"),
 
-    bill_date: Yup.date()
-      .transform(parseDateString)
-      .typeError("Invalid date format")
-      .required("Bill date is required"),
+      settlement_amount: numField("Settlement amount", {
+        required: true,
+        max: MAX_MONEY,
+        decimals: 2,
+      }),
 
-    tax_type: Yup.string().oneOf(["inclusive", "exclusive"]).required(),
+      notes: Yup.string()
+        .nullable()
+        .max(500, "Remarks can be at most 500 characters"),
 
-    settlement_amount: Yup.number()
-      .transform((value, originalValue) =>
-        originalValue === "" ? null : value
-      )
-      .typeError("Settlement amount must be a number")
-      .required("Settlement amount is required")
-      .min(0, "Cannot be negative")
-      .max(9999999999, "Settlement amount is too large"),
+      lines: Yup.array()
+        .min(1, "At least one product is required")
+        .max(MAX_LINES, `A bill can have at most ${MAX_LINES} product lines`)
+        .of(
+          Yup.object().shape({
+            product_id: Yup.string()
+              .required("Select a product")
+              .test(
+                "not-add-new",
+                "Select a product or save the new one first",
+                (value) => value !== "add_new",
+              ),
 
-    notes: Yup.string().nullable(),
+            qty: numField("Quantity", {
+              required: true,
+              moreThan: 0,
+              max: MAX_QTY,
+              decimals: 3,
+            }).test(
+              "whole-qty",
+              "Quantity must be a whole number for this product",
+              function (value) {
+                if (value == null) return true;
+                const p = findProduct(this.parent.product_id);
+                if (p?.sale_type === "weight") return true;
+                return Number.isInteger(value);
+              },
+            ),
 
+            free_qty: numField("Free quantity", {
+              max: MAX_QTY,
+              decimals: 3,
+              emptyAs: 0,
+            }).test(
+              "whole-free-qty",
+              "Free quantity must be a whole number for this product",
+              function (value) {
+                if (value == null) return true;
+                const p = findProduct(this.parent.product_id);
+                if (p?.sale_type === "weight") return true;
+                return Number.isInteger(value);
+              },
+            ),
 
-    lines: Yup.array()
-      .min(1, "At least one product is required")
-      .of(
-        Yup.object().shape({
-          product_id: Yup.string()
-            .required("Product is required"),
+            purchase_rate: numField("Purchase rate", {
+              required: true,
+              moreThan: 0,
+              max: MAX_MONEY,
+              decimals: 4,
+            }).test(
+              "rate-le-mrp",
+              "Purchase rate cannot be greater than MRP",
+              function (value) {
+                const mrp = num(this.parent.mrp);
+                return !mrp || value == null || value <= mrp;
+              },
+            ),
 
-          // Quantity
-          qty: Yup.number()
-            .transform((value, originalValue) =>
-              originalValue === "" ? undefined : value
-            )
-            .typeError("Quantity must be a number")
-            .required("Quantity is required")
-            .moreThan(0, "Quantity must be greater than 0")
-            .max(999999, "Quantity cannot exceed 999999"),
+            mrp: numField("MRP", {
+              required: true,
+              min: 0,
+              max: MAX_MONEY,
+              decimals: 2,
+            }),
 
-          // Free Quantity
-          free_qty: Yup.number()
-            .transform((value, originalValue) =>
-              originalValue === "" ? 0 : value
-            )
-            .typeError("Free quantity must be a number")
-            .nullable()
-            .min(0, "Free quantity cannot be negative")
-            .max(999999, "Free quantity cannot exceed 999999"),
-
-          purchase_rate: Yup.number()
-            .transform((value, originalValue) =>
-              originalValue === "" ? undefined : value
-            )
-            .typeError("Purchase rate must be a number")
-            .required("Purchase rate is required")
-            .min(0, "Rate cannot be negative")
-            .max(99999999, "Purchase rate is too large"),
-
-          // MRP
-          mrp: Yup.number()
-            .transform((value, originalValue) =>
-              originalValue === "" ? undefined : value
-            )
-            .typeError("MRP must be a number")
-            .required("MRP is required")
-            .min(0, "MRP cannot be negative")
-            .max(99999999, "MRP is too large"),
-
-          // Selling Price
-          selling_price: Yup.number()
-            .transform((value, originalValue) =>
-              originalValue === "" ? undefined : value
-            )
-            .typeError("Selling price must be a number")
-            .required("Selling price is required")
-            .min(0, "Selling price cannot be negative")
-            .max(99999999, "Selling price is too large")
-            .test(
+            selling_price: numField("Selling price", {
+              required: true,
+              min: 0,
+              max: MAX_MONEY,
+              decimals: 2,
+            }).test(
               "sp-le-mrp",
               "Selling price cannot be greater than MRP",
               function (value) {
-                if (!isPharmacy) return true;
-
-                const mrp = Number(this.parent.mrp);
+                const mrp = num(this.parent.mrp);
                 return !mrp || value == null || value <= mrp;
-              }
+              },
             ),
 
-          // HSN Code
-          hsn_code: Yup.string()
-            .nullable()
-            .transform((value) => value?.trim() || "")
-            .matches(
-              /^$|^\d{4}$|^\d{6}$|^\d{8}$/,
-              "HSN must be 4, 6 or 8 digits"
-            ),
-
-          // Batch Number
-          batch_no: isPharmacy
-            ? Yup.string()
-              .trim()
-              .required("Batch number is required")
-              .max(50, "Batch number cannot exceed 50 characters")
-            : Yup.string().nullable(),
-
-          discount_type: Yup.string()
-            .nullable()
-            .oneOf(["percent", "fixed", ""], "Invalid discount type"),
-          // Discount
-          discount: Yup.number()
-            .transform((value, originalValue) =>
-              originalValue === "" ? 0 : value
-            )
-            .typeError("Discount must be a number")
-            .nullable()
-            .min(0, "Discount cannot be negative")
-            .max(100, "Discount cannot exceed 100"),
-
-          gst_rate_id: Yup.string().required("GST rate required"),
-
-          expiry_date: isPharmacy
-            ? Yup.string()
-              .transform(parseDateString)
-              .required("Expiry date is required")
-              .matches(
-                /^\d{4}-\d{2}-\d{2}$/,
-                "Enter expiry date in DD-MM-YYYY format"
-              )
-              .test("valid-calendar-date", "Enter a valid expiry date", (value) => {
-                if (!value) return false;
-
-                const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-                if (!match) return false;
-
-                const year = Number(match[1]);
-                const month = Number(match[2]);
-                const day = Number(match[3]);
-
-                const date = new Date(year, month - 1, day);
-
-                return (
-                  date.getFullYear() === year &&
-                  date.getMonth() === month - 1 &&
-                  date.getDate() === day
-                );
-              })
-            : Yup.string()
+            hsn_code: Yup.string()
               .nullable()
-              .test("valid-calendar-date", "Enter a valid expiry date", (value) => {
-                if (!value) return true;
+              .transform((value) => value?.trim() || "")
+              .matches(
+                /^$|^\d{4}$|^\d{6}$|^\d{8}$/,
+                "HSN must be 4, 6 or 8 digits",
+              ),
 
-                const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-                if (!match) return false;
+            batch_no: (isPharmacy
+              ? Yup.string()
+                .trim()
+                .required("Batch number is required")
+              : Yup.string().nullable().trim()
+            )
+              .max(50, "Batch number cannot exceed 50 characters")
+              .test(
+                "batch-chars",
+                "Batch can contain only letters, numbers and / - _ .",
+                (value) => !value || BATCH_PATTERN.test(value),
+              ),
 
-                const year = Number(match[1]);
-                const month = Number(match[2]);
-                const day = Number(match[3]);
+            discount_type: Yup.string()
+              .nullable()
+              .oneOf(["percent", "fixed", "", null], "Invalid discount type"),
 
-                const date = new Date(year, month - 1, day);
+            discount: numField("Discount", {
+              max: MAX_MONEY,
+              decimals: 2,
+              emptyAs: 0,
+            }).test("discount-rules", function (value) {
+              const d = num(value);
+              if (!d) return true;
+              const { discount_type: type, qty, purchase_rate: rate } = this.parent;
+              if (!type) {
+                return this.createError({ message: "Select a discount type (% or ₹)" });
+              }
+              if (type === "percent" && d > 100) {
+                return this.createError({ message: "Percent discount cannot exceed 100" });
+              }
+              if (type === "fixed") {
+                const gross = num(qty) * num(rate);
+                if (gross && d > gross) {
+                  return this.createError({
+                    message: `Discount cannot exceed the line amount (₹${formatAmount(gross)})`,
+                  });
+                }
+              }
+              return true;
+            }),
 
-                return (
-                  date.getFullYear() === year &&
-                  date.getMonth() === month - 1 &&
-                  date.getDate() === day
-                );
+            gst_rate_id: Yup.string()
+              .required("GST rate required")
+              .test(
+                "gst-exists",
+                "Select a valid GST rate",
+                (value) =>
+                  !gstRates.length ||
+                  gstRates.some((g) => String(g.id) === String(value)),
+              ),
+
+            expiry_date: Yup.string()
+              .nullable()
+              .test("expiry-format", function (value) {
+                const raw = String(value || "").trim();
+                if (!raw) {
+                  return isPharmacy
+                    ? this.createError({ message: "Expiry date is required" })
+                    : true;
+                }
+                if (!toISODate(raw)) {
+                  return this.createError({ message: "Enter a valid expiry date" });
+                }
+                return true;
               }),
+          }),
+        ),
+
+      payments: Yup.array().of(
+        Yup.object().shape({
+          amount: numField("Amount", {
+            required: true,
+            moreThan: 0,
+            max: MAX_MONEY,
+            decimals: 2,
+          }),
+
+          method: Yup.string()
+            .required("Method is required")
+            .oneOf(["cash", "online", "bank"], "Invalid payment method"),
+
+          reference: Yup.string()
+            .nullable()
+            .trim()
+            .max(50, "Reference can be at most 50 characters")
+            .test(
+              "ref-chars",
+              "Reference can contain only letters, numbers and / - _ . #",
+              (value) => !value || REF_PATTERN.test(value),
+            )
+            .test(
+              "ref-required",
+              "Reference / transaction ID is required for online and bank payments (min 4 characters)",
+              function (value) {
+                if (this.parent.method === "cash") return true;
+                return String(value || "").trim().length >= 4;
+              },
+            ),
+
+          payment_date: Yup.string()
+            .nullable()
+            .test("valid-payment-date", function (value) {
+              if (!value) return true;
+              const iso = toISODate(value);
+              if (!iso) return this.createError({ message: "Enter a valid payment date" });
+              if (iso > todayISO()) {
+                return this.createError({ message: "Payment date cannot be in the future" });
+              }
+              return true;
+            }),
         }),
       ),
-    payments: Yup.array().of(
-      Yup.object().shape({
-        amount: Yup.number()
-          .required("Amount is required")
-          .min(0.01, "Min amount is 0.01"),
+    })
+    // Cross-field rules (dates, duplicates, overpayment)
+    .test("cross-field-rules", "Invalid bill", function (raw) {
+      const v = this.originalValue || raw || {};
+      const errs = [];
+      const fail = (path, message) =>
+        errs.push(this.createError({ path, message }));
 
-        method: Yup.string()
-          .required("Method is required")
-          .oneOf(["cash", "online", "bank"], "Invalid payment method"),
+      const billDate = toISODate(v.bill_date);
+      const today = todayISO();
+      const maxExpiry = daysFromToday(3650);
 
-        reference: Yup.string().nullable(),
+      const seen = new Map();
+      (v.lines || []).forEach((line, i) => {
+        if (line.product_id && line.product_id !== "add_new") {
+          const key = [
+            line.product_id,
+            String(line.batch_no || "").trim().toUpperCase(),
+            toISODate(line.expiry_date),
+          ].join("|");
+          if (seen.has(key)) {
+            fail(
+              `lines[${i}].product_id`,
+              `Same product, batch and expiry as line ${seen.get(key) + 1}. Merge the quantities.`,
+            );
+          } else {
+            seen.set(key, i);
+          }
+        }
 
-        payment_date: Yup.date().transform(parseDateString).nullable(),
-      }),
-    ),
-  });
+        const exp = toISODate(line.expiry_date);
+        if (exp) {
+          if (billDate && exp < billDate) {
+            fail(`lines[${i}].expiry_date`, "Expiry cannot be before the bill date");
+          } else if (!isEdit && !line.is_opening && exp < today) {
+            fail(`lines[${i}].expiry_date`, "This item is already expired");
+          } else if (exp > maxExpiry) {
+            fail(`lines[${i}].expiry_date`, "Expiry is too far ahead (max 10 years). Check the year");
+          }
+        }
+      });
 
+      const payments = v.payments || [];
+      let paid = 0;
+      payments.forEach((p, i) => {
+        paid += num(p.amount);
+        const pd = toISODate(p.payment_date);
+        if (pd && billDate && pd < billDate) {
+          fail(`payments[${i}].payment_date`, "Payment date cannot be before the bill date");
+        }
+      });
+
+      if (payments.length) {
+        const total = effectiveTotalOf(v);
+        if (paid - total > 1) {
+          fail(
+            `payments[${payments.length - 1}].amount`,
+            `Total payments (₹${formatAmount(paid)}) exceed the bill total (₹${formatAmount(total)})`,
+          );
+        }
+      }
+
+      return errs.length ? new Yup.ValidationError(errs) : true;
+    });
+
+  /* ---------- submit ---------- */
   const handleSubmit = async (values, actions) => {
     try {
+      const settlement =
+        values.settlement_amount !== "" && values.settlement_amount != null
+          ? round2(Number(values.settlement_amount))
+          : null;
+
+      // Real-world sanity checks: block nahi karte, par save se pehle confirm karate hain
+      const warnings = [];
+      const calc = round2(calcGrandTotal(values));
+      if (
+        settlement != null &&
+        calc > 0 &&
+        Math.abs(settlement - calc) > Math.max(10, calc * 0.05)
+      ) {
+        warnings.push(
+          `Settlement amount (₹${formatAmount(settlement)}) differs a lot from the calculated total (₹${formatAmount(calc)}).`,
+        );
+      }
+
+      const belowCost = values.lines.filter(
+        (l) =>
+          num(l.selling_price) > 0 &&
+          num(l.purchase_rate) > 0 &&
+          num(l.selling_price) < num(l.purchase_rate),
+      ).length;
+      if (belowCost) {
+        warnings.push(
+          `${belowCost} line(s) have a selling price lower than the purchase rate (loss on sale).`,
+        );
+      }
+
+      const today = todayISO();
+      const soon = daysFromToday(NEAR_EXPIRY_DAYS);
+      const nearExpiry = values.lines.filter((l) => {
+        const e = toISODate(l.expiry_date);
+        return e && !l.is_opening && e >= today && e <= soon;
+      }).length;
+      if (nearExpiry) {
+        warnings.push(
+          `${nearExpiry} line(s) expire within ${NEAR_EXPIRY_DAYS} days.`,
+        );
+      }
+
+      if (
+        warnings.length &&
+        !window.confirm(
+          `Please review before saving:\n\n• ${warnings.join("\n• ")}\n\nSave anyway?`,
+        )
+      ) {
+        return;
+      }
+
       const payload = {
         branch_id: Number(values.branch_id),
         supplier_id: Number(values.supplier_id),
-        bill_no: values.bill_no,
-        bill_date: values.bill_date,
+        bill_no: String(values.bill_no).trim(),
+        bill_date: toISODate(values.bill_date),
         tax_type: values.tax_type,
-        settlement_amount:
-          values.settlement_amount !== "" && values.settlement_amount != null
-            ? Number(values.settlement_amount)
-            : null,
+        settlement_amount: settlement,
         notes: values.notes?.trim() || null,
         is_lost: isBillLost ? 1 : 0,
-        lines: values.lines.map((line) => ({
-          product_id: Number(line.product_id),
-          qty: Number(line.qty),
-          free_qty: Number(line.free_qty || 0),
-          purchase_rate: Number(line.purchase_rate),
-          mrp: Number(line.mrp),
-          selling_price: Number(line.selling_price),
-          discount_type: line.discount_type || null,
-          discount: line.discount ? Number(line.discount) : 0,
-          gst_rate_id: Number(line.gst_rate_id),
-          batch_no: line.batch_no || null,
-          expiry_date: line.expiry_date || null,
-          hsn_code: line.hsn_code || null,
-          is_opening: line.is_opening ? 1 : 0,
-        })),
+        lines: values.lines.map((line) => {
+          const discount = round2(num(line.discount));
+          return {
+            product_id: Number(line.product_id),
+            qty: Number(line.qty),
+            free_qty: Number(line.free_qty || 0),
+            purchase_rate: round4(num(line.purchase_rate)),
+            mrp: round2(num(line.mrp)),
+            selling_price: round2(num(line.selling_price)),
+            discount_type: discount > 0 ? line.discount_type : null,
+            discount,
+            gst_rate_id: Number(line.gst_rate_id),
+            batch_no: String(line.batch_no || "").trim().toUpperCase() || null,
+            expiry_date: toISODate(line.expiry_date) || null,
+            hsn_code: String(line.hsn_code || "").trim() || null,
+            is_opening: line.is_opening ? 1 : 0,
+          };
+        }),
         payments: values.payments.map((p) => ({
-          amount: Number(p.amount),
+          amount: round2(num(p.amount)),
           method: p.method,
           reference: p.reference?.trim() || null,
-          payment_date: p.payment_date || null,
+          payment_date: toISODate(p.payment_date) || null,
         })),
       };
 
@@ -978,39 +1387,84 @@ const CreateEditPurchaseBill = () => {
     }
   };
 
-  const saveSupplier = async (e) => {
-    e.preventDefault();
-    if (newSupplier.trim().length < 3) {
-      setError("Supplier name must be at least 3 characters.");
-      return;
-    }
-    setError("");
-    const supplier = {
-      id: Date.now(),
-      name: newSupplier.trim(),
-      state: supplierState,
-    };
-    await axios({
-      method: "post",
-      url: `${BASE_URL}/api/suppliers`,
-      data: supplier,
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${user_data.token}`,
-      },
-    });
-    toast.success("Suppliers Created!");
-    setSupplierId(supplier.id);
+  /* ---------- supplier modal ---------- */
+  const closeSupplierModal = () => {
+    setShowModal(false);
     setNewSupplier("");
     setSupplierState("");
-    setShowModal(false);
-
-    appData?.invalidate("suppliers");
-    await appData?.loadSuppliers();
+    setError("");
+    setStateError("");
+    // "+ Add New Supplier" select me atka na rahe
+    if (formikRef.current?.values?.supplier_id === "add_new") {
+      formikRef.current.setFieldValue("supplier_id", "");
+    }
   };
+
+  const saveSupplier = async (e) => {
+    e.preventDefault();
+    if (savingSupplier) return;
+
+    const { errors, value } = validateSupplierForm(
+      newSupplier,
+      supplierState,
+      suppliers,
+    );
+    setError(errors.name || "");
+    setStateError(errors.state || "");
+    if (errors.name || errors.state) return;
+
+    setSavingSupplier(true);
+    try {
+      const res = await axios({
+        method: "post",
+        url: `${BASE_URL}/api/suppliers`,
+        data: { name: value, state: supplierState },
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${user_data.token}`,
+        },
+      });
+      toast.success("Suppliers Created!");
+
+      const created = res?.data?.supplier || res?.data?.data || res?.data;
+      const createdId = created?.id ? String(created.id) : "";
+
+      appData?.invalidate("suppliers");
+      await appData?.loadSuppliers();
+
+      setSupplierId(createdId);
+      formikRef.current?.setFieldValue("supplier_id", createdId);
+
+      setNewSupplier("");
+      setSupplierState("");
+      setError("");
+      setStateError("");
+      setShowModal(false);
+    } catch (err) {
+      const apiErrors = err.response?.data?.errors;
+      const first = apiErrors ? Object.values(apiErrors).flat()[0] : null;
+      setError(
+        first || err.response?.data?.message || "Could not create the supplier.",
+      );
+    } finally {
+      setSavingSupplier(false);
+    }
+  };
+
   const handlePurchaseBillImageScan = async (setFieldValue) => {
     if (!billImage) {
       toast.error("Please select a bill image first.");
+      return;
+    }
+
+    // Image type / size check (backend tak bekar upload na jaye)
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(billImage.type)) {
+      toast.error("Only JPG, PNG or WEBP images are allowed.");
+      return;
+    }
+    if (billImage.size > 8 * 1024 * 1024) {
+      toast.error("Image is too large. Please upload a file under 8 MB.");
       return;
     }
 
@@ -1051,8 +1505,8 @@ const CreateEditPurchaseBill = () => {
       );
 
       setFieldValue("supplier_id", supplierMatch?.id?.toString() || "");
-      setFieldValue("bill_no", bill.bill_no || "");
-      setFieldValue("bill_date", bill.bill_date || "");
+      setFieldValue("bill_no", sanitizers.billNo(bill.bill_no || ""));
+      setFieldValue("bill_date", toISODate(bill.bill_date) || "");
 
       if (["inclusive", "exclusive"].includes(bill.tax_type)) {
         setFieldValue("tax_type", bill.tax_type);
@@ -1083,9 +1537,9 @@ const CreateEditPurchaseBill = () => {
                 ? "fixed"
                 : "",
           discount: item.discount ?? 0,
-          hsn_code: item.hsn_code || productMatch?.hsn_code || "",
+          hsn_code: sanitizers.hsn(item.hsn_code || productMatch?.hsn_code || ""),
           gst_rate_id: gstMatch?.id?.toString() || "",
-          batch_no: item.batch_no || "",
+          batch_no: sanitizers.batch(item.batch_no || ""),
           // Avoid saving a potentially hallucinated expiry day.
           // Verify the original invoice and enter expiry manually.
           expiry_date: "",
@@ -1095,25 +1549,7 @@ const CreateEditPurchaseBill = () => {
 
       setFieldValue(
         "lines",
-        mappedLines.length
-          ? mappedLines
-          : [
-            {
-              product_id: "",
-              qty: "",
-              free_qty: "",
-              purchase_rate: "",
-              mrp: "",
-              selling_price: "",
-              discount_type: "",
-              discount: "",
-              hsn_code: "",
-              gst_rate_id: "",
-              batch_no: "",
-              expiry_date: "",
-              is_opening: false,
-            },
-          ],
+        mappedLines.length ? mappedLines : [emptyLine()],
       );
 
       // Do not set settlement_amount: it is the adjusted paid amount,
@@ -1149,7 +1585,9 @@ const CreateEditPurchaseBill = () => {
       setIsScanningBill(false);
     }
   };
-  const handleBarcodeScan = async (barcode, values, push, setFieldValue) => {
+
+  const handleBarcodeScan = async (rawBarcode, values, push, setFieldValue) => {
+    const barcode = String(rawBarcode || "").trim();
     if (!barcode) return;
     try {
       const response = await axios.post(
@@ -1205,10 +1643,10 @@ const CreateEditPurchaseBill = () => {
         purchase_rate: inventory.purchase_rate ?? toPack(inventory.cost_price),
         mrp: toPack(inventory.mrp),
         selling_price: toPack(inventory.selling_price),
-        hsn_code: product.hsn_code || "",
-        gst_rate_id: product.gst_rate?.id || "",
-        batch_no: inventory.batch_no || "",
-        expiry_date: inventory.expiry_date || "",
+        hsn_code: sanitizers.hsn(product.hsn_code || ""),
+        gst_rate_id: product.gst_rate?.id ? String(product.gst_rate.id) : "",
+        batch_no: sanitizers.batch(inventory.batch_no || ""),
+        expiry_date: toISODate(inventory.expiry_date) || "",
       };
 
       if (emptyIndex !== -1) {
@@ -1216,7 +1654,7 @@ const CreateEditPurchaseBill = () => {
           setFieldValue(`lines.${emptyIndex}.${key}`, value);
         });
       } else {
-        push(lineData);
+        push({ ...emptyLine(), ...lineData });
       }
       setBarcode("");
     } catch (error) {
@@ -1227,8 +1665,8 @@ const CreateEditPurchaseBill = () => {
 
   const generateLostRef = () => {
     const now = new Date();
-    const ymd = now.toISOString().slice(0, 10).replace(/-/g, "");
-    const time = now.toTimeString().slice(0, 8).replace(/:/g, "");
+    const ymd = todayISO().replace(/-/g, "");
+    const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
     return `LOST-${ymd}-${time}`;
   };
 
@@ -1249,40 +1687,9 @@ const CreateEditPurchaseBill = () => {
             onSubmit={(values, actions) => handleSubmit(values, actions)}
           >
 
-            {({ values, setFieldValue }) => {
-              const grandTotal = (values.lines || []).reduce((sum, line) => {
-                const qty = Number(line.qty) || 0;
-                const purchaseRate = Number(line.purchase_rate) || 0;
-                const discount = Number(line.discount || 0);
-                const discountType = line.discount_type;
-                const gstRate = getGstRate(line.gst_rate_id);
-
-                if (!qty || !purchaseRate) return sum;
-
-                const grossValue =
-                  values.tax_type === "inclusive"
-                    ? qty * (purchaseRate / (1 + gstRate / 100))
-                    : qty * purchaseRate;
-
-                const discountAmount =
-                  discountType === "percent"
-                    ? grossValue * (discount / 100)
-                    : discount;
-
-                const taxable = Math.max(0, grossValue - discountAmount);
-                const totalTax = (taxable * gstRate) / 100;
-
-                return sum + (taxable + totalTax);
-              }, 0);
-
-              const effectiveTotal =
-                values.settlement_amount !== "" &&
-                  values.settlement_amount != null &&
-                  !isNaN(Number(values.settlement_amount))
-                  ? Number(values.settlement_amount)
-                  : incomingBill?.total_amount
-                    ? Number(incomingBill.total_amount)
-                    : grandTotal;
+            {({ values, setFieldValue, errors }) => {
+              const grandTotal = calcGrandTotal(values);
+              const effectiveTotal = effectiveTotalOf(values);
 
               // Payments log total
               const paidTotal = (values.payments || []).reduce(
@@ -1337,6 +1744,7 @@ const CreateEditPurchaseBill = () => {
                   </div>
 
                   <Form
+                    noValidate
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         const target = e.target;
@@ -1360,6 +1768,8 @@ const CreateEditPurchaseBill = () => {
                       }
                     }}
                   >
+                    <ScrollToFirstError />
+
                     {!isEdit && (
                       <div className="pb-card">
                         <p className="pb-section-label">AI Bill Scanner</p>
@@ -1438,11 +1848,6 @@ const CreateEditPurchaseBill = () => {
                                     {s.name}
                                   </option>
                                 ))}
-                                {/* {!newSupplier && (
-                                  <option value="add_new">
-                                    + Add New Supplier
-                                  </option>
-                                )} */}
                               </select>
                             )}
                           </Field>
@@ -1503,10 +1908,12 @@ const CreateEditPurchaseBill = () => {
                             </div>
 
                             <div style={{ flex: 1 }}>
-                              <Field
+                              <LiveFormikField
                                 type="text"
                                 name="bill_no"
-                                maxlength={20}
+                                maxLength={20}
+                                autoComplete="off"
+                                sanitize={sanitizers.billNo}
                                 className={isBillLost ? "lost-bill-input" : ""}
                                 placeholder={
                                   isBillLost
@@ -1544,6 +1951,8 @@ const CreateEditPurchaseBill = () => {
                               id="barcode-input"
                               className="pb-barcode-input"
                               type="text"
+                              maxLength={50}
+                              autoComplete="off"
                               value={barcode}
                               onChange={(e) => setBarcode(e.target.value)}
                               onKeyDown={(e) => {
@@ -1561,321 +1970,320 @@ const CreateEditPurchaseBill = () => {
                             />
 
                             <div className="pb-lines-scroll">
-                              {values?.lines?.map((line, index) => (
-                                <div
-                                  key={index}
-                                  className={`pb-line-row${line.is_opening ? " is-opening" : ""}${showBatch ? " with-batch" : ""}`}
-                                >
-                                  <div className="field-col">
-                                    <small className="field-label">
-                                      Product
-                                    </small>
-                                    <Field name={`lines.${index}.product_id`}>
-                                      {({ field, form }) => (
-                                        <select
-                                          {...field}
-                                          onChange={(e) => {
-                                            const value = e.target.value;
-                                            if (value === "add_new") {
-                                              setShowProductModal(true);
-                                              setActiveRowIndex(index);
-                                              return;
-                                            }
-                                            form.setFieldValue(
-                                              field.name,
-                                              value,
-                                            );
+                              {values?.lines?.map((line, index) => {
+                                const lineProduct = findProduct(line.product_id);
+                                const isWeight =
+                                  lineProduct?.sale_type === "weight";
+                                const qtyDecimals = isWeight ? 3 : 0;
 
-                                            const selectedProduct =
-                                              products.find(
-                                                (p) =>
-                                                  p.id.toString() === value,
-                                              );
-                                            if (
-                                              selectedProduct &&
-                                              selectedProduct.sale_type ===
-                                              "weight" &&
-                                              selectedProduct.price_per_kg
-                                            ) {
-                                              form.setFieldValue(
-                                                `lines.${index}.selling_price`,
-                                                selectedProduct.price_per_kg,
-                                              );
-                                            }
-                                          }}
-                                        >
-                                          <option value="">Select</option>
-                                          <option value="add_new">
-                                            + Add New Product
-                                          </option>
-                                          {products.map((p) => (
-                                            <option key={p.id} value={p.id}>
-                                              {p.name}
-                                            </option>
-                                          ))}
-
-                                        </select>
-                                      )}
-                                    </Field>
-                                    <ErrorMessage
-                                      name={`lines.${index}.product_id`}
-                                      component="div"
-                                      className="field-error"
-                                    />
-                                  </div>
-
-                                  <div className="field-col">
-                                    <small className="field-label">Qty</small>
-                                    <LiveFormikField
-                                      type="number"
-                                      name={`lines.${index}.qty`}
-                                    />
-                                    <ErrorMessage
-                                      name={`lines.${index}.qty`}
-                                      component="div"
-                                      className="field-error"
-                                    />
-                                    {(() => {
-                                      const lp = products.find(
-                                        (p) =>
-                                          p.id.toString() === line.product_id,
-                                      );
-                                      const perPack = Number(
-                                        lp?.units_per_pack,
-                                      );
-                                      if (
-                                        !lp ||
-                                        lp.allow_loose != 1 ||
-                                        !(perPack >= 2)
-                                      ) {
-                                        return null;
-                                      }
-                                      const unit = lp.loose_unit || "tablet";
-                                      const label =
-                                        unit === "ml" ? "ml" : `${unit}s`;
-                                      const packs = Number(line.qty) || 1;
-                                      return (
-                                        <small
-                                          style={{
-                                            fontSize: 10,
-                                            lineHeight: 1.2,
-                                            marginTop: 3,
-                                            color: "#16a34a",
-                                            fontWeight: 600,
-                                          }}
-                                        >
-                                          {Number(line.qty) ? "=" : "1 pack ="}{" "}
-                                          {packs * perPack} {label}
-                                        </small>
-                                      );
-                                    })()}
-                                  </div>
-
-                                  <div className="field-col">
-                                    <small className="field-label">Free</small>
-                                    <LiveFormikField
-                                      type="number"
-                                      name={`lines.${index}.free_qty`}
-                                    />
-                                    <ErrorMessage
-                                      name={`lines.${index}.free_qty`}
-                                      component="div"
-                                      className="field-error"
-                                    />
-                                  </div>
-
-                                  <div className="field-col">
-                                    <small className="field-label">Rate</small>
-                                    <LiveFormikField
-                                      type="number"
-                                      name={`lines.${index}.purchase_rate`}
-                                    />
-                                    <ErrorMessage
-                                      name={`lines.${index}.purchase_rate`}
-                                      component="div"
-                                      className="field-error"
-                                    />
-                                  </div>
-
-                                  <div className="field-col">
-                                    <small className="field-label">MRP</small>
-                                    <LiveFormikField
-                                      type="number"
-                                      name={`lines.${index}.mrp`}
-                                    />
-                                    <ErrorMessage
-                                      name={`lines.${index}.mrp`}
-                                      component="div"
-                                      className="field-error"
-                                    />
-                                  </div>
-
-                                  <div className="field-col">
-                                    <small className="field-label">SP</small>
-                                    {(() => {
-                                      const selectedProduct = products.find(
-                                        (p) =>
-                                          p.id.toString() === line.product_id,
-                                      );
-                                      const isWeight =
-                                        selectedProduct?.sale_type === "weight";
-                                      return (
-                                        <LiveFormikField
-                                          type="number"
-                                          name={`lines.${index}.selling_price`}
-                                          disabled={isWeight}
-                                          title={
-                                            isWeight
-                                              ? "Auto-filled from product's price per kg"
-                                              : undefined
-                                          }
-                                        />
-                                      );
-                                    })()}
-                                    <ErrorMessage
-                                      name={`lines.${index}.selling_price`}
-                                      component="div"
-                                      className="field-error"
-                                    />
-                                  </div>
-
-                                  <div className="field-col">
-                                    <small className="field-label">
-                                      Disc Type
-                                    </small>
-                                    <Field
-                                      as="select"
-                                      name={`lines.${index}.discount_type`}
-                                    >
-                                      <option value="">–</option>
-                                      <option value="percent">%</option>
-                                      <option value="fixed">₹</option>
-                                    </Field>
-                                    <ErrorMessage
-                                      name={`lines.${index}.discount_type`}
-                                      component="div"
-                                      className="field-error"
-                                    />
-                                  </div>
-
-                                  <div className="field-col">
-                                    <small className="field-label">
-                                      Discount
-                                    </small>
-                                    <LiveFormikField
-                                      type="number"
-                                      name={`lines.${index}.discount`}
-                                    />
-                                    <ErrorMessage
-                                      name={`lines.${index}.discount`}
-                                      component="div"
-                                      className="field-error"
-                                    />
-                                  </div>
-
-                                  <div className="field-col">
-                                    <small className="field-label">GST %</small>
-                                    <Field
-                                      as="select"
-                                      name={`lines.${index}.gst_rate_id`}
-                                    >
-                                      <option value="">–</option>
-                                      {gstRates.map((g) => (
-                                        <option key={g.id} value={g.id}>
-                                          {g.rate}%
-                                        </option>
-                                      ))}
-                                    </Field>
-                                    <ErrorMessage
-                                      name={`lines.${index}.gst_rate_id`}
-                                      component="div"
-                                      className="field-error"
-                                    />
-                                  </div>
-
-                                  {showBatch && (
+                                return (
+                                  <div
+                                    key={index}
+                                    className={`pb-line-row${line.is_opening ? " is-opening" : ""}${showBatch ? " with-batch" : ""}`}
+                                  >
                                     <div className="field-col">
                                       <small className="field-label">
-                                        Batch No{isPharmacy ? " *" : ""}
+                                        Product
                                       </small>
-                                      <Field
-                                        type="text"
-                                        name={`lines.${index}.batch_no`}
-                                        placeholder={
-                                          isPharmacy
-                                            ? "Batch no"
-                                            : "Batch no / Blank"
-                                        }
-                                        style={{ textTransform: "uppercase" }}
-                                      />
+                                      <Field name={`lines.${index}.product_id`}>
+                                        {({ field, form }) => (
+                                          <select
+                                            {...field}
+                                            onChange={(e) => {
+                                              const value = e.target.value;
+                                              if (value === "add_new") {
+                                                setShowProductModal(true);
+                                                setActiveRowIndex(index);
+                                                return;
+                                              }
+                                              form.setFieldValue(
+                                                field.name,
+                                                value,
+                                              );
+
+                                              const selectedProduct =
+                                                products.find(
+                                                  (p) =>
+                                                    p.id.toString() === value,
+                                                );
+                                              if (
+                                                selectedProduct &&
+                                                selectedProduct.sale_type ===
+                                                "weight" &&
+                                                selectedProduct.price_per_kg
+                                              ) {
+                                                form.setFieldValue(
+                                                  `lines.${index}.selling_price`,
+                                                  selectedProduct.price_per_kg,
+                                                );
+                                              }
+                                            }}
+                                          >
+                                            <option value="">Select</option>
+                                            <option value="add_new">
+                                              + Add New Product
+                                            </option>
+                                            {products.map((p) => (
+                                              <option key={p.id} value={p.id}>
+                                                {p.name}
+                                              </option>
+                                            ))}
+
+                                          </select>
+                                        )}
+                                      </Field>
                                       <ErrorMessage
-                                        name={`lines.${index}.batch_no`}
+                                        name={`lines.${index}.product_id`}
                                         component="div"
                                         className="field-error"
                                       />
                                     </div>
-                                  )}
 
-                                  <div className="field-col">
-                                    <small className="field-label">
-                                      Expiry{isPharmacy ? " *" : ""}
-                                    </small>
-                                    <FormikDatePicker
-                                      name={`lines.${index}.expiry_date`}
-                                      placeholder="dd-mm-yyyy"
-                                    />
-                                    <ErrorMessage
-                                      name={`lines.${index}.expiry_date`}
-                                      component="div"
-                                      className="field-error"
-                                    />
+                                    <div className="field-col">
+                                      <small className="field-label">Qty</small>
+                                      <LiveFormikField
+                                        type="number"
+                                        decimals={qtyDecimals}
+                                        name={`lines.${index}.qty`}
+                                      />
+                                      <ErrorMessage
+                                        name={`lines.${index}.qty`}
+                                        component="div"
+                                        className="field-error"
+                                      />
+                                      {(() => {
+                                        const perPack = Number(
+                                          lineProduct?.units_per_pack,
+                                        );
+                                        if (
+                                          !lineProduct ||
+                                          lineProduct.allow_loose != 1 ||
+                                          !(perPack >= 2)
+                                        ) {
+                                          return null;
+                                        }
+                                        const unit =
+                                          lineProduct.loose_unit || "tablet";
+                                        const label =
+                                          unit === "ml" ? "ml" : `${unit}s`;
+                                        const packs = Number(line.qty) || 1;
+                                        return (
+                                          <small
+                                            style={{
+                                              fontSize: 10,
+                                              lineHeight: 1.2,
+                                              marginTop: 3,
+                                              color: "#16a34a",
+                                              fontWeight: 600,
+                                            }}
+                                          >
+                                            {Number(line.qty) ? "=" : "1 pack ="}{" "}
+                                            {packs * perPack} {label}
+                                          </small>
+                                        );
+                                      })()}
+                                    </div>
+
+                                    <div className="field-col">
+                                      <small className="field-label">Free</small>
+                                      <LiveFormikField
+                                        type="number"
+                                        decimals={qtyDecimals}
+                                        name={`lines.${index}.free_qty`}
+                                      />
+                                      <ErrorMessage
+                                        name={`lines.${index}.free_qty`}
+                                        component="div"
+                                        className="field-error"
+                                      />
+                                    </div>
+
+                                    <div className="field-col">
+                                      <small className="field-label">Rate</small>
+                                      <LiveFormikField
+                                        type="number"
+                                        decimals={4}
+                                        name={`lines.${index}.purchase_rate`}
+                                      />
+                                      <ErrorMessage
+                                        name={`lines.${index}.purchase_rate`}
+                                        component="div"
+                                        className="field-error"
+                                      />
+                                    </div>
+
+                                    <div className="field-col">
+                                      <small className="field-label">MRP</small>
+                                      <LiveFormikField
+                                        type="number"
+                                        decimals={2}
+                                        name={`lines.${index}.mrp`}
+                                      />
+                                      <ErrorMessage
+                                        name={`lines.${index}.mrp`}
+                                        component="div"
+                                        className="field-error"
+                                      />
+                                    </div>
+
+                                    <div className="field-col">
+                                      <small className="field-label">SP</small>
+                                      <LiveFormikField
+                                        type="number"
+                                        decimals={2}
+                                        name={`lines.${index}.selling_price`}
+                                        disabled={isWeight}
+                                        title={
+                                          isWeight
+                                            ? "Auto-filled from product's price per kg"
+                                            : undefined
+                                        }
+                                      />
+                                      <ErrorMessage
+                                        name={`lines.${index}.selling_price`}
+                                        component="div"
+                                        className="field-error"
+                                      />
+                                    </div>
+
+                                    <div className="field-col">
+                                      <small className="field-label">
+                                        Disc Type
+                                      </small>
+                                      <Field
+                                        as="select"
+                                        name={`lines.${index}.discount_type`}
+                                      >
+                                        <option value="">–</option>
+                                        <option value="percent">%</option>
+                                        <option value="fixed">₹</option>
+                                      </Field>
+                                      <ErrorMessage
+                                        name={`lines.${index}.discount_type`}
+                                        component="div"
+                                        className="field-error"
+                                      />
+                                    </div>
+
+                                    <div className="field-col">
+                                      <small className="field-label">
+                                        Discount
+                                      </small>
+                                      <LiveFormikField
+                                        type="number"
+                                        decimals={2}
+                                        name={`lines.${index}.discount`}
+                                      />
+                                      <ErrorMessage
+                                        name={`lines.${index}.discount`}
+                                        component="div"
+                                        className="field-error"
+                                      />
+                                    </div>
+
+                                    <div className="field-col">
+                                      <small className="field-label">GST %</small>
+                                      <Field
+                                        as="select"
+                                        name={`lines.${index}.gst_rate_id`}
+                                      >
+                                        <option value="">–</option>
+                                        {gstRates.map((g) => (
+                                          <option key={g.id} value={g.id}>
+                                            {g.rate}%
+                                          </option>
+                                        ))}
+                                      </Field>
+                                      <ErrorMessage
+                                        name={`lines.${index}.gst_rate_id`}
+                                        component="div"
+                                        className="field-error"
+                                      />
+                                    </div>
+
+                                    {showBatch && (
+                                      <div className="field-col">
+                                        <small className="field-label">
+                                          Batch No{isPharmacy ? " *" : ""}
+                                        </small>
+                                        <LiveFormikField
+                                          type="text"
+                                          name={`lines.${index}.batch_no`}
+                                          maxLength={50}
+                                          autoComplete="off"
+                                          sanitize={sanitizers.batch}
+                                          placeholder={
+                                            isPharmacy
+                                              ? "Batch no"
+                                              : "Batch no / Blank"
+                                          }
+                                          style={{ textTransform: "uppercase" }}
+                                        />
+                                        <ErrorMessage
+                                          name={`lines.${index}.batch_no`}
+                                          component="div"
+                                          className="field-error"
+                                        />
+                                      </div>
+                                    )}
+
+                                    <div className="field-col">
+                                      <small className="field-label">
+                                        Expiry{isPharmacy ? " *" : ""}
+                                      </small>
+                                      <FormikDatePicker
+                                        name={`lines.${index}.expiry_date`}
+                                        placeholder="dd-mm-yyyy"
+                                      />
+                                      <ErrorMessage
+                                        name={`lines.${index}.expiry_date`}
+                                        component="div"
+                                        className="field-error"
+                                      />
+                                    </div>
+
+                                    <div className="field-col">
+                                      <small className="field-label">HSN</small>
+                                      <LiveFormikField
+                                        type="text"
+                                        name={`lines.${index}.hsn_code`}
+                                        maxLength={8}
+                                        inputMode="numeric"
+                                        autoComplete="off"
+                                        sanitize={sanitizers.hsn}
+                                      />
+                                      <ErrorMessage
+                                        name={`lines.${index}.hsn_code`}
+                                        component="div"
+                                        className="field-error"
+                                      />
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      className="pb-remove-btn"
+                                      onClick={() => remove(index)}
+                                      title="Remove line"
+                                      disabled={values.lines.length === 1}
+                                    >
+                                      ✕
+                                    </button>
                                   </div>
-
-                                  <div className="field-col">
-                                    <small className="field-label">HSN</small>
-                                    <LiveFormikField
-                                      type="text"
-                                      name={`lines.${index}.hsn_code`}
-                                    />
-                                    <ErrorMessage
-                                      name={`lines.${index}.hsn_code`}
-                                      component="div"
-                                      className="field-error"
-                                    />
-                                  </div>
-
-                                  <button
-                                    type="button"
-                                    className="pb-remove-btn"
-                                    onClick={() => remove(index)}
-                                    title="Remove line"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
+
+                            {typeof errors.lines === "string" && (
+                              <div className="error-text">{errors.lines}</div>
+                            )}
 
                             <button
                               type="button"
                               className="pb-add-product-btn"
+                              disabled={values.lines.length >= MAX_LINES}
                               onClick={() => {
                                 const newIndex = values.lines.length;
-                                push({
-                                  product_id: "",
-                                  qty: "",
-                                  free_qty: "",
-                                  purchase_rate: "",
-                                  mrp: "",
-                                  selling_price: "",
-                                  discount_type: "",
-                                  discount: "",
-                                  hsn_code: "",
-                                  gst_rate_id: "",
-                                  batch_no: "",
-                                  expiry_date: "",
-                                  is_opening: false,
-                                });
+                                push(emptyLine());
                                 setTimeout(() => {
                                   document
                                     .querySelector(
@@ -1923,14 +2331,20 @@ const CreateEditPurchaseBill = () => {
                               Inclusive (In)
                             </button>
                           </div>
+                          <ErrorMessage
+                            name="tax_type"
+                            className="error-text"
+                            component="div"
+                          />
                         </div>
 
                         <div className="mb-20 col-md-4">
                           <label className="pb-field-label">
                             Settlement Amount (Final Adjusted Paid)
                           </label>
-                          <Field
+                          <LiveFormikField
                             type="number"
+                            decimals={2}
                             name="settlement_amount"
                             placeholder="e.g., 722"
                           />
@@ -1948,6 +2362,7 @@ const CreateEditPurchaseBill = () => {
                           <Field
                             as="textarea"
                             name="notes"
+                            maxLength={500}
                             placeholder="Enter settlement remarks or adjustment details..."
                           />
                           <ErrorMessage
@@ -2016,8 +2431,9 @@ const CreateEditPurchaseBill = () => {
                                   <label className="pb-field-label">
                                     Amount
                                   </label>
-                                  <Field
+                                  <LiveFormikField
                                     type="number"
+                                    decimals={2}
                                     name={`payments.${pIndex}.amount`}
                                     placeholder="0.00"
                                   />
@@ -2031,11 +2447,20 @@ const CreateEditPurchaseBill = () => {
                                 <div style={{ flex: 1 }}>
                                   <label className="pb-field-label">
                                     Ref / Transaction ID
+                                    {payment.method !== "cash" ? " *" : ""}
                                   </label>
-                                  <Field
+                                  <LiveFormikField
                                     type="text"
                                     name={`payments.${pIndex}.reference`}
                                     placeholder="Ref No."
+                                    maxLength={50}
+                                    autoComplete="off"
+                                    sanitize={sanitizers.reference}
+                                  />
+                                  <ErrorMessage
+                                    name={`payments.${pIndex}.reference`}
+                                    component="div"
+                                    className="error-text"
                                   />
                                 </div>
 
@@ -2046,6 +2471,11 @@ const CreateEditPurchaseBill = () => {
                                   <FormikDatePicker
                                     name={`payments.${pIndex}.payment_date`}
                                     placeholder="dd-mm-yyyy"
+                                  />
+                                  <ErrorMessage
+                                    name={`payments.${pIndex}.payment_date`}
+                                    component="div"
+                                    className="error-text"
                                   />
                                 </div>
 
@@ -2069,7 +2499,7 @@ const CreateEditPurchaseBill = () => {
                                   method: "cash",
                                   amount: dueAmount > 0 ? dueAmount : "",
                                   reference: "",
-                                  payment_date: "",
+                                  payment_date: todayISO(),
                                 })
                               }
                             >
@@ -2116,10 +2546,7 @@ const CreateEditPurchaseBill = () => {
 
           {/* Supplier Modal */}
           {showModal && (
-            <div
-              className="pb-modal-overlay"
-              onClick={() => setShowModal(false)}
-            >
+            <div className="pb-modal-overlay" onClick={closeSupplierModal}>
               <div
                 className="pb-modal-card"
                 onClick={(e) => e.stopPropagation()}
@@ -2134,6 +2561,8 @@ const CreateEditPurchaseBill = () => {
                     type="text"
                     className={error ? "is-invalid" : ""}
                     placeholder="Supplier Name"
+                    maxLength={100}
+                    autoComplete="off"
                     value={newSupplier}
                     onChange={(e) => {
                       setNewSupplier(e.target.value);
@@ -2145,7 +2574,11 @@ const CreateEditPurchaseBill = () => {
                   <p className="input-name">Select State</p>
                   <select
                     className="state"
-                    onChange={(e) => setSupplierState(e.target.value)}
+                    value={supplierState}
+                    onChange={(e) => {
+                      setSupplierState(e.target.value);
+                      if (stateError) setStateError("");
+                    }}
                     name="state"
                     id="state"
                   >
@@ -2191,20 +2624,23 @@ const CreateEditPurchaseBill = () => {
                     <option value="Lakshadweep">Lakshadweep</option>
                     <option value="Puducherry">Puducherry</option>
                   </select>
+                  {stateError && <div className="error-text">{stateError}</div>}
                 </div>
                 <div className="pb-modal-footer">
                   <button
+                    type="button"
                     className="pb-btn-cancel"
-                    onClick={() => setShowModal(false)}
+                    onClick={closeSupplierModal}
                   >
                     Cancel
                   </button>
                   <button
+                    type="button"
                     className="pb-btn-save"
-                    disabled={!newSupplier.trim()}
+                    disabled={!newSupplier.trim() || savingSupplier}
                     onClick={(e) => saveSupplier(e)}
                   >
-                    Save
+                    {savingSupplier ? "Saving..." : "Save"}
                   </button>
                 </div>
               </div>
@@ -2233,7 +2669,7 @@ const CreateEditPurchaseBill = () => {
                       if (formikRef.current && activeRowIndex !== null) {
                         formikRef.current.setFieldValue(
                           `lines.${activeRowIndex}.product_id`,
-                          product.id,
+                          String(product.id),
                         );
                       }
 

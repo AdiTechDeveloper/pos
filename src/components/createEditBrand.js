@@ -38,22 +38,21 @@ const CreateEditBrand = () => {
     loadBrandData();
   }, []);
 
-  const validationSchema = Yup.object({
-    name: Yup.string()
-      .required("Name is required")
-      .min(3, "Name must be at least 3 characters long")
-      .max(25, "Name cannot exceed 25 characters")
-       .matches(
-      /^[A-Za-z0-9\s.&'-]+$/, 
-      "Brand name can only contain letters, numbers, spaces, &, ., ' and -"
+const validationSchema = Yup.object({
+  name: Yup.string()
+    .required("Name is required")
+    .min(3, "Name must be at least 3 characters long")
+    .max(25, "Name cannot exceed 25 characters")
+    .matches(
+      /^[A-Za-z0-9 ]+$/,
+      "Only letters, numbers and spaces are allowed"
     ),
 
-    description: Yup.string()
-      .required("Description is required")
-      .min(3, "Description must be at least 3 characters long")
-      .max(255, "Description cannot exceed 255 characters"),
-  });
-
+  description: Yup.string()
+    .required("Description is required")
+    .min(3, "Description must be at least 3 characters long")
+    .max(255, "Description cannot exceed 255 characters"),
+});
  
   const handleSubmit = async (values) => {
     try {

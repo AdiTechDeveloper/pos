@@ -89,6 +89,95 @@ const errorText = (err, fallback) => {
   return err?.response?.data?.message || fallback;
 };
 
+// Input filters: invalid keystrokes and pasted characters are rejected.
+const TEXT_NAME_RE = /^[\p{L}\p{N} ]*$/u;
+const ADDRESS_RE = /^[\p{L}\p{N} ,.#\/()'’\-]*$/u;
+const ABOUT_RE = /^[\p{L}\p{N} \n\r.,!?'"()\/:;#&@%+’-]*$/u;
+const SLUG_RE = /^[a-z0-9-]*$/;
+const PHONE_RE = /^\d{0,10}$/;
+const DECIMAL_RE = /^\d*(?:\.\d{0,2})?$/;
+const INTEGER_RE = /^\d*$/;
+const MAX_AMOUNT = 999999.99;
+const MAX_QUANTITY = 99;
+
+const isValidAmountInput = (value) =>
+  value === "" ||
+  (DECIMAL_RE.test(value) &&
+    value !== "." &&
+    value.length <= 9 &&
+    Number(value) <= MAX_AMOUNT);
+
+const isValidIntegerInput = (value, min, max, allowEmpty = false) => {
+  if (allowEmpty && value === "") return true;
+  if (!INTEGER_RE.test(value) || value.length > String(max).length) return false;
+  const number = Number(value);
+  return number >= min && number <= max;
+};
+
+const isValidPincodeInput = (value) => {
+  if (!/^[0-9,\s]*$/.test(value)) return false;
+  return value
+    .split(/[ ,\t\n\r]+/)
+    .every((part) => part.length <= 6);
+};
+
+const validateSettings = (values) => {
+  if (values.display_name.length > 150 || !TEXT_NAME_RE.test(values.display_name)) {
+    return "Display name can contain only letters, numbers and spaces (max 150 characters).";
+  }
+  if (values.slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(values.slug)) {
+    return "Store link name can contain lowercase letters, numbers and single hyphens.";
+  }
+  if (values.phone && !/^\d{10}$/.test(values.phone)) {
+    return "Phone number must contain exactly 10 digits.";
+  }
+  if (values.address.length > 255 || !ADDRESS_RE.test(values.address)) {
+    return "Address contains invalid characters or exceeds 255 characters.";
+  }
+  if (values.about.length > 1000 || !ABOUT_RE.test(values.about)) {
+    return "About the store contains invalid characters or exceeds 1000 characters.";
+  }
+
+  const moneyFields = [
+    ["Delivery charge", values.delivery_charge],
+    ["Minimum order", values.min_order_amount],
+    ["Free delivery above", values.free_delivery_above],
+  ];
+  for (const [label, value] of moneyFields) {
+    if (value !== "" && !isValidAmountInput(value)) {
+      return `${label} must be between ₹0 and ₹999,999.99 with up to 2 decimal places.`;
+    }
+  }
+
+  if (
+    !INTEGER_RE.test(values.online_stock_percent) ||
+    values.online_stock_percent === "" ||
+    Number(values.online_stock_percent) < 0 ||
+    Number(values.online_stock_percent) > 100
+  ) {
+    return "Online stock share must be a whole number between 0 and 100.";
+  }
+  if (
+    !INTEGER_RE.test(values.prep_minutes) ||
+    values.prep_minutes === "" ||
+    Number(values.prep_minutes) < 0 ||
+    Number(values.prep_minutes) > 1440
+  ) {
+    return "Preparation time must be a whole number between 0 and 1440 minutes.";
+  }
+  if (
+    values.max_qty_per_product !== "" &&
+    !isValidIntegerInput(values.max_qty_per_product, 1, MAX_QUANTITY)
+  ) {
+    return "Maximum quantity must be a whole number between 1 and 99.";
+  }
+  if (!!values.open_time !== !!values.close_time) {
+    return "Please select both opening and closing times, or leave both empty.";
+  }
+
+  return "";
+};
+
 const EMPTY = {
   is_online_enabled: true,
   slug: "",
@@ -117,7 +206,7 @@ const toForm = (s) => ({
   slug: s.slug || "",
   display_name: s.display_name || "",
   about: s.about || "",
-  phone: s.phone || "",
+  phone: String(s.phone || "").replace(/\D/g, "").slice(-10),
   address: s.address || "",
   open_time: normalizeTime(s.open_time),
   close_time: normalizeTime(s.close_time),
@@ -411,12 +500,38 @@ export default function OnlineStoreSettings() {
     })();
   }, [role, apply]);
 
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const setAllowed = (key, pattern, transform = (value) => value) => (e) => {
+    const value = transform(e.target.value);
+    if (pattern.test(value)) {
+      setForm((current) => ({ ...current, [key]: value }));
+    }
+  };
+  const setDecimal = (key) => (e) => {
+    const value = e.target.value;
+    if (isValidAmountInput(value)) {
+      setForm((current) => ({ ...current, [key]: value }));
+    }
+  };
+
+  const setIntegerRange = (key, min, max, allowEmpty = false) => (e) => {
+    const value = e.target.value;
+    if (isValidIntegerInput(value, min, max, allowEmpty)) {
+      setForm((current) => ({ ...current, [key]: value }));
+    }
+  };
   const setBool = (key) => (v) => setForm((f) => ({ ...f, [key]: v }));
 
   const save = async (e) => {
     e.preventDefault();
     setFormError("");
+
+    const validationMessage = validateSettings(form);
+    if (validationMessage) {
+      setFormError(validationMessage);
+      toast.error(validationMessage);
+      return;
+    }
+
     setSaving(true);
     try {
       const num = (v, d = 0) => (v === "" || v === null ? d : Number(v));
@@ -449,6 +564,18 @@ export default function OnlineStoreSettings() {
   const addPincodes = async () => {
     if (!pins.trim()) {
       toast.error("Enter at least one pincode.");
+      return;
+    }
+    const pincodeList = pins.trim().split(/[ ,\t\n\r]+/).filter(Boolean);
+    if (!pincodeList.length || pincodeList.some((pin) => !/^\d{6}$/.test(pin))) {
+      toast.error("Every pincode must contain exactly 6 digits.");
+      return;
+    }
+    if (
+      (pinCharge !== "" && !isValidAmountInput(pinCharge)) ||
+      (pinMin !== "" && !isValidAmountInput(pinMin))
+    ) {
+      toast.error("Delivery charge and minimum order must be between ₹0 and ₹999,999.99, with up to 2 decimal places.");
       return;
     }
     setAdding(true);
@@ -500,6 +627,13 @@ export default function OnlineStoreSettings() {
   };
 
   const saveEdit = async (row) => {
+    if (
+      (draft.delivery_charge !== "" && !isValidAmountInput(String(draft.delivery_charge))) ||
+      (draft.min_order_amount !== "" && !isValidAmountInput(String(draft.min_order_amount)))
+    ) {
+      toast.error("Amounts must be between ₹0 and ₹999,999.99, with up to 2 decimal places.");
+      return;
+    }
     setRowSaving(true);
     const ok = await updatePincode(row.id, {
       delivery_charge: draft.delivery_charge === "" ? null : Number(draft.delivery_charge),
@@ -532,13 +666,17 @@ export default function OnlineStoreSettings() {
       cell: (r) =>
         editId === r.id ? (
           <input
-            type="number"
-            min="0"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
+            maxLength={9}
             placeholder="Default"
             className="ovx-input ovx-sm"
             value={draft.delivery_charge}
-            onChange={(e) => setDraft((d) => ({ ...d, delivery_charge: e.target.value }))}
+            onChange={(e) => {
+              if (isValidAmountInput(e.target.value)) {
+                setDraft((d) => ({ ...d, delivery_charge: e.target.value }));
+              }
+            }}
           />
         ) : (
           showAmount(r.delivery_charge)
@@ -551,13 +689,17 @@ export default function OnlineStoreSettings() {
       cell: (r) =>
         editId === r.id ? (
           <input
-            type="number"
-            min="0"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
+            maxLength={9}
             placeholder="Default"
             className="ovx-input ovx-sm"
             value={draft.min_order_amount}
-            onChange={(e) => setDraft((d) => ({ ...d, min_order_amount: e.target.value }))}
+            onChange={(e) => {
+              if (isValidAmountInput(e.target.value)) {
+                setDraft((d) => ({ ...d, min_order_amount: e.target.value }));
+              }
+            }}
           />
         ) : (
           showAmount(r.min_order_amount)
@@ -674,21 +816,53 @@ export default function OnlineStoreSettings() {
                     <StoreLogoUpload storeName={storeName} />
                     <div className="ovx-grid2">
                       <Field label="Display name" hint="Leave empty to use your store name.">
-                        <input className="ovx-input" value={form.display_name} onChange={set("display_name")} maxLength={150} />
+                        <input
+                          className="ovx-input"
+                          value={form.display_name}
+                          onChange={setAllowed("display_name", TEXT_NAME_RE)}
+                          maxLength={150}
+                          autoComplete="off"
+                        />
                       </Field>
                       <Field label="Store link name" hint="Small letters, numbers and hyphens only. Leave empty to create it automatically.">
-                        <input className="ovx-input" value={form.slug} onChange={set("slug")} maxLength={100} placeholder="my-store" />
+                        <input
+                          className="ovx-input"
+                          value={form.slug}
+                          onChange={setAllowed("slug", SLUG_RE, (value) => value.toLowerCase())}
+                          maxLength={100}
+                          placeholder="my-store"
+                          autoComplete="off"
+                        />
                       </Field>
                       <Field label="Phone">
-                        <input className="ovx-input" value={form.phone} onChange={set("phone")} maxLength={20} inputMode="tel" />
+                        <input
+                          className="ovx-input"
+                          type="tel"
+                          inputMode="numeric"
+                          value={form.phone}
+                          onChange={setAllowed("phone", PHONE_RE)}
+                          maxLength={10}
+                          placeholder="10 digit mobile number"
+                        />
                       </Field>
                       <Field label="Address" hint="Each branch uses its own address when it has one.">
-                        <input className="ovx-input" value={form.address} onChange={set("address")} maxLength={255} />
+                        <input
+                          className="ovx-input"
+                          value={form.address}
+                          onChange={setAllowed("address", ADDRESS_RE)}
+                          maxLength={255}
+                        />
                       </Field>
                     </div>
                     <div className="ovx-mt">
                       <Field label="About the store">
-                        <textarea className="ovx-input" rows={4} maxLength={1000} value={form.about} onChange={set("about")} />
+                        <textarea
+                          className="ovx-input"
+                          rows={4}
+                          maxLength={1000}
+                          value={form.about}
+                          onChange={setAllowed("about", ABOUT_RE)}
+                        />
                       </Field>
                     </div>
                   </Card>
@@ -729,13 +903,31 @@ export default function OnlineStoreSettings() {
                         label="Online stock share (%)"
                         hint="Example: 50% of 11 pieces means 5 pieces can be ordered online."
                       >
-                        <input type="number" min="0" max="100" className="ovx-input" value={form.online_stock_percent} onChange={set("online_stock_percent")} />
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          min="0"
+                          max="100"
+                          className="ovx-input"
+                          value={form.online_stock_percent}
+                          onChange={setIntegerRange("online_stock_percent", 0, 100)}
+                          maxLength={3}
+                        />
                       </Field>
                       <Field
                         label="Max quantity per product (per order)"
-                        hint="Default for every product. Leave empty for no limit. You can set a different limit for a product below."
+                        hint="Default for every product. Enter 1–99, or leave empty for no limit. You can set a different limit for a product below."
                       >
-                        <input type="number" min="1" className="ovx-input" value={form.max_qty_per_product} onChange={set("max_qty_per_product")} />
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          min="1"
+                          className="ovx-input"
+                          value={form.max_qty_per_product}
+                          onChange={setIntegerRange("max_qty_per_product", 1, MAX_QUANTITY, true)}
+                          maxLength={2}
+                          max={MAX_QUANTITY}
+                        />
                       </Field>
                     </Card>
                   </div>
@@ -757,16 +949,16 @@ export default function OnlineStoreSettings() {
                     </div>
                     <div className="ovx-grid4 ovx-mt">
                       <Field label="Delivery charge (₹)" hint="Used for pincodes that have no charge of their own.">
-                        <input type="number" min="0" step="0.01" className="ovx-input" value={form.delivery_charge} onChange={set("delivery_charge")} />
+                        <input type="text" inputMode="decimal" maxLength={9} max={MAX_AMOUNT} className="ovx-input" value={form.delivery_charge} onChange={setDecimal("delivery_charge")} />
                       </Field>
                       <Field label="Free delivery above (₹)" hint="Leave empty for no free delivery.">
-                        <input type="number" min="0" step="0.01" className="ovx-input" value={form.free_delivery_above} onChange={set("free_delivery_above")} />
+                        <input type="text" inputMode="decimal" maxLength={9} max={MAX_AMOUNT} className="ovx-input" value={form.free_delivery_above} onChange={setDecimal("free_delivery_above")} />
                       </Field>
                       <Field label="Minimum order (₹)" hint="Minimum amount for home delivery.">
-                        <input type="number" min="0" step="0.01" className="ovx-input" value={form.min_order_amount} onChange={set("min_order_amount")} />
+                        <input type="text" inputMode="decimal" maxLength={9} max={MAX_AMOUNT} className="ovx-input" value={form.min_order_amount} onChange={setDecimal("min_order_amount")} />
                       </Field>
                       <Field label="Prepare time (min)" hint="Time to prepare an order.">
-                        <input type="number" min="0" max="1440" className="ovx-input" value={form.prep_minutes} onChange={set("prep_minutes")} />
+                        <input type="text" inputMode="numeric" min="0" max="1440" className="ovx-input" value={form.prep_minutes} onChange={setIntegerRange("prep_minutes", 0, 1440)} />
                       </Field>
                     </div>
                   </Card>
@@ -790,16 +982,19 @@ export default function OnlineStoreSettings() {
                         className="ovx-input"
                         rows={2}
                         value={pins}
-                        onChange={(e) => setPins(e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (isValidPincodeInput(value)) setPins(value);
+                        }}
                         placeholder="380001, 380015, 380054"
                       />
                     </Field>
                     <div className="ovx-grid3 ovx-mt">
                       <Field label="Delivery charge (₹)">
-                        <input type="number" min="0" step="0.01" className="ovx-input" value={pinCharge} onChange={(e) => setPinCharge(e.target.value)} placeholder="Store default" />
+                        <input type="text" inputMode="decimal" maxLength={9} className="ovx-input" value={pinCharge} onChange={(e) => { if (isValidAmountInput(e.target.value)) setPinCharge(e.target.value); }} placeholder="Store default" />
                       </Field>
                       <Field label="Minimum order (₹)">
-                        <input type="number" min="0" step="0.01" className="ovx-input" value={pinMin} onChange={(e) => setPinMin(e.target.value)} placeholder="Store default" />
+                        <input type="text" inputMode="decimal" maxLength={9} className="ovx-input" value={pinMin} onChange={(e) => { if (isValidAmountInput(e.target.value)) setPinMin(e.target.value); }} placeholder="Store default" />
                       </Field>
                       <button
                         type="button"
