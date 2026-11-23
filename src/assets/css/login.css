@@ -304,6 +304,19 @@ body {
   font-size: 13px;
 }
 
+.vakaro-login-error {
+  margin: -16px 0 18px;
+  padding: 11px 13px;
+
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  background: #fef2f2;
+
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .vakaro-form-login {
   display: flex;
   flex-direction: column;

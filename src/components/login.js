@@ -18,6 +18,7 @@ const getErrorMessage = (error) => {
 
     return (
       data?.message ||
+      data?.error ||
       (data?.errors && Object.values(data.errors).flat()[0]) ||
       "Invalid username or password!"
     );
@@ -26,6 +27,8 @@ const getErrorMessage = (error) => {
   if (error.request) {
     return "Cannot reach the server. Please check your internet connection.";
   }
+
+  if (error.message) return error.message;
 
   return "Something went wrong. Please try again.";
 };
@@ -42,6 +45,7 @@ const Login = () => {
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [loginError, setLoginError] = useState("");
   const [showForgotModal, setShowForgotModal] = useState(false);
 
   useEffect(() => {
@@ -57,6 +61,7 @@ const Login = () => {
 
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
+    setLoginError("");
   };
 
   const validate = () => {
@@ -77,6 +82,7 @@ const Login = () => {
 
     submittingRef.current = true;
     setLoading(true);
+    setLoginError("");
 
     try {
       const response = await axios.post(`${BASE_URL}/api/login`, formData, {
@@ -111,11 +117,10 @@ const Login = () => {
     } catch (error) {
       console.error("LOGIN ERROR:", error);
 
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Invalid credentials!";
+      const message = getErrorMessage(error);
 
+      setFormData({ username: "", password: "" });
+      setLoginError(message);
       toast.error(message, {
         toastId: "login-error",
       });

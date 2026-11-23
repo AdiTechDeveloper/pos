@@ -21,11 +21,19 @@ axios.interceptors.request.use((config) => {
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem("user_detail", "cart_detail", "cart_detail");
+    const requestUrl = String(error?.config?.url || "");
+    const isLoginCall = requestUrl.endsWith("/api/login");
+
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !isLoginCall
+    ) {
+      localStorage.removeItem("user_detail");
+      localStorage.removeItem("cart_detail");
       toast.error("Session Expired. Please login again.");
       window.location.href = "/";
-      return new Promise(() => {});
+      return Promise.reject(error);
     }
     return Promise.reject(error);
   },
