@@ -11,9 +11,10 @@ import { hasFeature } from "../utils/hasFeature";
 
 const MAX_IMAGE_SIDE = 800;
 const MAX_PICK_MB = 10;
-const MAX_IMAGES = 4; // ek product ki max photos
-const MAX_INFO_ROWS = 20; // Blinkit jaisi product details ki max rows
-// Quick-add buttons (user apna koi bhi label bhi likh sakta hai)
+const MAX_IMAGES = 4;
+const MAX_INFO_ROWS = 20;
+
+// Quick-add buttons
 const INFO_SUGGESTIONS = [
   "Unit",
   "Shelf Life",
@@ -505,26 +506,6 @@ const CreateEditProduct = () => {
             uploadData.images.map((img) => ({ id: img.id, url: img.url })),
           );
         }
-        setImageFile(null);
-        setRemoveImage(false);
-      } else if (removeImage && isEdit) {
-        const deleteResponse = await axios.delete(
-          `${BASE_URL}/api/products/${productId}/image`,
-          {
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${user_data.token}`,
-            },
-          },
-        );
-        if (deleteResponse.data?.status === false) {
-          throw new Error(
-            deleteResponse.data.message || "Image removal failed",
-          );
-        }
-        setServerImage("");
-        setImagePreview("");
-        setRemoveImage(false);
       }
 
       appData?.invalidate("products");
