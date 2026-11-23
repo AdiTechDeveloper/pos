@@ -7,8 +7,28 @@ import "../assets/css/login.css";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-const POS_LOGIN_IMAGE = "../../assets/images/avatar/pos.png";
-const VAKARO_LOGO = "../../assets/images/avatar/logo.png";
+const POS_LOGIN_IMAGE = "/assets/images/avatar/pos.png";
+const VAKARO_LOGO = "/assets/images/avatar/logo.png";
+
+const getErrorMessage = (error) => {
+  if (error.response) {
+    const { status, data } = error.response;
+
+    if (status >= 500) return "Server error. Please try again later.";
+
+    return (
+      data?.message ||
+      (data?.errors && Object.values(data.errors).flat()[0]) ||
+      "Invalid username or password!"
+    );
+  }
+
+  if (error.request) {
+    return "Cannot reach the server. Please check your internet connection.";
+  }
+
+  return "Something went wrong. Please try again.";
+};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,9 +37,10 @@ const Login = () => {
     username: "",
     password: "",
   });
-  const submittingRef = useRef(false);
-  const [loading, setLoading] = useState(false);
 
+  const submittingRef = useRef(false);
+
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [showForgotModal, setShowForgotModal] = useState(false);
 
@@ -32,69 +53,72 @@ const Login = () => {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
 
-    setErrors({
-      ...errors,
-      [e.target.name]: "",
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validate = () => {
     const temp = {};
 
-    if (!formData.username) {
-      temp.username = "Username is required";
-    }
-
-    if (!formData.password) {
-      temp.password = "Password is required";
-    }
+    if (!formData.username.trim()) temp.username = "Username is required";
+    if (!formData.password) temp.password = "Password is required";
 
     setErrors(temp);
-
     return Object.keys(temp).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (submittingRef.current) return;
     if (!validate()) return;
 
     submittingRef.current = true;
     setLoading(true);
 
-    if (!validate()) return;
-
     try {
       const response = await axios.post(`${BASE_URL}/api/login`, formData, {
         headers: {
-          accept: "application/json",
+          Accept: "application/json",
         },
       });
 
       const user_detail = response.data;
 
+      // Check whether login was successful
+      if (!user_detail || !user_detail.token) {
+        throw new Error(user_detail?.message || "Invalid login response!");
+      }
+
+      // Store authenticated user details
       localStorage.setItem("user_detail", JSON.stringify(user_detail));
 
-      if (response.data) {
-        toast.success(user_detail.message || "Login successful!");
+      // Store token separately if required by your guards
+      localStorage.setItem("token", user_detail.token);
 
-        if (user_detail.must_change_credentials) {
-          navigate("/change-password");
-        } else if (user_detail?.user?.role === "delivery") {
-          navigate("/delivery");
-        } else {
-          navigate("/dashboard");
-        }
+      toast.success(user_detail.message || "Login successful!");
+
+      // Navigate according to user role and account status
+      if (user_detail.must_change_credentials) {
+        navigate("/change-password", { replace: true });
+      } else if (user_detail?.user?.role === "delivery") {
+        navigate("/delivery", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
       }
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Invalid credentials!");
+    } catch (error) {
+      console.error("LOGIN ERROR:", error);
 
-      console.error("LOGIN ERROR:", err);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Invalid credentials!";
+
+      toast.error(message, {
+        toastId: "login-error",
+      });
     } finally {
       submittingRef.current = false;
       setLoading(false);
@@ -124,11 +148,12 @@ const Login = () => {
 
         <div className="vakaro-visual-footer">
           <span className="vakaro-status-dot" />
-          Know what&apos;s happening.
+          Know what's happening.
           <strong>Act with confidence.</strong>
         </div>
       </section>
 
+      {/* LOGIN FORM */}
       <section className="vakaro-login-form-side">
         <div className="vakaro-login-card">
           <img className="vakaro-form-logo" src={VAKARO_LOGO} alt="Vakaro" />
@@ -155,6 +180,8 @@ const Login = () => {
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
+                autoComplete="username"
+                autoFocus
               />
 
               {errors.username && (
@@ -162,6 +189,7 @@ const Login = () => {
               )}
             </fieldset>
 
+            {/* Password */}
             <fieldset className="vakaro-field">
               <label htmlFor="password">
                 Password <span className="vakaro-required">*</span>
@@ -175,6 +203,7 @@ const Login = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
+                autoComplete="current-password"
               />
 
               {errors.password && (
@@ -187,6 +216,7 @@ const Login = () => {
               <span aria-hidden="true">→</span>
             </button>
 
+            {/* Cashier login */}
             <p className="vakaro-cashier-text">
               Please Cashier Login here{" "}
               <Link to="/cashier_login" className="vakaro-cashier-link">
@@ -195,6 +225,7 @@ const Login = () => {
             </p>
           </form>
 
+          {/* Forgot password */}
           <p className="vakaro-forgot-text">
             Forgot Password?{" "}
             <a

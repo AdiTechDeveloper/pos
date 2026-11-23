@@ -33,6 +33,7 @@ import PurchaseBill from "./components/purchaseBill";
 import SupplierBill from "./components/suppllier";
 import Brand from "./components/brand";
 import CreateEditProduct from "./components/createEditProduct";
+import ProductBulkDetails from "./components/ProductBulkDetails";
 import CreateEditBranch from "./components/createEditBranch";
 import CreateEditCategory from "./components/createEditCategory";
 import CreateEditBrand from "./components/createEditBrand";
@@ -177,6 +178,13 @@ const router = createBrowserRouter(
         path="/product/edit/:id"
         element={
           <Protected Component={CreateEditProduct} requiredFeature="products" />
+        }
+      />
+
+      <Route
+        path="/product-bulk-details"
+        element={
+          <Protected Component={ProductBulkDetails} requiredFeature="products" />
         }
       />
 

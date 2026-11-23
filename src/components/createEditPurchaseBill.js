@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
+import { Formik, Form, Field, ErrorMessage, FieldArray , useField , useFormikContext } from "formik";
 import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
@@ -691,6 +691,22 @@ const CreateEditPurchaseBill = () => {
     return value;
   };
 
+  const LiveFormikField = ({ name, ...props }) => {
+  const [field] = useField(name);
+  const { setFieldTouched } = useFormikContext();
+
+  return (
+    <input
+      {...field}
+      {...props}
+      onChange={(e) => {
+        setFieldTouched(name, true, false);
+        field.onChange(e);
+      }}
+    />
+  );
+};
+
   const validationSchema = Yup.object().shape({
     branch_id: Yup.string().required("Branch is required"),
 
@@ -705,7 +721,14 @@ const CreateEditPurchaseBill = () => {
 
     tax_type: Yup.string().oneOf(["inclusive", "exclusive"]).required(),
 
-    settlement_amount: Yup.number().nullable().min(0, "Cannot be negative"),
+    settlement_amount: Yup.number()
+      .transform((value, originalValue) =>
+        originalValue === "" ? null : value
+      )
+      .typeError("Settlement amount must be a number")
+      .required("Settlement amount is required")
+      .min(0, "Cannot be negative")
+      .max(9999999999, "Settlement amount is too large"),
 
     notes: Yup.string().nullable(),
 
@@ -714,55 +737,103 @@ const CreateEditPurchaseBill = () => {
       .min(1, "At least one product is required")
       .of(
         Yup.object().shape({
-          product_id: Yup.string().required("Product is required"),
+          product_id: Yup.string()
+            .required("Product is required"),
 
+          // Quantity
           qty: Yup.number()
+            .transform((value, originalValue) =>
+              originalValue === "" ? undefined : value
+            )
             .typeError("Quantity must be a number")
-            .required("Qty required")
-            .min(0.0001, "Qty must be greater than 0"),
+            .required("Quantity is required")
+            .moreThan(0, "Quantity must be greater than 0")
+            .max(999999, "Quantity cannot exceed 999999"),
 
+          // Free Quantity
           free_qty: Yup.number()
+            .transform((value, originalValue) =>
+              originalValue === "" ? 0 : value
+            )
+            .typeError("Free quantity must be a number")
             .nullable()
-            .typeError("Free Qty must be a number")
-            .min(0, "Free Qty cannot be negative"),
+            .min(0, "Free quantity cannot be negative")
+            .max(999999, "Free quantity cannot exceed 999999"),
 
           purchase_rate: Yup.number()
+            .transform((value, originalValue) =>
+              originalValue === "" ? undefined : value
+            )
             .typeError("Purchase rate must be a number")
-            .required("Purchase rate required")
-            .min(0, "Rate cannot be negative"),
+            .required("Purchase rate is required")
+            .min(0, "Rate cannot be negative")
+            .max(99999999, "Purchase rate is too large"),
 
+          // MRP
           mrp: Yup.number()
+            .transform((value, originalValue) =>
+              originalValue === "" ? undefined : value
+            )
             .typeError("MRP must be a number")
-            .required("MRP required")
-            .min(0, "MRP cannot be negative"),
+            .required("MRP is required")
+            .min(0, "MRP cannot be negative")
+            .max(99999999, "MRP is too large"),
 
+          // Selling Price
           selling_price: Yup.number()
+            .transform((value, originalValue) =>
+              originalValue === "" ? undefined : value
+            )
             .typeError("Selling price must be a number")
-            .required("Selling price required")
+            .required("Selling price is required")
             .min(0, "Selling price cannot be negative")
-            .test("sp-le-mrp", "SP not more then MRP", function (v) {
-              if (!isPharmacy) return true;
-              const mrp = Number(this.parent.mrp);
-              return !mrp || v == null || Number(v) <= mrp;
-            }),
+            .max(99999999, "Selling price is too large")
+            .test(
+              "sp-le-mrp",
+              "Selling price cannot be greater than MRP",
+              function (value) {
+                if (!isPharmacy) return true;
 
+                const mrp = Number(this.parent.mrp);
+                return !mrp || value == null || value <= mrp;
+              }
+            ),
+
+          // HSN Code
+          hsn_code: Yup.string()
+            .nullable()
+            .transform((value) => value?.trim() || "")
+            .matches(
+              /^$|^\d{4}$|^\d{6}$|^\d{8}$/,
+              "HSN must be 4, 6 or 8 digits"
+            ),
+
+          // Batch Number
           batch_no: isPharmacy
             ? Yup.string()
               .trim()
-              .required("Batch no required")
-              .max(50, "Max 50 chars")
+              .required("Batch number is required")
+              .max(50, "Batch number cannot exceed 50 characters")
             : Yup.string().nullable(),
 
           discount_type: Yup.string()
             .nullable()
-            .oneOf(["percent", "fixed", ""]),
-
-          discount: Yup.number().nullable().min(0, "Cannot be negative"),
+            .oneOf(["percent", "fixed", ""], "Invalid discount type"),
+          // Discount
+          discount: Yup.number()
+            .transform((value, originalValue) =>
+              originalValue === "" ? 0 : value
+            )
+            .typeError("Discount must be a number")
+            .nullable()
+            .min(0, "Discount cannot be negative")
+            .max(100, "Discount cannot exceed 100"),
 
           gst_rate_id: Yup.string().required("GST rate required"),
 
           expiry_date: isPharmacy
             ? Yup.string()
+              .transform(parseDateString)
               .required("Expiry date is required")
               .matches(
                 /^\d{4}-\d{2}-\d{2}$/,
@@ -794,7 +865,7 @@ const CreateEditPurchaseBill = () => {
                 const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
                 if (!match) return false;
 
-                const year = Number(match[1]);  
+                const year = Number(match[1]);
                 const month = Number(match[2]);
                 const day = Number(match[3]);
 
@@ -1172,8 +1243,12 @@ const CreateEditPurchaseBill = () => {
             initialValues={initialValues}
             enableReinitialize={true}
             validationSchema={validationSchema}
+            validateOnChange={true}
+            validateOnBlur={true}
+            validateOnMount={false}
             onSubmit={(values, actions) => handleSubmit(values, actions)}
           >
+
             {({ values, setFieldValue }) => {
               const grandTotal = (values.lines || []).reduce((sum, line) => {
                 const qty = Number(line.qty) || 0;
@@ -1431,6 +1506,7 @@ const CreateEditPurchaseBill = () => {
                               <Field
                                 type="text"
                                 name="bill_no"
+                                maxlength={20}
                                 className={isBillLost ? "lost-bill-input" : ""}
                                 placeholder={
                                   isBillLost
@@ -1550,7 +1626,7 @@ const CreateEditPurchaseBill = () => {
 
                                   <div className="field-col">
                                     <small className="field-label">Qty</small>
-                                    <Field
+                                    <LiveFormikField
                                       type="number"
                                       name={`lines.${index}.qty`}
                                     />
@@ -1597,7 +1673,7 @@ const CreateEditPurchaseBill = () => {
 
                                   <div className="field-col">
                                     <small className="field-label">Free</small>
-                                    <Field
+                                    <LiveFormikField
                                       type="number"
                                       name={`lines.${index}.free_qty`}
                                     />
@@ -1610,7 +1686,7 @@ const CreateEditPurchaseBill = () => {
 
                                   <div className="field-col">
                                     <small className="field-label">Rate</small>
-                                    <Field
+                                    <LiveFormikField
                                       type="number"
                                       name={`lines.${index}.purchase_rate`}
                                     />
@@ -1623,7 +1699,7 @@ const CreateEditPurchaseBill = () => {
 
                                   <div className="field-col">
                                     <small className="field-label">MRP</small>
-                                    <Field
+                                    <LiveFormikField
                                       type="number"
                                       name={`lines.${index}.mrp`}
                                     />
@@ -1644,7 +1720,7 @@ const CreateEditPurchaseBill = () => {
                                       const isWeight =
                                         selectedProduct?.sale_type === "weight";
                                       return (
-                                        <Field
+                                        <LiveFormikField
                                           type="number"
                                           name={`lines.${index}.selling_price`}
                                           disabled={isWeight}
@@ -1686,7 +1762,7 @@ const CreateEditPurchaseBill = () => {
                                     <small className="field-label">
                                       Discount
                                     </small>
-                                    <Field
+                                    <LiveFormikField
                                       type="number"
                                       name={`lines.${index}.discount`}
                                     />
@@ -1757,7 +1833,7 @@ const CreateEditPurchaseBill = () => {
 
                                   <div className="field-col">
                                     <small className="field-label">HSN</small>
-                                    <Field
+                                    <LiveFormikField
                                       type="text"
                                       name={`lines.${index}.hsn_code`}
                                     />

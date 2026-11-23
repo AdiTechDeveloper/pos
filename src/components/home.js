@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { Clock, Users, Sparkles } from "lucide-react";
+import { Clock, Users, Sparkles , TrendingUp , Megaphone , ClipboardX , IndianRupee , ReceiptText, SquareExclamationPoint ,SquareSplitHorizontal  } from "lucide-react";
+import { BadgeIndianRupee , HandCoins , Wallet , Van   } from "lucide-react";
 import { useCachedApi, invalidateDashboardCache } from "./Dashboardcache";
 import Layout from "./layout";
 import ProfitLossWidget from "./ProfitLossWidget";
@@ -13,6 +14,7 @@ import CustomerDuesWidget from "./CustomerDuesWidget";
 import RecentSalesFeed from "./RecentSalesFeed";
 import { hasFeature } from "../utils/hasFeature";
 import { useAppData } from "../context/AppDataContext";
+import { Column } from "jspdf-autotable";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -20,7 +22,7 @@ const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 const ROUTES = {
   newSale: "/sales-bill",
   addExpense: "/expenses",
-  addProduct: "/create-product",
+  addProduct: "/create-product",                                   
   products: "/product",
   expiry: "/reports/stock-expiry-report",
   newPurchase: "/purchase-bill",
@@ -153,7 +155,7 @@ const card = {
   boxSizing: "border-box",
 };
 
-const Card = ({ title, hint, right, children }) => (
+const Card = ({ icon, title, hint, right, children }) => (
   <div style={card}>
     {(title || right) && (
       <div
@@ -172,8 +174,12 @@ const Card = ({ title, hint, right, children }) => (
               fontWeight: 700,
               color: "#111827",
               lineHeight: 1.3,
+              display: "flex",
+              flexDirection:"row",
+              gap: 10,
             }}
           >
+            {icon && React.createElement(icon, { size: 20 , className:"text-blue-600" })}
             {title}
           </div>
           {hint && (
@@ -220,11 +226,12 @@ const Delta = ({ cur, prev, label }) => {
   );
 };
 
-const Kpi = ({ label, value, sub, accent }) => (
+const Kpi = ({ icon , label, value, sub, accent }) => (
   <div
-    style={{ ...card, borderTop: `3px solid ${accent}`, padding: "18px 20px" }}
+    style={{ ...card, borderTop: `3px solid ${accent}`, padding: "18px 16px" }}
   >
-    <div style={{ fontSize: 15, fontWeight: 600, color: "#4b5563" }}>
+    <div style={{ fontSize: 15, fontWeight: 600, color: "#4b5563" , display:"flex" , flexDirection:"row" , gap:4 }}>
+      {icon && React.createElement(icon, { size: 22 , className:"text-blue-600" })}
       {label}
     </div>
     <div
@@ -243,9 +250,10 @@ const Kpi = ({ label, value, sub, accent }) => (
   </div>
 );
 
-const Mini = ({ label, value, sub }) => (
-  <div style={{ ...card, padding: "14px 18px" }}>
-    <div style={{ fontSize: 14, fontWeight: 600, color: "#4b5563" }}>
+const Mini = ({ icon , label, value, sub }) => (
+  <div style={{ ...card, padding: "14px 12px" }}>
+    <div style={{ fontSize: 14, fontWeight: 600, color: "#4b5563" , display:"flex",flexDirection:"row", gap:3 }}>
+      {icon && React.createElement(icon, { size: 16 , className:"text-blue-600" })}
       {label}
     </div>
     <div
@@ -527,6 +535,7 @@ function SalesTrendCard({ token, branchId }) {
 
   return (
     <Card
+      icon={ TrendingUp }
       title="Sales Trend"
       right={
         <div
@@ -1534,6 +1543,7 @@ const Home = () => {
                       border: "1px solid #a855f7",
                       borderRadius: 16,
                       boxShadow: "0 4px 18px rgba(124, 58, 237, 0.12)",
+                
                     }}
                   >
                     <svg
@@ -1554,6 +1564,7 @@ const Home = () => {
 
                     <input
                       type="text"
+                       data-no-uppercase
                       value={aiQuestion}
                       onChange={(e) => setAiQuestion(e.target.value)}
                       placeholder="Ask AI about your business..."
@@ -1567,6 +1578,7 @@ const Home = () => {
                         background: "transparent",
                         color: "#111827",
                         fontSize: 15,
+                        
                       }}
                     />
 
@@ -1712,6 +1724,7 @@ const Home = () => {
               <div style={{ ...autoGrid, marginBottom: 20 }}>
                 {canSales && (
                   <Kpi
+                    icon={BadgeIndianRupee }
                     label={
                       range === "today"
                         ? "Today's Sales"
@@ -1737,6 +1750,7 @@ const Home = () => {
 
                 {canFinancial && profit && (
                   <Kpi
+                  icon = { HandCoins }
                     label="Profit"
                     value={fmt(profit.amount)}
                     accent="#22C55E"
@@ -1755,6 +1769,7 @@ const Home = () => {
 
                 {canFinancial && (
                   <Kpi
+                  icon={Wallet}
                     label="Available Funds"
                     value={money ? fmt(available) : "-"}
                     accent="#0EA5E9"
@@ -1779,6 +1794,7 @@ const Home = () => {
 
                 {(canCustomers || canPurchase) && (
                   <Kpi
+                  icon = { Van }
                     label="To Collect"
                     value={money ? fmt(money.customer_dues) : "-"}
                     accent="#F59E0B"
@@ -1802,6 +1818,7 @@ const Home = () => {
               <div style={{ ...autoGrid, marginBottom: 32 }}>
                 {canFinancial && exp && (
                   <Mini
+                      icon ={IndianRupee}
                     label="Expenses"
                     value={fmt(exp.total)}
                     sub={`Cash ${fmt(exp.cash)} · Bank ${fmt(exp.bank)}`}
@@ -1809,6 +1826,7 @@ const Home = () => {
                 )}
                 {canSales && sales && (
                   <Mini
+                    icon={ReceiptText}
                     label="Bills"
                     value={sales.bills}
                     sub={`Average bill ${fmt(sales.avg_bill)}`}
@@ -1816,25 +1834,28 @@ const Home = () => {
                 )}
                 {canSales && pay && payTotal > 0 && (
                   <Mini
+                    icon = {SquareSplitHorizontal}
                     label="Payment split"
                     value={`${Math.round((pay.cash / payTotal) * 100)}% cash`}
                     sub={`UPI/Bank ${Math.round((pay.online / payTotal) * 100)}% · ${fmt(pay.online)}`}
                   />
                 )}
-                {canStock &&
+                {/* {canStock &&
                   ins?.expiry &&
                   (ins.expiry.soon > 0 || ins.expiry.expired > 0) && (
                     <Mini
+                      icon={SquareExclamationPoint }
                       label="Expiring Soon"
                       value={ins.expiry.soon}
                       sub={`Expiring in 30 days · ${ins.expiry.expired} expired`}
                     />
-                  )}
+                  )} */}
               </div>
 
               {/* 2. Kya karna hai */}
               <div className="mb-8">
                 <Card
+                  icon={Megaphone}
                   title="Needs Attention"
                   hint="Things that need action right now"
                 >
@@ -1978,6 +1999,7 @@ const Home = () => {
                 {canStock && ins?.dead_stock && ins.dead_stock.count > 0 && (
                   <div>
                     <Card
+                    icon = {ClipboardX}
                       title="Dead Stock"
                       hint={`${ins.dead_stock.count} items have not sold in 30 days · ${fmt(
                         ins.dead_stock.value,

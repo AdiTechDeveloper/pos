@@ -77,11 +77,31 @@ const CreateEditStaff = () => {
     name: Yup.string()
       .required("Name is required")
       .min(3, "Name must be at least 3 characters")
-      .max(100, "Name cannot exceed 100 characters"),
+      .max(25, "Name cannot exceed 25 characters")
+       .matches(
+      /^[A-Za-z0-9\s.&'-]+$/,
+      "Name can only contain letters, numbers, spaces, &, ., ' and -"
+    )
+    .test(
+        "not-empty",
+        "Address cannot contain only spaces",
+        (value) => !!value && value.trim().length > 0
+      ),
+
     username: Yup.string()
       .required("Username is required")
       .min(3, "Name must be at least 3 characters")
-      .max(100, "Name cannot exceed 100 characters"),
+      .max(25, "Name cannot exceed 25 characters")
+       .matches(
+      /^[A-Za-z0-9\s.&'-]+$/,
+      "Name can only contain letters, numbers, spaces, &, ., ' and -"
+    )
+    .test(
+        "not-empty",
+        "Address cannot contain only spaces",
+        (value) => !!value && value.trim().length > 0
+      ),
+
 
     role: Yup.string().required("Role is required"),
     branch_ids: Yup.array()
@@ -143,6 +163,7 @@ const CreateEditStaff = () => {
             <Formik
               enableReinitialize
               initialValues={initialValues}
+              validateOnChange={true}
               validationSchema={validationSchema}
               onSubmit={(values, actions) => handleSubmit(values, actions)}
             >
@@ -154,13 +175,21 @@ const CreateEditStaff = () => {
                     >
                       <div className="body-title">Name *</div>
                       <div className="body-content mb-15">
-                        <Field
-                          type="text"
-                          name="name"
-                          className="mb-5"
-                          placeholder="Enter staff name"
-                          maxLength={30}
-                        />
+                        <Field name="name">
+                          {({ field, form }) => (
+                            <input
+                              {...field}
+                              type="text"
+                              placeholder="Enter staff name"
+                              maxLength={25}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                form.setFieldTouched("name", true, false);
+                              }}
+                            />
+                          )}
+                        </Field>
+
                         <ErrorMessage
                           name="name"
                           component="div"
@@ -174,13 +203,20 @@ const CreateEditStaff = () => {
                     >
                       <div className="body-title">Username *</div>
                       <div className="body-content">
-                        <Field
-                          type="text"
-                          name="username"
-                          className="mb-5"
-                          placeholder="Enter username"
-                          maxLength={30}
-                        />
+                        <Field name="username">
+                          {({ field, form }) => (
+                            <input
+                              {...field}
+                              type="text"
+                              placeholder="Enter username"
+                                maxLength={25}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                form.setFieldTouched("username", true, false);
+                              }}
+                            />
+                          )}
+                        </Field>
                         <ErrorMessage
                           name="username"
                           component="div"

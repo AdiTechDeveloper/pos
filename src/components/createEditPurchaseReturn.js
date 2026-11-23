@@ -141,7 +141,8 @@ const CreateEditPurchaseReturn = () => {
           qty: Yup.number()
             .required("Quantity is required")
             .positive("Must be positive")
-            .integer("Must be an integer"),
+            .integer("Must be an integer")
+            .max(999999, "Quantity cannot exceed 999999"),
         }),
       ),
   });

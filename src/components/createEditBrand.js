@@ -42,11 +42,15 @@ const CreateEditBrand = () => {
     name: Yup.string()
       .required("Name is required")
       .min(3, "Name must be at least 3 characters long")
-      .max(50, "Name cannot exceed 50 characters"),
+      .max(25, "Name cannot exceed 25 characters")
+       .matches(
+      /^[A-Za-z0-9\s.&'-]+$/, 
+      "Brand name can only contain letters, numbers, spaces, &, ., ' and -"
+    ),
 
     description: Yup.string()
       .required("Description is required")
-      .min(10, "Description must be at least 10 characters long")
+      .min(3, "Description must be at least 3 characters long")
       .max(255, "Description cannot exceed 255 characters"),
   });
 
@@ -115,6 +119,7 @@ const CreateEditBrand = () => {
                           type="text"
                           name="name"
                           placeholder="Enter brand name"
+                          maxLength={25}
                           className="mb-5"
                         />
                         <ErrorMessage

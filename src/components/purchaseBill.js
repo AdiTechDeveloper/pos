@@ -1,10 +1,39 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import DataTable from "react-data-table-component";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Layout from "./layout";
 import { toast } from "react-toastify";
 import { useAppData } from "../context/AppDataContext";
+import { CSVLink } from "react-csv";
+import { FileSpreadsheet, FileDown, CalendarDays, RotateCcw } from "lucide-react";
+
+
+const todayStr = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const toDateInputValue = (value) => {
+  if (!value) return "";
+  const raw = String(value).split("T")[0];
+
+  // API date is normally YYYY-MM-DD.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+  // Also support DD-MM-YYYY / DD/MM/YYYY.
+  const match = raw.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
+  if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`;
+};
+
+const money = (value) => Number(value || 0).toFixed(2);
 
 const PurchaseBill = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -15,12 +44,13 @@ const PurchaseBill = () => {
   const [perPage, setPerPage] = useState(25);
   const [resetPaging, setResetPaging] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Empty means show all purchase bills; select a date to filter one day.
+  const [selectedDate, setSelectedDate] = useState("");
+  
   // const [purchaseBill, setPurchaseBill] = useState([]);
   const appData = useAppData();
   const purchaseBill = appData?.purchaseBills || [];
   const totalRows = appData?.purchaseBillsMeta?.total ?? purchaseBill.length;
-  const [filteredData, setFilteredData] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
 
   const handleCreatePurchaseBills = () => {
@@ -51,7 +81,12 @@ const PurchaseBill = () => {
       if (response) {
         toast.success("Purchase Bill Deleted!");
         appData?.invalidate("purchaseBills");
-        await appData?.loadPurchaseBills();
+        await appData?.loadPurchaseBills({
+          page,
+          per_page: perPage,
+          search: debouncedSearch || undefined,
+          selected_date: selectedDate || undefined,
+        });
       }
     } catch (error) {
       toast.error(
@@ -257,17 +292,131 @@ const PurchaseBill = () => {
 
   const fetchBills = async () => {
     setLoading(true);
-    await appData?.loadPurchaseBills({
-      page,
-      per_page: perPage,
-      search: debouncedSearch || undefined,
-    });
-    setLoading(false);
+    try {
+      await appData?.loadPurchaseBills({
+        page,
+        per_page: perPage,
+        search: debouncedSearch || undefined,
+        // AppDataContext/API should pass this as ?selected_date=YYYY-MM-DD.
+        selected_date: selectedDate || undefined,
+      });
+    } catch (error) {
+      console.error("Error loading purchase bills:", error);
+      toast.error("Failed to load purchase bills.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchBills();
-  }, [page, perPage, debouncedSearch]);
+    // fetchBills is intentionally recreated on render; use its input values as dependencies.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, perPage, debouncedSearch, selectedDate]);
+
+  // Client-side safety filter for the currently loaded page.
+  // Server-side filtering is also requested through selected_date above.
+  const visibleBills = useMemo(() => {
+    if (!selectedDate) return purchaseBill;
+
+    return purchaseBill.filter(
+      (bill) => toDateInputValue(bill.bill_date) === selectedDate
+    );
+  }, [purchaseBill, selectedDate]);
+
+  const csvHeaders = [
+    { label: "Inward No.", key: "inward_no" },
+    { label: "Supplier Name", key: "supplier_name" },
+    { label: "Bill No", key: "bill_no" },
+    { label: "Bill Date", key: "bill_date" },
+    { label: "Taxable Amount", key: "taxable_value" },
+    { label: "CGST", key: "cgst_amount" },
+    { label: "SGST", key: "sgst_amount" },
+    { label: "IGST", key: "igst_amount" },
+    { label: "CESS", key: "cess_amount" },
+    { label: "Total Tax", key: "total_tax" },
+    { label: "Total Amount", key: "total_amount" },
+    { label: "Settlement Amount", key: "settlement_amount" },
+    { label: "Settlement Note", key: "notes" },
+  ];
+
+  const exportData = visibleBills.map((bill) => ({
+    inward_no: bill.inward_no || "",
+    supplier_name: bill.supplier?.name || "",
+    bill_no: bill.bill_no || "",
+    bill_date: toDateInputValue(bill.bill_date),
+    taxable_value: money(bill.taxable_value),
+    cgst_amount: money(bill.cgst_amount),
+    sgst_amount: money(bill.sgst_amount),
+    igst_amount: money(bill.igst_amount),
+    cess_amount: money(bill.cess_amount),
+    total_tax: money(bill.total_tax),
+    total_amount: money(bill.total_amount),
+    settlement_amount: money(bill.settlement_amount),
+    notes: bill.notes || "",
+  }));
+
+  const exportPDF = () => {
+    const rows = visibleBills.map((bill) => `
+      <tr>
+        <td>${bill.inward_no || ""}</td>
+        <td>${bill.supplier?.name || ""}</td>
+        <td>${bill.bill_no || ""}</td>
+        <td>${toDateInputValue(bill.bill_date)}</td>
+        <td>${money(bill.taxable_value)}</td>
+        <td>${money(bill.total_tax)}</td>
+        <td>${money(bill.total_amount)}</td>
+        <td>${money(bill.settlement_amount)}</td>
+      </tr>
+    `).join("");
+
+    const title = selectedDate
+      ? `Purchase Bills - ${selectedDate}`
+      : "Purchase Bills - All Dates";
+
+    const printWindow = window.open("", "_blank", "width=1100,height=750");
+    if (!printWindow) {
+      toast.error("Please allow pop-ups to export PDF.");
+      return;
+    }
+
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>${title}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
+            h2 { margin: 0 0 6px; }
+            p { margin: 0 0 18px; color: #6b7280; }
+            table { width: 100%; border-collapse: collapse; font-size: 11px; }
+            th, td { border: 1px solid #d1d5db; padding: 7px; text-align: left; }
+            th { background: #f3f4f6; }
+            @media print { body { padding: 0; } }
+          </style>
+        </head>
+        <body>
+          <h2>Purchase Bills</h2>
+          <p>${selectedDate ? `Bill date: ${selectedDate}` : "All dates"} | Records: ${visibleBills.length}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Inward No.</th><th>Supplier</th><th>Bill No</th><th>Bill Date</th>
+                <th>Taxable</th><th>Total Tax</th><th>Total</th><th>Settlement</th>
+              </tr>
+            </thead>
+            <tbody>${rows || '<tr><td colspan="8">No purchase bills found</td></tr>'}</tbody>
+          </table>
+          <script>
+            window.onload = function () {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   return (
     <Layout>
@@ -354,6 +503,58 @@ const PurchaseBill = () => {
                 </form>
               </div>
 
+              {/* Date Filter + Export Controls */}
+              <div className="flex items-center flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <CalendarDays size={18} />
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => {
+                      setSelectedDate(e.target.value);
+                      setPage(1);
+                      setResetPaging((value) => !value);
+                    }}
+                    className="px-3 py-2 border rounded"
+                    aria-label="Filter purchase bills by bill date"
+                  />
+                  {selectedDate && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedDate("");
+                        setPage(1);
+                        setResetPaging((value) => !value);
+                      }}
+                      title="Clear date filter"
+                      className="flex items-center gap-1 px-3 py-2 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
+                    >
+                      <RotateCcw size={15} />
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                <CSVLink
+                  data={exportData}
+                  headers={csvHeaders}
+                  filename={`purchase-bills${selectedDate ? `-${selectedDate}` : ""}.csv`}
+                  title="Export as Excel"
+                  className="flex items-center justify-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 shadow-sm"
+                >
+                  <FileSpreadsheet size={22} />
+                </CSVLink>
+
+                <button
+                  type="button"
+                  onClick={exportPDF}
+                  title="Export as PDF"
+                  className="flex items-center justify-center gap-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 shadow-sm"
+                >
+                  <FileDown size={22} />
+                </button>
+              </div>
+
               <Link
                 className="tf-button style-1 w208"
                 to="/create-purchase-bill"
@@ -365,7 +566,7 @@ const PurchaseBill = () => {
 
             <DataTable
               columns={columns}
-              data={purchaseBill}
+              data={visibleBills}
               pagination
               paginationServer
               paginationTotalRows={totalRows}
