@@ -1359,7 +1359,7 @@ const Expenses = () => {
         .exp-inline-form { display: flex; gap: 10px; margin-bottom: 14px; }
         .exp-inline-form input { flex: 1; }
         .exp-cat-list { list-style: none; margin: 0; padding: 0; max-height: 340px; overflow-y: auto; border: 1px solid rgba(148, 163, 184, .35); border-radius: 12px; }
-        .exp-cat-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid rgba(148, 163, 184, .25); }
+        .exp-cat-list li {font-size: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid rgba(148, 163, 184, .25); }
         .exp-cat-list li:last-child { border-bottom: 0; }
         .exp-cat-list li.off .exp-cat-name { opacity: .6; }
         .exp-cat-list input { height: 34px; }

@@ -78,7 +78,7 @@ const TIME_PICKER_CSS = `
 `;
 
 const STOREFRONT_URL =
-  process.env.REACT_APP_STOREFRONT_URL || "https://store.vakro.in";
+  process.env.REACT_APP_STOREFRONT_URL || "https://store.vakaro.in";
 
 const errorText = (err, fallback) => {
   const errors = err?.response?.data?.errors;
