@@ -11,7 +11,7 @@ const POS_LOGIN_IMAGE = "/assets/images/avatar/pos.png";
 const VAKARO_LOGO = "/assets/images/avatar/logo.png";
 
 // Input limits
-const USERNAME_MAX = 10;
+const USERNAME_MAX = 20;
 const PASSWORD_MAX = 12;
 
 const getErrorMessage = (error) => {
