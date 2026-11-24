@@ -300,10 +300,17 @@ export default function ProductBulkDetails() {
           <div style={styles.box}>
             <h3 style={styles.title}>2. Product photos (ZIP)</h3>
             <p style={styles.hint}>
-              Put the photos in one ZIP and name each file with the product <b>SKU</b>:
+              Put the photos in one ZIP and name each file with the product <b>name</b>, <b>SKU</b> or{" "}
+              <b>barcode</b>. No SKU needed.
               <br />
-              <b>SKU.jpg</b> = photo 1 (main), <b>SKU_2.jpg</b> = photo 2, <b>SKU_3.jpg</b> = photo 3,{" "}
-              <b>SKU_4.jpg</b> = photo 4. Example: <code>MILK500.jpg</code>, <code>MILK500_2.jpg</code>.
+              <b>Name.jpg</b> = photo 1 (main), <b>Name_2.jpg</b> = photo 2, <b>Name_3.jpg</b> = photo 3,{" "}
+              <b>Name_4.jpg</b> = photo 4. Example: <code>Amul Gold Milk 500ml.jpg</code>,{" "}
+              <code>Amul Gold Milk 500ml_2.jpg</code>.
+              <br />
+              Capital or small letters, spaces, <code>-</code> and <code>_</code> do not matter
+              (<code>parle-g-100g.jpg</code> matches "Parle G 100g"). The name must otherwise be the
+              same as in the product list. If two products have the same name, use the SKU or
+              barcode for those files.
               <br />
               JPG, PNG or WebP, up to 5 MB each. A photo replaces the existing photo at the same
               number; other photos stay as they are. Max 4 photos per product.
@@ -338,7 +345,7 @@ export default function ProductBulkDetails() {
               <>
                 <div style={styles.summary}>
                   <div><b>{zipSummary.updated ?? 0}</b> photos saved</div>
-                  <div><b>{zipSummary.not_found ?? 0}</b> SKU not found</div>
+                  <div><b>{zipSummary.not_found ?? 0}</b> product not found</div>
                   <div><b>{zipSummary.failed ?? 0}</b> failed</div>
                   <div><b>{zipSummary.total_files ?? 0}</b> files</div>
                 </div>
