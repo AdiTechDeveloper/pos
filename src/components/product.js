@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DataTable from "react-data-table-component";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -15,57 +15,176 @@ const Product = () => {
 
   const appData = useAppData();
 
-  const products = appData?.products || [];
-
+  const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
 
   // Filters
-
   const [stockFilter, setStockFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [brandFilter, setBrandFilter] = useState("all");
 
-  const [filteredData, setFilteredData] = useState(products);
-
+  // Server-side pagination
   const [currentPage, setCurrentPage] = useState(1);
-
-  const perPage = 10;
+  const [perPage, setPerPage] = useState(100);
+  const [totalRows, setTotalRows] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const requestIdRef = useRef(0);
 
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const user_data = JSON.parse(localStorage.getItem("user_detail"));
+  const user_data = JSON.parse(localStorage.getItem("user_detail") || "null");
   const userRole = user_data?.user?.role || user_data?.role;
   const isAdmin = userRole === "admin";
   const isManager = userRole === "manager";
   const branches = appData?.branches || [];
+  const categories = appData?.categories || [];
+  const brands = appData?.brands || [];
   const [selectedBranch, setSelectedBranch] = useState("");
 
-  const getStock = (row) => Number(row?.total_stock ?? 0);
+  // API /api/all-products already returns paginated products and meta.
+  // Map its raw product shape to the row shape used by this page.
+  const fetchProducts = useCallback(async (page = 1, pageSize = perPage) => {
+    const requestId = ++requestIdRef.current;
 
-  // Unique categories from loaded products
+    try {
+      setLoading(true);
 
-  const categories = useMemo(() => {
-    const map = new Map();
+      const params = {
+        page,
+        per_page: pageSize,
+        with_inventories: 1,
+      };
 
-    products.forEach((product) => {
-      if (product?.category?.id) {
-        map.set(product.category.id, product.category);
+      if (search.trim()) params.search = search.trim();
+      if (categoryFilter !== "all") params.category_id = categoryFilter;
+      if (brandFilter !== "all") params.brand_id = brandFilter;
+      if (selectedBranch) params.branch_id = selectedBranch;
+      if (stockFilter === "in_stock") params.in_stock = 1;
+
+      const response = await axios.get("/api/all-products", {
+        params,
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${user_data?.token || ""}`,
+        },
+      });
+
+      // Ignore an older response if the user changed filters/page meanwhile.
+      if (requestId !== requestIdRef.current) return;
+
+      const rawProducts = response.data?.products || [];
+      const rows = rawProducts.map((product) => {
+        const inventories = Array.isArray(product.inventories)
+          ? product.inventories
+          : [];
+
+        const totalQty = inventories.reduce((sum, inv) => {
+          const qty = Number(
+            inv.available_qty ?? (Number(inv.qty || 0) - Number(inv.sold_qty || 0)),
+          ) || 0;
+          return sum + qty;
+        }, 0);
+
+        const totalFree = inventories.reduce(
+          (sum, inv) => sum + (Number(inv.free_qty ?? inv.free ?? 0) || 0),
+          0,
+        );
+
+        const costTotal = inventories.reduce((sum, inv) => {
+          const qty = Number(
+            inv.available_qty ?? (Number(inv.qty || 0) - Number(inv.sold_qty || 0)),
+          ) || 0;
+          return sum + Number(inv.cost_price || 0) * qty;
+        }, 0);
+
+        const stock = Number(product.total_stock ?? totalQty) || 0;
+
+        return {
+          row_id: `prod-${product.id}`,
+          product_id: product.id,
+          id: product.id,
+          inventory_ids: inventories.map((inv) => inv.id).filter(Boolean),
+          sku: product.sku,
+          name: product.name,
+          brand: product.brand,
+          category: product.category,
+          hsn_code: product.hsn_code,
+          gst_rate: product.gst_rate ?? product.gstRate,
+          gst_inclusive: product.gst_inclusive,
+          is_price_override: product.is_price_override,
+          barcode: product.barcode || null,
+          show_barcode: !!product.barcode,
+          mrp: Number(inventories[0]?.mrp ?? product.mrp ?? 0),
+          selling_price: Number(
+            inventories[0]?.selling_price ?? product.selling_price ?? 0,
+          ),
+          cost_price: totalQty ? (costTotal / totalQty).toFixed(2) : (product.cost_price ?? 0),
+          qty: stock,
+          total_stock: stock,
+          free: totalFree,
+          total_qty: totalQty + totalFree,
+          batch_count: inventories.length,
+          batch_no: "-",
+        };
+      });
+
+      setProducts(rows);
+      setTotalRows(Number(response.data?.meta?.total || 0));
+      setCurrentPage(Number(response.data?.meta?.page || page));
+    } catch (error) {
+      if (requestId === requestIdRef.current) {
+        console.error("Products loading failed:", error);
+        toast.error(error.response?.data?.message || "Failed to load products");
       }
-    });
+    } finally {
+      if (requestId === requestIdRef.current) setLoading(false);
+    }
+  }, [
+    perPage,
+    search,
+    categoryFilter,
+    brandFilter,
+    stockFilter,
+    selectedBranch,
+    user_data?.token,
+  ]);
 
-    return Array.from(map.values());
-  }, [products]);
+  // Load master filter lists and fetch the first page. Any filter change
+  // automatically requests page 1 from the backend.
+  useEffect(() => {
+    if (isAdmin) appData?.loadBranches({ force: true });
+    appData?.loadCategories?.();
+    appData?.loadBrands?.();
+  }, [isAdmin]);
 
-  // Unique brands from loaded products
+  useEffect(() => {
+    if (!isAdmin && !isManager) return;
 
-  const brands = useMemo(() => {
-    const map = new Map();
-    products.forEach((product) => {
-      if (product?.brand?.id) {
-        map.set(product.brand.id, product.brand);
-      }
-    });
-    return Array.from(map.values());
-  }, [products]);
+    setCurrentPage(1);
+
+    const timer = setTimeout(() => {
+      fetchProducts(1, perPage);
+    }, search.trim() ? 350 : 0);
+
+    return () => clearTimeout(timer);
+  }, [fetchProducts, isAdmin, isManager, perPage]);
+
+  // Low-stock and out-of-stock filtering is currently limited to the loaded
+  // page because the existing getAllProducts endpoint does not implement these
+  // two filter parameters yet. In-stock is filtered by the backend.
+  const displayedProducts = useMemo(() => {
+    if (stockFilter === "low_stock") {
+      return products.filter((product) => {
+        const stock = Number(product.total_stock || 0);
+        return stock > 0 && stock <= 10;
+      });
+    }
+
+    if (stockFilter === "out_of_stock") {
+      return products.filter((product) => Number(product.total_stock || 0) <= 0);
+    }
+
+    return products;
+  }, [products, stockFilter]);
 
   const handleEdit = (product) => {
     localStorage.setItem(
@@ -100,9 +219,7 @@ const Product = () => {
       );
 
       if (response.status === 200) {
-        appData?.invalidate("products");
-
-        await appData?.loadProducts();
+        await fetchProducts(currentPage, perPage);
 
         toast.success("Product Deleted");
 
@@ -114,102 +231,6 @@ const Product = () => {
       toast.error(error.response?.data?.message || "Failed to delete product");
     }
   };
-
-  // Load branches for admin and products for manager
-
-  useEffect(() => {
-    if (isAdmin) {
-      appData?.loadBranches({ force: true });
-
-      return;
-    }
-
-    if (isManager) {
-      appData?.loadProducts({ force: true });
-    }
-  }, [isAdmin, isManager]);
-
-  // Load products when admin selects a branch
-
-  useEffect(() => {
-    if (!isAdmin || !selectedBranch) {
-      return;
-    }
-
-    appData?.loadProducts({
-      branch_id: selectedBranch,
-
-      force: true,
-    });
-  }, [selectedBranch, isAdmin]);
-
-  // Search + Stock + Category + Brand filters
-
-  useEffect(() => {
-    const text = search.trim().toLowerCase();
-
-    const result = products.filter((item) => {
-      const searchString = `
-
-        ${item.id || ""}
-
-        ${item.sku || ""}
-
-        ${item.barcode || ""}
-
-        ${item.name || ""}
-
-        ${item.qty || 0}
-
-        ${item.brand?.name || ""}
-
-        ${item.category?.name || ""}
-
-        ${item.hsn_code || ""}
-
-        ${item.gst_rate?.rate || ""}
-
-        ${item.mrp || ""}
-
-        ${item.selling_price || ""}
-
-        ${item.cost_price || ""}
-
-      `.toLowerCase();
-
-      // Search
-
-      const matchesSearch = !text || searchString.includes(text);
-
-      // Stock
-
-      const stock = Number(item?.qty || 0);
-
-      const matchesStock =
-        stockFilter === "all" ||
-        (stockFilter === "in_stock" && stock > 10) ||
-        (stockFilter === "low_stock" && stock > 0 && stock <= 10) ||
-        (stockFilter === "out_of_stock" && stock <= 0);
-
-      // Category
-
-      const matchesCategory =
-        categoryFilter === "all" ||
-        String(item?.category?.id) === String(categoryFilter);
-
-      // Brand
-
-      const matchesBrand =
-        brandFilter === "all" ||
-        String(item?.brand?.id) === String(brandFilter);
-
-      return matchesSearch && matchesStock && matchesCategory && matchesBrand;
-    });
-
-    setFilteredData(result);
-
-    setCurrentPage(1);
-  }, [search, products, stockFilter, categoryFilter, brandFilter]);
 
   const columns = [
     {
@@ -704,7 +725,7 @@ const Product = () => {
                       appearance: "none",
                     }}
                   >
-                    <option value="">Branch: Select</option>
+                    <option value="">Branch: All</option>
 
                     {branches.map((branch) => (
                       <option key={branch.id} value={branch.id}>
@@ -1053,11 +1074,21 @@ const Product = () => {
             {/* Products Table */}
 
             <DataTable
+              key={`${perPage}-${search}-${stockFilter}-${categoryFilter}-${brandFilter}-${selectedBranch}`}
               columns={columns}
-              data={filteredData}
+              data={displayedProducts}
+              progressPending={loading}
               pagination
+              paginationServer
+              paginationTotalRows={totalRows}
               paginationPerPage={perPage}
-              onChangePage={(page) => setCurrentPage(page)}
+              paginationRowsPerPageOptions={[25, 50, 100, 200, 500]}
+              onChangePage={(page) => fetchProducts(page, perPage)}
+              onChangeRowsPerPage={(newPerPage) => {
+                setCurrentPage(1);
+                setPerPage(newPerPage);
+              }}
+              paginationDefaultPage={currentPage}
               highlightOnHover
               pointerOnHover
               responsive

@@ -1,18 +1,25 @@
 import React, { useRef, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { hasFeature } from "../utils/hasFeature";
 
 /**
  * Bulk product import from Excel.
  *
  * Usage (inside your Products page):
  *
- * const { invalidate, loadProducts } = useAppData();
+ * const { invalidate, loadProducts, loadBrands, loadCategories } = useAppData();
  *
  * <ProductImport
- *   onImported={() => {
+ *   onImported={async () => {
  *     invalidate("products");
- *     loadProducts({ force: true });
+ *     invalidate("brands");       // import can create new brands
+ *     invalidate("categories");   // import can create new categories
+ *     await Promise.all([
+ *       loadProducts({ force: true }),
+ *       loadBrands(),
+ *       loadCategories(),
+ *     ]);
  *   }}
  * />
  */
@@ -65,6 +72,8 @@ const styles = {
 
 export default function ProductImport({ onImported }) {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+  // Pharmacy store gets the medicine template; grocery/mart gets the weight (sale_type) template.
+  const isPharmacy = hasFeature("pharmacy");
   const inputRef = useRef(null);
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -96,7 +105,9 @@ export default function ProductImport({ onImported }) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "product-import-template.xlsx";
+      a.download = isPharmacy
+        ? "pharmacy-product-import-template.xlsx"
+        : "product-import-template.xlsx";
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -218,9 +229,25 @@ export default function ProductImport({ onImported }) {
       <p style={styles.hint}>
         1) Download the template.
         <br />
-        2) Fill in the product details.
+        {isPharmacy ? (
+          <>
+            2) Fill in the medicine details. <b>name</b>, <b>salt_composition</b>,{" "}
+            <b>manufacturer</b>, <b>drug_schedule</b> (none, G, H, H1, X),{" "}
+            <b>pack_type</b> and <b>units_per_pack</b> are required for every row.
+            Schedule H, H1 and X always need a prescription.
+          </>
+        ) : (
+          <>
+            2) Fill in the product details. Only <b>name</b> is always required
+            (weight products also need <b>plu_code</b> and <b>price_per_kg</b>).
+          </>
+        )}
         <br />
-        3) Upload the complete file, You can import up to <b>2,000</b> products at a time.
+        3) Write the <b>brand</b> and <b>category</b> names in the sheet. If a brand or
+        category does not exist yet, it is <b>created automatically</b> — no need to
+        create it first.
+        <br />
+        4) Upload the complete file. You can import up to <b>2,000</b> products at a time.
       </p>
 
       <div style={styles.row}>
@@ -279,7 +306,24 @@ export default function ProductImport({ onImported }) {
             <div><b>{summary.created ?? 0}</b> products created</div>
             <div><b>{summary.skipped ?? 0}</b> skipped</div>
             <div><b>{summary.total_rows ?? 0}</b> total rows</div>
+            {Number(summary.brands_created || 0) > 0 && (
+              <div><b>{summary.brands_created}</b> new brands created</div>
+            )}
+            {Number(summary.categories_created || 0) > 0 && (
+              <div><b>{summary.categories_created}</b> new categories created</div>
+            )}
           </div>
+
+          {(Array.isArray(result?.created_brands) && result.created_brands.length > 0) && (
+            <div style={{ ...styles.hint, margin: "10px 0 0" }}>
+              <b>New brands:</b> {result.created_brands.join(", ")}
+            </div>
+          )}
+          {(Array.isArray(result?.created_categories) && result.created_categories.length > 0) && (
+            <div style={{ ...styles.hint, margin: "6px 0 0" }}>
+              <b>New categories:</b> {result.created_categories.join(", ")}
+            </div>
+          )}
 
           {errors.length > 0 && (
             <>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import DataTable from "react-data-table-component";
 import { toast } from "react-toastify";
@@ -7,6 +7,508 @@ import { ONLINE_CSS } from "./onlineStyles";
 import { ONLINE_TABLE_STYLES } from "./onlineTableStyles";
 import OnlineProductLimits from "./OnlineProductLimits";
 import StoreLogoUpload from "./StoreLogoUpload";
+
+/* ================================================================== */
+/*  VALIDATION (is file ke andar hi; alag module ki zarurat nahi)      */
+/*                                                                    */
+/*  - sanitize.*  : type / paste karte waqt galat characters hata deta */
+/*                  hai ({ value, notice })                           */
+/*  - finalize.*  : field se bahar jaate hi value saaf karta hai       */
+/*  - validate*   : Save / Add dabane par final check                  */
+/* ================================================================== */
+
+// Limits (yahin se badlo, baaki code apne aap follow karega)
+const LIMITS = {
+  displayName: { min: 2, max: 150 },
+  slug: { min: 3, max: 100 },
+  address: { min: 5, max: 255 },
+  about: { max: 1000 },
+  maxMoney: 999999.99, // delivery charge, minimum order, pincode amounts
+  maxFreeDelivery: 9999999.99, // "Free delivery above"
+  stockPercent: { min: 0, max: 100 },
+  maxQty: { min: 1, max: 10000 }, // per product per order
+  prepMinutes: { min: 1, max: 1440 },
+  maxPincodes: 200, // ek baar me
+  pincodeText: 1400, // textarea ki max length (200 pincodes + separators)
+};
+
+// Form ke fields screen ke order me. Pehla galat field yahin se focus hota hai
+// (element id = "ovx-f-" + key)
+const FIELD_ORDER = [
+  "display_name",
+  "slug",
+  "phone",
+  "address",
+  "about",
+  "open_time",
+  "close_time",
+  "online_stock_percent",
+  "max_qty_per_product",
+  "delivery_mode",
+  "delivery_charge",
+  "free_delivery_above",
+  "min_order_amount",
+  "prep_minutes",
+];
+
+// \p{M} = combining marks (Hindi / Gujarati matras). Iske bina "हिन्दी" jaise naam ruk jaate hain.
+const NAME_CHAR = /[\p{L}\p{M}\p{N} ]/u;
+const ADDRESS_CHAR = /[\p{L}\p{M}\p{N} ,.#/()'’-]/u;
+const ABOUT_CHAR = /[\p{L}\p{M}\p{N} .,!?'’"()/:;&%+-]/u;
+
+const NAME_RE = /^[\p{L}\p{M}\p{N} ]+$/u;
+const ADDRESS_RE = /^[\p{L}\p{M}\p{N} ,.#/()'’-]+$/u;
+const ABOUT_RE = /^[\p{L}\p{M}\p{N} .,!?'’"()/:;&%+-]+$/u;
+const HAS_LETTER = /\p{L}/u;
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const PHONE_RE = /^[6-9]\d{9}$/; // Indian mobile
+const PINCODE_RE = /^[1-9]\d{5}$/; // Indian PIN kabhi 0 se shuru nahi hota
+const MONEY_RE = /^\d+(\.\d{0,2})?$/;
+const WHOLE_RE = /^\d+$/;
+const LINK_RE =
+  /(https?:|www\.|\b[a-z0-9-]+\.(com|in|net|org|co|io|me|shop|store|app|xyz)\b)/i;
+
+const cleanText = (v) => String(v ?? "").replace(/\s+/g, " ").trim();
+
+const fmtMoney = (n) =>
+  n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// "+91 98765 43210", "098765 43210", "9876543210" -> 10 digit
+const cleanPhone = (raw) => {
+  let digits = String(raw ?? "").replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) digits = digits.slice(2);
+  else if (digits.length === 11 && digits.startsWith("0")) digits = digits.slice(1);
+  return digits.slice(0, 10);
+};
+
+const normalizePhone = (raw) => cleanPhone(raw);
+
+const parsePincodes = (text) => {
+  const parts = String(text ?? "")
+    .split(/[\s,]+/)
+    .filter(Boolean);
+  return [...new Set(parts)];
+};
+
+/* ---------- sanitize: typing ke waqt ---------- */
+
+const textSanitizer = (charRe, max, notice) => (raw) => {
+  const original = String(raw ?? "").replace(/[\r\n\t]+/g, " ");
+  const kept = Array.from(original).filter((ch) => charRe.test(ch)).join("");
+  const removed = kept.length !== original.length;
+  const value = kept.replace(/\s{2,}/g, " ").replace(/^\s+/, "").slice(0, max);
+  return { value, notice: removed ? notice : "" };
+};
+
+const sanitize = {
+  displayName: textSanitizer(
+    NAME_CHAR,
+    LIMITS.displayName.max,
+    "Only letters, numbers and spaces are allowed here."
+  ),
+
+  address: textSanitizer(
+    ADDRESS_CHAR,
+    LIMITS.address.max,
+    "Only letters, numbers, spaces and , . # / ( ) ' - are allowed here."
+  ),
+
+  // About: ek paragraph (new line space ban jaati hai)
+  about: textSanitizer(
+    ABOUT_CHAR,
+    LIMITS.about.max,
+    "Some symbols are not allowed and were removed."
+  ),
+
+  slug: (raw) => {
+    const original = String(raw ?? "").toLowerCase().replace(/\s+/g, "-");
+    const kept = original.replace(/[^a-z0-9-]/g, "");
+    const value = kept
+      .replace(/-{2,}/g, "-")
+      .replace(/^-+/, "")
+      .slice(0, LIMITS.slug.max);
+    return {
+      value,
+      notice:
+        kept.length !== original.length
+          ? "Only small letters, numbers and hyphens are allowed here."
+          : "",
+    };
+  },
+
+  phone: (raw) => {
+    const s = String(raw ?? "");
+    const value = cleanPhone(s);
+    return {
+      value,
+      notice: /[^\d\s+()-]/.test(s) ? "Phone number can contain digits only." : "",
+    };
+  },
+
+  // Poori sankhya (maxDigits tak)
+  whole: (maxDigits) => (raw) => {
+    const s = String(raw ?? "");
+    const digits = s.replace(/\D/g, "");
+    const value = digits.replace(/^0+(?=\d)/, "").slice(0, maxDigits);
+    return {
+      value,
+      notice: digits.length !== s.length ? "Only whole numbers are allowed here." : "",
+    };
+  },
+
+  // Rupaye: intDigits = decimal se pehle kitne digit, baad me max 2
+  money: (intDigits) => (raw) => {
+    const s = String(raw ?? "");
+    const stripped = s.replace(/[^\d.]/g, "");
+    let notice = stripped.length !== s.length ? "Only numbers are allowed here." : "";
+
+    const dot = stripped.indexOf(".");
+    let intPart = dot === -1 ? stripped : stripped.slice(0, dot);
+    let frac = dot === -1 ? null : stripped.slice(dot + 1).replace(/\./g, "");
+
+    if (frac !== null && frac.length > 2) {
+      frac = frac.slice(0, 2);
+      notice = notice || "Only 2 decimal places are allowed.";
+    }
+    if (intPart.length > intDigits) {
+      intPart = intPart.slice(0, intDigits);
+      notice = notice || `Amount can have at most ${intDigits} digits before the decimal point.`;
+    }
+    intPart = intPart.replace(/^0+(?=\d)/, "");
+    if (frac !== null && intPart === "") intPart = "0";
+
+    return { value: frac === null ? intPart : `${intPart}.${frac}`, notice };
+  },
+
+  // Pincodes: digits, comma, space, new line
+  pincodes: (raw) => {
+    const s = String(raw ?? "");
+    const value = s.replace(/[^\d,\s]/g, "").slice(0, LIMITS.pincodeText);
+    return {
+      value,
+      notice:
+        value.length !== s.length && /[^\d,\s]/.test(s)
+          ? "Only digits, commas, spaces and new lines are allowed here."
+          : "",
+    };
+  },
+};
+
+/* ---------- finalize: field se bahar jaate hi ---------- */
+
+const finalize = {
+  text: (v) => cleanText(v),
+  slug: (v) => String(v ?? "").replace(/^-+|-+$/g, ""),
+  // "5." -> "5", "." -> ""
+  money: (v) => {
+    const s = String(v ?? "");
+    if (s === "" || s === ".") return "";
+    return s.endsWith(".") ? s.slice(0, -1) : s;
+  },
+};
+
+/* ---------- field checks ---------- */
+
+const checkMoney = (value, { label, max, required = false, positive = false }) => {
+  const v = String(value ?? "").trim();
+  if (v === "") return required ? `${label} is required (enter 0 if none).` : "";
+  if (!MONEY_RE.test(v)) {
+    return `${label} must be a valid amount with up to 2 decimal places.`;
+  }
+  const n = Number(v);
+  if (n > max) return `${label} cannot be more than ₹${fmtMoney(max)}.`;
+  if (positive && n <= 0) {
+    return `${label} must be greater than 0 (leave it empty for none).`;
+  }
+  return "";
+};
+
+const checkWhole = (value, { label, min, max, required = false }) => {
+  const v = String(value ?? "").trim();
+  if (v === "") return required ? `${label} is required.` : "";
+  if (!WHOLE_RE.test(v)) return `${label} must be a whole number.`;
+  const n = Number(v);
+  if (n < min || n > max) {
+    return `${label} must be between ${min.toLocaleString("en-IN")} and ${max.toLocaleString("en-IN")}.`;
+  }
+  return "";
+};
+
+/* ---------- main settings form ---------- */
+
+function validateSettings(values) {
+  const e = {};
+
+  // Display name (optional)
+  const name = cleanText(values.display_name);
+  if (name) {
+    if (name.length < LIMITS.displayName.min) {
+      e.display_name = `Display name must be at least ${LIMITS.displayName.min} characters.`;
+    } else if (name.length > LIMITS.displayName.max) {
+      e.display_name = `Display name can be at most ${LIMITS.displayName.max} characters.`;
+    } else if (!NAME_RE.test(name)) {
+      e.display_name = "Display name can contain only letters, numbers and spaces.";
+    } else if (!HAS_LETTER.test(name)) {
+      e.display_name = "Display name must contain at least one letter.";
+    }
+  }
+
+  // Store link name (optional)
+  const slug = String(values.slug ?? "").trim();
+  if (slug) {
+    if (slug.length < LIMITS.slug.min) {
+      e.slug = `Store link name must be at least ${LIMITS.slug.min} characters.`;
+    } else if (!SLUG_RE.test(slug)) {
+      e.slug =
+        "Use small letters and numbers only. Hyphens are allowed between words (not at the start or end).";
+    }
+  }
+
+  // Phone (optional)
+  const phone = String(values.phone ?? "").trim();
+  if (phone && !PHONE_RE.test(phone)) {
+    e.phone = "Enter a valid 10-digit mobile number (starts with 6, 7, 8 or 9).";
+  }
+
+  // Address (optional)
+  const address = cleanText(values.address);
+  if (address) {
+    if (address.length < LIMITS.address.min) {
+      e.address = `Address must be at least ${LIMITS.address.min} characters.`;
+    } else if (address.length > LIMITS.address.max) {
+      e.address = `Address can be at most ${LIMITS.address.max} characters.`;
+    } else if (!ADDRESS_RE.test(address)) {
+      e.address = "Address contains characters that are not allowed.";
+    }
+  }
+
+  // About (optional)
+  const about = cleanText(values.about);
+  if (about) {
+    if (about.length > LIMITS.about.max) {
+      e.about = `About can be at most ${LIMITS.about.max} characters.`;
+    } else if (!ABOUT_RE.test(about)) {
+      e.about = "About contains characters that are not allowed.";
+    } else if (LINK_RE.test(about)) {
+      e.about = "Links and website addresses are not allowed in the description.";
+    }
+  }
+
+  // Timings: dono ya dono khaali
+  const open = values.open_time || "";
+  const close = values.close_time || "";
+  if (open && !close) {
+    e.close_time = "Select the closing time too, or clear the opening time.";
+  } else if (!open && close) {
+    e.open_time = "Select the opening time too, or clear the closing time.";
+  } else if (open && close && open === close) {
+    e.close_time = "Closing time must be different from the opening time.";
+  }
+
+  // Online stock share
+  const stock = checkWhole(values.online_stock_percent, {
+    label: "Online stock share",
+    min: LIMITS.stockPercent.min,
+    max: LIMITS.stockPercent.max,
+    required: true,
+  });
+  if (stock) e.online_stock_percent = stock;
+
+  // Max qty per product (optional)
+  const maxQty = checkWhole(values.max_qty_per_product, {
+    label: "Max quantity",
+    min: LIMITS.maxQty.min,
+    max: LIMITS.maxQty.max,
+  });
+  if (maxQty) e.max_qty_per_product = maxQty;
+
+  // Delivery / pickup: online store ON hai to kam se kam ek mode chahiye
+  if (values.is_online_enabled && !values.accepts_delivery && !values.accepts_pickup) {
+    e.delivery_mode =
+      "Turn on home delivery or pickup. With both off, customers cannot place orders.";
+  }
+
+  // Amounts
+  const charge = checkMoney(values.delivery_charge, {
+    label: "Delivery charge",
+    max: LIMITS.maxMoney,
+    required: true,
+  });
+  if (charge) e.delivery_charge = charge;
+
+  const minOrder = checkMoney(values.min_order_amount, {
+    label: "Minimum order",
+    max: LIMITS.maxMoney,
+    required: true,
+  });
+  if (minOrder) e.min_order_amount = minOrder;
+
+  const free = checkMoney(values.free_delivery_above, {
+    label: "Free delivery limit",
+    max: LIMITS.maxFreeDelivery,
+    positive: true,
+  });
+  if (free) {
+    e.free_delivery_above = free;
+  } else if (
+    String(values.free_delivery_above ?? "").trim() !== "" &&
+    !minOrder &&
+    Number(values.free_delivery_above) < Number(values.min_order_amount || 0)
+  ) {
+    e.free_delivery_above = `Free delivery limit should be at least the minimum order (₹${fmtMoney(
+      Number(values.min_order_amount || 0)
+    )}).`;
+  }
+
+  // Prepare time
+  const prep = checkWhole(values.prep_minutes, {
+    label: "Prepare time",
+    min: LIMITS.prepMinutes.min,
+    max: LIMITS.prepMinutes.max,
+    required: true,
+  });
+  if (prep) e.prep_minutes = prep;
+
+  return e;
+}
+
+/* ---------- API payload ---------- */
+
+function buildSettingsPayload(form) {
+  const num = (v, d = 0) => (v === "" || v === null || v === undefined ? d : Number(v));
+  const slug = String(form.slug ?? "").trim();
+
+  return {
+    ...form,
+    display_name: cleanText(form.display_name),
+    slug: slug || null,
+    phone: String(form.phone ?? "").trim(),
+    address: cleanText(form.address),
+    about: cleanText(form.about),
+    min_order_amount: num(form.min_order_amount),
+    delivery_charge: num(form.delivery_charge),
+    free_delivery_above:
+      form.free_delivery_above === "" || form.free_delivery_above == null
+        ? null
+        : Number(form.free_delivery_above),
+    prep_minutes: num(form.prep_minutes, 30),
+    online_stock_percent: num(form.online_stock_percent, 50),
+    open_time: form.open_time || null,
+    close_time: form.close_time || null,
+    max_qty_per_product:
+      form.max_qty_per_product === "" || form.max_qty_per_product == null
+        ? null
+        : Number(form.max_qty_per_product),
+  };
+}
+
+/* ---------- backend (422) errors -> form fields ---------- */
+
+const SERVER_KEY_MAP = {
+  accepts_delivery: "delivery_mode",
+  accepts_pickup: "delivery_mode",
+};
+
+function serverFieldErrors(err) {
+  const raw = err?.response?.data?.errors;
+  const out = {};
+  if (raw && typeof raw === "object") {
+    Object.entries(raw).forEach(([key, val]) => {
+      const field = SERVER_KEY_MAP[key] || key;
+      if (FIELD_ORDER.includes(field) && !out[field]) {
+        out[field] = Array.isArray(val) ? val[0] : String(val);
+      }
+    });
+  }
+  return out;
+}
+
+/* ---------- pincodes ---------- */
+
+function validatePincodeAdd({ pins, charge, min }) {
+  const e = {};
+  const list = parsePincodes(pins);
+
+  if (!list.length) {
+    e.pins = "Enter at least one pincode.";
+  } else {
+    const bad = list.find((p) => !PINCODE_RE.test(p));
+    if (bad) {
+      e.pins = `"${bad}" is not a valid pincode. Each pincode must be 6 digits and cannot start with 0.`;
+    } else if (list.length > LIMITS.maxPincodes) {
+      e.pins = `You can add at most ${LIMITS.maxPincodes} pincodes at a time (you entered ${list.length}).`;
+    }
+  }
+
+  const c = checkMoney(charge, { label: "Delivery charge", max: LIMITS.maxMoney });
+  if (c) e.charge = c;
+
+  const m = checkMoney(min, { label: "Minimum order", max: LIMITS.maxMoney });
+  if (m) e.min = m;
+
+  return e;
+}
+
+// Table me inline edit (khaali = store default)
+function validateRowDraft(draft) {
+  const e = {};
+  const c = checkMoney(draft.delivery_charge, {
+    label: "Delivery charge",
+    max: LIMITS.maxMoney,
+  });
+  if (c) e.delivery_charge = c;
+
+  const m = checkMoney(draft.min_order_amount, {
+    label: "Minimum order",
+    max: LIMITS.maxMoney,
+  });
+  if (m) e.min_order_amount = m;
+
+  return e;
+}
+
+/* ================================================================== */
+/*  Styles                                                            */
+/* ================================================================== */
+
+// Validation ke error / counter ki styling (baaki styling onlineStyles.js me hai)
+const VALIDATION_CSS = `
+.ovx .ovx-ferr { display: block; margin-top: 6px; font-size: 12px; line-height: 1.4; font-weight: 600; color: #dc2626; }
+.ovx .ovx-input.ovx-invalid, .ovx .ovx-time-trigger.invalid { border-color: #dc2626 !important; }
+.ovx .ovx-input.ovx-invalid:focus { box-shadow: 0 0 0 3px rgba(220,38,38,.15) !important; }
+.ovx .ovx-fcount { display: block; margin-top: 4px; text-align: right; font-size: 11px; color: #94a3b8; }
+.ovx .ovx-req { color: #dc2626; }
+.ovx .ovx-cellfield { padding: 6px 0; }
+.ovx .ovx-cellfield .ovx-ferr { max-width: 220px; }
+`;
+
+// Branch ka on/off switch
+const BRANCH_CSS = `
+.ovx .ovx-bsw-wrap { display: flex !important; align-items: center !important; gap: 8px !important; flex-shrink: 0 !important; }
+.ovx .ovx-bsw { position: relative !important; display: block !important; width: 44px !important; height: 24px !important; padding: 0 !important; border: 0 !important; border-radius: 12px !important; background: #cbd5e1 !important; cursor: pointer !important; flex-shrink: 0 !important; transition: background .15s !important; }
+.ovx .ovx-bsw.on { background: #2563eb !important; }
+.ovx .ovx-bsw:disabled { opacity: .55 !important; cursor: wait !important; }
+.ovx .ovx-bsw:focus-visible { outline: 2px solid #2563eb !important; outline-offset: 2px !important; }
+.ovx .ovx-bsw-knob { position: absolute !important; top: 3px !important; left: 3px !important; width: 18px !important; height: 18px !important; border-radius: 50% !important; background: #fff !important; transition: left .15s !important; }
+.ovx .ovx-bsw.on .ovx-bsw-knob { left: 23px !important; }
+.ovx .ovx-bsw-label { min-width: 28px !important; font-size: 12px !important; font-weight: 700 !important; color: #64748b !important; }
+.ovx .ovx-bsw.on + .ovx-bsw-label { color: #1d4ed8 !important; }
+.ovx .ovx-list li.is-off .ovx-list-name { color: #94a3b8 !important; }
+.ovx .ovx-list li.is-off a { color: #94a3b8 !important; }
+.ovx .ovx-bstat-list { list-style: none !important; margin: 0 !important; padding: 0 !important; display: grid !important; gap: 10px !important; }
+.ovx .ovx-bstat { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 14px !important; flex-wrap: wrap !important; padding: 14px 16px !important; border: 1px solid #e2e8f0 !important; border-radius: 12px !important; background: #fff !important; }
+.ovx .ovx-bstat.is-open { border-left: 4px solid #16a34a !important; }
+.ovx .ovx-bstat.is-closed { border-left: 4px solid #dc2626 !important; background: #fef2f2 !important; }
+.ovx .ovx-bstat-name { margin: 0 !important; font-size: 15px !important; font-weight: 700 !important; color: #172033 !important; }
+.ovx .ovx-bstat-state { display: inline-block !important; margin-top: 4px !important; padding: 2px 10px !important; border-radius: 999px !important; font-size: 12px !important; font-weight: 700 !important; }
+.ovx .ovx-bstat.is-open .ovx-bstat-state { background: #dcfce7 !important; color: #15803d !important; }
+.ovx .ovx-bstat.is-closed .ovx-bstat-state { background: #fee2e2 !important; color: #b91c1c !important; }
+.ovx .ovx-bstat-btn { min-width: 130px !important; height: 40px !important; padding: 0 18px !important; border-radius: 10px !important; font-size: 14px !important; font-weight: 700 !important; cursor: pointer !important; border: 1.5px solid transparent !important; }
+.ovx .ovx-bstat-btn.do-close { background: #fff !important; color: #dc2626 !important; border-color: #dc2626 !important; }
+.ovx .ovx-bstat-btn.do-open { background: #16a34a !important; color: #fff !important; border-color: #16a34a !important; }
+.ovx .ovx-bstat-btn:disabled { opacity: .55 !important; cursor: wait !important; }
+.ovx .ovx-note { margin: 0 0 12px !important; padding: 10px 12px !important; border-radius: 10px !important; font-size: 13px !important; line-height: 1.5 !important; background: #fffbeb !important; border: 1px solid #fde68a !important; color: #92400e !important; }
+`;
 
 const TIME_PICKER_CSS = `
 .ovx .ovx-time-picker { position: relative; width: 100%; z-index: 1; }
@@ -78,7 +580,7 @@ const TIME_PICKER_CSS = `
 `;
 
 const STOREFRONT_URL =
-  process.env.REACT_APP_STOREFRONT_URL || "https://store.vakaro.in";
+  process.env.REACT_APP_STOREFRONT_URL || "https://store.vakro.in";
 
 const errorText = (err, fallback) => {
   const errors = err?.response?.data?.errors;
@@ -87,95 +589,6 @@ const errorText = (err, fallback) => {
     if (Array.isArray(first) && first[0]) return first[0];
   }
   return err?.response?.data?.message || fallback;
-};
-
-// Input filters: invalid keystrokes and pasted characters are rejected.
-const TEXT_NAME_RE = /^[\p{L}\p{N} ]*$/u;
-const ADDRESS_RE = /^[\p{L}\p{N} ,.#\/()'’\-]*$/u;
-const ABOUT_RE = /^[\p{L}\p{N} \n\r.,!?'"()\/:;#&@%+’-]*$/u;
-const SLUG_RE = /^[a-z0-9-]*$/;
-const PHONE_RE = /^\d{0,10}$/;
-const DECIMAL_RE = /^\d*(?:\.\d{0,2})?$/;
-const INTEGER_RE = /^\d*$/;
-const MAX_AMOUNT = 999999.99;
-const MAX_QUANTITY = 99;
-
-const isValidAmountInput = (value) =>
-  value === "" ||
-  (DECIMAL_RE.test(value) &&
-    value !== "." &&
-    value.length <= 9 &&
-    Number(value) <= MAX_AMOUNT);
-
-const isValidIntegerInput = (value, min, max, allowEmpty = false) => {
-  if (allowEmpty && value === "") return true;
-  if (!INTEGER_RE.test(value) || value.length > String(max).length) return false;
-  const number = Number(value);
-  return number >= min && number <= max;
-};
-
-const isValidPincodeInput = (value) => {
-  if (!/^[0-9,\s]*$/.test(value)) return false;
-  return value
-    .split(/[ ,\t\n\r]+/)
-    .every((part) => part.length <= 6);
-};
-
-const validateSettings = (values) => {
-  if (values.display_name.length > 150 || !TEXT_NAME_RE.test(values.display_name)) {
-    return "Display name can contain only letters, numbers and spaces (max 150 characters).";
-  }
-  if (values.slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(values.slug)) {
-    return "Store link name can contain lowercase letters, numbers and single hyphens.";
-  }
-  if (values.phone && !/^\d{10}$/.test(values.phone)) {
-    return "Phone number must contain exactly 10 digits.";
-  }
-  if (values.address.length > 255 || !ADDRESS_RE.test(values.address)) {
-    return "Address contains invalid characters or exceeds 255 characters.";
-  }
-  if (values.about.length > 1000 || !ABOUT_RE.test(values.about)) {
-    return "About the store contains invalid characters or exceeds 1000 characters.";
-  }
-
-  const moneyFields = [
-    ["Delivery charge", values.delivery_charge],
-    ["Minimum order", values.min_order_amount],
-    ["Free delivery above", values.free_delivery_above],
-  ];
-  for (const [label, value] of moneyFields) {
-    if (value !== "" && !isValidAmountInput(value)) {
-      return `${label} must be between ₹0 and ₹999,999.99 with up to 2 decimal places.`;
-    }
-  }
-
-  if (
-    !INTEGER_RE.test(values.online_stock_percent) ||
-    values.online_stock_percent === "" ||
-    Number(values.online_stock_percent) < 0 ||
-    Number(values.online_stock_percent) > 100
-  ) {
-    return "Online stock share must be a whole number between 0 and 100.";
-  }
-  if (
-    !INTEGER_RE.test(values.prep_minutes) ||
-    values.prep_minutes === "" ||
-    Number(values.prep_minutes) < 0 ||
-    Number(values.prep_minutes) > 1440
-  ) {
-    return "Preparation time must be a whole number between 0 and 1440 minutes.";
-  }
-  if (
-    values.max_qty_per_product !== "" &&
-    !isValidIntegerInput(values.max_qty_per_product, 1, MAX_QUANTITY)
-  ) {
-    return "Maximum quantity must be a whole number between 1 and 99.";
-  }
-  if (!!values.open_time !== !!values.close_time) {
-    return "Please select both opening and closing times, or leave both empty.";
-  }
-
-  return "";
 };
 
 const EMPTY = {
@@ -206,7 +619,7 @@ const toForm = (s) => ({
   slug: s.slug || "",
   display_name: s.display_name || "",
   about: s.about || "",
-  phone: String(s.phone || "").replace(/\D/g, "").slice(-10),
+  phone: normalizePhone(s.phone),
   address: s.address || "",
   open_time: normalizeTime(s.open_time),
   close_time: normalizeTime(s.close_time),
@@ -236,17 +649,31 @@ function Card({ title, hint, children }) {
   );
 }
 
-function Field({ label, hint, children }) {
+// error = laal message, hint = halka madad text, count/max = "12/60" counter
+function Field({ label, hint, error, required, count, max, children }) {
   return (
     <label className="ovx-field">
-      <span className="ovx-label">{label}</span>
+      <span className="ovx-label">
+        {label}
+        {required && <span className="ovx-req" aria-hidden="true"> *</span>}
+      </span>
       {children}
+      {max != null && (
+        <span className="ovx-fcount">
+          {count}/{max}
+        </span>
+      )}
+      {error && (
+        <span className="ovx-ferr" aria-live="polite">
+          {error}
+        </span>
+      )}
       {hint && <span className="ovx-fhint">{hint}</span>}
     </label>
   );
 }
 
-function TimePicker({ label, value, onChange }) {
+function TimePicker({ id, invalid, label, value, onChange }) {
   const [open, setOpen] = useState(false);
   const [hour, setHour] = useState("09");
   const [minute, setMinute] = useState("00");
@@ -313,11 +740,13 @@ function TimePicker({ label, value, onChange }) {
   return (
     <div className="ovx-time-picker" ref={pickerRef}>
       <button
+        id={id}
         type="button"
         aria-label={`${label}: ${displayTime}`}
         aria-expanded={open}
+        aria-invalid={invalid ? "true" : undefined}
         onClick={() => setOpen((current) => !current)}
-        className={`ovx-time-trigger ${open ? "active" : ""}`}
+        className={`ovx-time-trigger ${open ? "active" : ""} ${invalid ? "invalid" : ""}`}
       >
         <span className="ovx-time-icon" aria-hidden="true">
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -466,18 +895,47 @@ export default function OnlineStoreSettings() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [listings, setListings] = useState([]);
+  const [branchBusy, setBranchBusy] = useState(null); // jis branch ka switch abhi save ho raha hai
   const [pincodes, setPincodes] = useState([]);
 
-  // naye pincodes ka form
+  // ---- main form ka validation
+  const [touched, setTouched] = useState({}); // jis field se user bahar nikal chuka
+  const [tried, setTried] = useState(false); // Save dabaya ja chuka
+  const [notice, setNotice] = useState({}); // "ye character allowed nahi" (typing ke waqt)
+  const [serverErrors, setServerErrors] = useState({}); // backend ke 422 errors
+  const errors = useMemo(() => validateSettings(form), [form]);
+  const errorOf = (key) =>
+    notice[key] || serverErrors[key] || (tried || touched[key] ? errors[key] : "") || "";
+  const inputCls = (key) => `ovx-input${errorOf(key) ? " ovx-invalid" : ""}`;
+
+  // ---- naye pincodes ka form
   const [pins, setPins] = useState("");
   const [pinCharge, setPinCharge] = useState("");
   const [pinMin, setPinMin] = useState("");
   const [adding, setAdding] = useState(false);
+  const [pinTried, setPinTried] = useState(false);
+  const [pinTouched, setPinTouched] = useState({});
+  const [pinNotice, setPinNotice] = useState({});
+  const [pinServerError, setPinServerError] = useState("");
+  const pinErrors = useMemo(
+    () => validatePincodeAdd({ pins, charge: pinCharge, min: pinMin }),
+    [pins, pinCharge, pinMin]
+  );
+  const pinErrorOf = (key) =>
+    pinNotice[key] ||
+    (key === "pins" ? pinServerError : "") ||
+    (pinTried || pinTouched[key] ? pinErrors[key] : "") ||
+    "";
+  const pinCls = (key) => `ovx-input${pinErrorOf(key) ? " ovx-invalid" : ""}`;
 
-  // pincode table: inline edit
+  // ---- pincode table: inline edit
   const [editId, setEditId] = useState(null);
   const [draft, setDraft] = useState({ delivery_charge: "", min_order_amount: "" });
+  const [draftNotice, setDraftNotice] = useState({});
   const [rowSaving, setRowSaving] = useState(false);
+  const [statusBusy, setStatusBusy] = useState(null);
+  const draftErrors = useMemo(() => validateRowDraft(draft), [draft]);
+  const draftErrorOf = (key) => draftNotice[key] || draftErrors[key] || "";
 
   const apply = useCallback((data) => {
     setStoreName(data.store_name || "");
@@ -500,87 +958,113 @@ export default function OnlineStoreSettings() {
     })();
   }, [role, apply]);
 
-  const setAllowed = (key, pattern, transform = (value) => value) => (e) => {
-    const value = transform(e.target.value);
-    if (pattern.test(value)) {
-      setForm((current) => ({ ...current, [key]: value }));
-    }
+  // Galat field par scroll + focus
+  const focusById = (id) => {
+    window.requestAnimationFrame(() => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (typeof el.focus === "function") el.focus({ preventScroll: true });
+    });
   };
-  const setDecimal = (key) => (e) => {
-    const value = e.target.value;
-    if (isValidAmountInput(value)) {
-      setForm((current) => ({ ...current, [key]: value }));
+
+  // Text / number inputs: type karte hi galat character hata do + kaaran dikhao
+  const change = (key, sanitizer) => (e) => {
+    const { value, notice: msg } = sanitizer(e.target.value);
+    setForm((f) => ({ ...f, [key]: value }));
+    setNotice((n) => (n[key] || msg ? { ...n, [key]: msg } : n));
+    setServerErrors((s) => (s[key] ? { ...s, [key]: "" } : s));
+  };
+
+  // Field se bahar jaate hi: touched, notice saaf, aur finalize (trim / "5." -> "5")
+  const blur = (key, finalizer) => () => {
+    setTouched((t) => ({ ...t, [key]: true }));
+    setNotice((n) => (n[key] ? { ...n, [key]: "" } : n));
+    if (finalizer) {
+      setForm((f) => {
+        const next = finalizer(f[key]);
+        return next === f[key] ? f : { ...f, [key]: next };
+      });
     }
   };
 
-  const setIntegerRange = (key, min, max, allowEmpty = false) => (e) => {
-    const value = e.target.value;
-    if (isValidIntegerInput(value, min, max, allowEmpty)) {
-      setForm((current) => ({ ...current, [key]: value }));
-    }
+  const changeTime = (key) => (value) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    setTouched((t) => ({ ...t, open_time: true, close_time: true }));
+    setServerErrors((s) => ({ ...s, open_time: "", close_time: "" }));
   };
-  const setBool = (key) => (v) => setForm((f) => ({ ...f, [key]: v }));
+
+  const setBool = (key) => (v) => {
+    setForm((f) => ({ ...f, [key]: v }));
+    setServerErrors((s) => ({ ...s, delivery_mode: "" }));
+  };
 
   const save = async (e) => {
     e.preventDefault();
+    if (saving) return;
     setFormError("");
+    setTried(true);
 
-    const validationMessage = validateSettings(form);
-    if (validationMessage) {
-      setFormError(validationMessage);
-      toast.error(validationMessage);
+    const found = validateSettings(form);
+    const firstKey = FIELD_ORDER.find((k) => found[k]);
+    if (firstKey) {
+      setFormError("Please correct the highlighted fields and save again.");
+      toast.error(found[firstKey]);
+      focusById(`ovx-f-${firstKey}`);
       return;
     }
 
     setSaving(true);
     try {
-      const num = (v, d = 0) => (v === "" || v === null ? d : Number(v));
-      const payload = {
-        ...form,
-        slug: form.slug.trim() || null,
-        min_order_amount: num(form.min_order_amount),
-        delivery_charge: num(form.delivery_charge),
-        free_delivery_above:
-          form.free_delivery_above === "" ? null : Number(form.free_delivery_above),
-        prep_minutes: num(form.prep_minutes, 30),
-        online_stock_percent: num(form.online_stock_percent, 50),
-        open_time: form.open_time || null,
-        close_time: form.close_time || null,
-        max_qty_per_product:
-          form.max_qty_per_product === "" ? null : Number(form.max_qty_per_product),
-      };
-      const res = await axios.put("/api/online/settings", payload);
+      const res = await axios.put("/api/online/settings", buildSettingsPayload(form));
       apply(res.data.data);
+      setTried(false);
+      setTouched({});
+      setNotice({});
+      setServerErrors({});
       toast.success("Online store settings saved.");
     } catch (err) {
+      const fieldErrors = serverFieldErrors(err);
+      setServerErrors(fieldErrors);
       const msg = errorText(err, "Could not save settings.");
       setFormError(msg);
       toast.error(msg);
+      const first = FIELD_ORDER.find((k) => fieldErrors[k]);
+      if (first) focusById(`ovx-f-${first}`);
     } finally {
       setSaving(false);
     }
   };
 
+  // ---- pincodes add
+  const changePin = (key, setter, sanitizer) => (e) => {
+    const { value, notice: msg } = sanitizer(e.target.value);
+    setter(value);
+    setPinNotice((n) => (n[key] || msg ? { ...n, [key]: msg } : n));
+    if (key === "pins") setPinServerError("");
+  };
+
+  const blurPin = (key, setter, finalizer) => () => {
+    setPinTouched((t) => ({ ...t, [key]: true }));
+    setPinNotice((n) => (n[key] ? { ...n, [key]: "" } : n));
+    if (finalizer && setter) setter((v) => finalizer(v));
+  };
+
   const addPincodes = async () => {
-    if (!pins.trim()) {
-      toast.error("Enter at least one pincode.");
+    if (adding) return;
+    setPinTried(true);
+    const firstKey = ["pins", "charge", "min"].find((k) => pinErrors[k]);
+    if (firstKey) {
+      toast.error(pinErrors[firstKey]);
+      focusById(`ovx-p-${firstKey}`);
       return;
     }
-    const pincodeList = pins.trim().split(/[ ,\t\n\r]+/).filter(Boolean);
-    if (!pincodeList.length || pincodeList.some((pin) => !/^\d{6}$/.test(pin))) {
-      toast.error("Every pincode must contain exactly 6 digits.");
-      return;
-    }
-    if (
-      (pinCharge !== "" && !isValidAmountInput(pinCharge)) ||
-      (pinMin !== "" && !isValidAmountInput(pinMin))
-    ) {
-      toast.error("Delivery charge and minimum order must be between ₹0 and ₹999,999.99, with up to 2 decimal places.");
-      return;
-    }
+
     setAdding(true);
+    setPinServerError("");
     try {
-      const body = { pincodes: pins };
+      // Saaf, duplicate-free list hi bhejo
+      const body = { pincodes: parsePincodes(pins).join(", ") };
       if (pinCharge !== "") body.delivery_charge = Number(pinCharge);
       if (pinMin !== "") body.min_order_amount = Number(pinMin);
       const res = await axios.post("/api/online/pincodes", body);
@@ -588,9 +1072,14 @@ export default function OnlineStoreSettings() {
       setPins("");
       setPinCharge("");
       setPinMin("");
+      setPinTried(false);
+      setPinTouched({});
+      setPinNotice({});
       toast.success(res.data.message || "Pincodes added.");
     } catch (err) {
-      toast.error(errorText(err, "Could not add pincodes."));
+      const msg = errorText(err, "Could not add pincodes.");
+      setPinServerError(msg);
+      toast.error(msg);
     } finally {
       setAdding(false);
     }
@@ -607,6 +1096,13 @@ export default function OnlineStoreSettings() {
     }
   };
 
+  const togglePincode = async (row) => {
+    if (statusBusy) return;
+    setStatusBusy(row.id);
+    await updatePincode(row.id, { is_active: !row.is_active });
+    setStatusBusy(null);
+  };
+
   const deletePincode = async (row) => {
     if (!window.confirm(`Remove pincode ${row.pincode}? Customers there will not get delivery.`))
       return;
@@ -620,18 +1116,24 @@ export default function OnlineStoreSettings() {
 
   const startEdit = (row) => {
     setEditId(row.id);
+    setDraftNotice({});
     setDraft({
-      delivery_charge: row.delivery_charge ?? "",
-      min_order_amount: row.min_order_amount ?? "",
+      delivery_charge: row.delivery_charge === null || row.delivery_charge === undefined ? "" : String(row.delivery_charge),
+      min_order_amount: row.min_order_amount === null || row.min_order_amount === undefined ? "" : String(row.min_order_amount),
     });
   };
 
+  const changeDraft = (key) => (e) => {
+    const { value, notice: msg } = sanitize.money(6)(e.target.value);
+    setDraft((d) => ({ ...d, [key]: value }));
+    setDraftNotice((n) => (n[key] || msg ? { ...n, [key]: msg } : n));
+  };
+
   const saveEdit = async (row) => {
-    if (
-      (draft.delivery_charge !== "" && !isValidAmountInput(String(draft.delivery_charge))) ||
-      (draft.min_order_amount !== "" && !isValidAmountInput(String(draft.min_order_amount)))
-    ) {
-      toast.error("Amounts must be between ₹0 and ₹999,999.99, with up to 2 decimal places.");
+    if (rowSaving) return;
+    const first = Object.values(draftErrors)[0];
+    if (first) {
+      toast.error(first);
       return;
     }
     setRowSaving(true);
@@ -641,6 +1143,31 @@ export default function OnlineStoreSettings() {
     });
     setRowSaving(false);
     if (ok) setEditId(null);
+  };
+
+  // Branch ko online store par on / off (turant save; baaki form ko haath nahi lagata)
+  const toggleBranch = async (l) => {
+    if (branchBusy) return;
+    const next = l.online_enabled === false; // abhi OFF hai to ON karo, warna OFF
+    if (
+      !next &&
+      !window.confirm(
+        `Close ${l.name}?\n\nCustomers will not see this branch and cannot place new orders for it. Orders already placed are not affected.`
+      )
+    ) {
+      return;
+    }
+
+    setBranchBusy(l.branch_id);
+    try {
+      const res = await axios.put(`/api/online/branches/${l.branch_id}`, { online_enabled: next });
+      setListings(res.data.data.listings || []);
+      toast.success(res.data.message || (next ? `${l.name} is now open.` : `${l.name} is now closed.`));
+    } catch (err) {
+      toast.error(errorText(err, "Could not update this branch."));
+    } finally {
+      setBranchBusy(null);
+    }
   };
 
   const copy = async (text) => {
@@ -665,19 +1192,26 @@ export default function OnlineStoreSettings() {
       sortable: true,
       cell: (r) =>
         editId === r.id ? (
-          <input
-            type="text"
-            inputMode="decimal"
-            maxLength={9}
-            placeholder="Default"
-            className="ovx-input ovx-sm"
-            value={draft.delivery_charge}
-            onChange={(e) => {
-              if (isValidAmountInput(e.target.value)) {
-                setDraft((d) => ({ ...d, delivery_charge: e.target.value }));
-              }
-            }}
-          />
+          <div className="ovx-cellfield">
+            <input
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              maxLength={9}
+              placeholder="Default"
+              aria-label="Delivery charge"
+              aria-invalid={draftErrorOf("delivery_charge") ? "true" : undefined}
+              className={`ovx-input ovx-sm${draftErrorOf("delivery_charge") ? " ovx-invalid" : ""}`}
+              value={draft.delivery_charge}
+              onChange={changeDraft("delivery_charge")}
+              onBlur={() => setDraft((d) => ({ ...d, delivery_charge: finalize.money(d.delivery_charge) }))}
+            />
+            {draftErrorOf("delivery_charge") && (
+              <span className="ovx-ferr" aria-live="polite">
+                {draftErrorOf("delivery_charge")}
+              </span>
+            )}
+          </div>
         ) : (
           showAmount(r.delivery_charge)
         ),
@@ -688,19 +1222,26 @@ export default function OnlineStoreSettings() {
       sortable: true,
       cell: (r) =>
         editId === r.id ? (
-          <input
-            type="text"
-            inputMode="decimal"
-            maxLength={9}
-            placeholder="Default"
-            className="ovx-input ovx-sm"
-            value={draft.min_order_amount}
-            onChange={(e) => {
-              if (isValidAmountInput(e.target.value)) {
-                setDraft((d) => ({ ...d, min_order_amount: e.target.value }));
-              }
-            }}
-          />
+          <div className="ovx-cellfield">
+            <input
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              maxLength={9}
+              placeholder="Default"
+              aria-label="Minimum order"
+              aria-invalid={draftErrorOf("min_order_amount") ? "true" : undefined}
+              className={`ovx-input ovx-sm${draftErrorOf("min_order_amount") ? " ovx-invalid" : ""}`}
+              value={draft.min_order_amount}
+              onChange={changeDraft("min_order_amount")}
+              onBlur={() => setDraft((d) => ({ ...d, min_order_amount: finalize.money(d.min_order_amount) }))}
+            />
+            {draftErrorOf("min_order_amount") && (
+              <span className="ovx-ferr" aria-live="polite">
+                {draftErrorOf("min_order_amount")}
+              </span>
+            )}
+          </div>
         ) : (
           showAmount(r.min_order_amount)
         ),
@@ -711,7 +1252,8 @@ export default function OnlineStoreSettings() {
       cell: (r) => (
         <button
           type="button"
-          onClick={() => updatePincode(r.id, { is_active: !r.is_active })}
+          onClick={() => togglePincode(r)}
+          disabled={statusBusy === r.id}
           title="Click to toggle"
           style={{
             padding: "3px 12px",
@@ -770,7 +1312,7 @@ export default function OnlineStoreSettings() {
       <div className="main-content-inner">
         <div className="main-content-wrap">
           <div className="ovx">
-            <style>{`${ONLINE_CSS}\n${TIME_PICKER_CSS}`}</style>
+            <style>{`${ONLINE_CSS}\n${TIME_PICKER_CSS}\n${VALIDATION_CSS}\n${BRANCH_CSS}`}</style>
 
             <div className="ovx-head">
               <div className="ovx-titlewrap">
@@ -799,7 +1341,7 @@ export default function OnlineStoreSettings() {
               <p className="ovx-alert ovx-alert-err">{loadError}</p>
             ) : (
               <>
-                <form onSubmit={save}>
+                <form onSubmit={save} noValidate>
                   <Card
                     title="Online store"
                     hint="Turn this off to hide all your branches from the online store."
@@ -812,56 +1354,143 @@ export default function OnlineStoreSettings() {
                     />
                   </Card>
 
+                  {listings.length > 1 && (
+                    <Card
+                      title="Branch status"
+                      hint="Open or close each branch separately. A closed branch is hidden from customers and cannot take new orders. Orders already placed are not affected. Changes apply immediately."
+                    >
+                      {!form.is_online_enabled && (
+                        <p className="ovx-note">
+                          The whole online store is OFF, so no branch is visible to customers, whatever these buttons say.
+                        </p>
+                      )}
+                      {form.is_online_enabled && listings.every((l) => l.online_enabled === false) && (
+                        <p className="ovx-note">All branches are closed. Customers cannot see your store right now.</p>
+                      )}
+                      <ul className="ovx-bstat-list">
+                        {listings.map((l) => {
+                          const open = l.online_enabled !== false;
+                          const busy = branchBusy === l.branch_id;
+                          return (
+                            <li key={l.branch_id} className={`ovx-bstat ${open ? "is-open" : "is-closed"}`}>
+                              <div>
+                                <p className="ovx-bstat-name">{l.name}</p>
+                                <span className="ovx-bstat-state">
+                                  {open ? "Open · taking orders" : "Closed · not taking orders"}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                disabled={Boolean(branchBusy)}
+                                onClick={() => toggleBranch(l)}
+                                aria-label={`${open ? "Close" : "Open"} ${l.name}`}
+                                className={`ovx-bstat-btn ${open ? "do-close" : "do-open"}`}
+                              >
+                                {busy ? "Saving..." : open ? "Close branch" : "Open branch"}
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </Card>
+                  )}
+
                   <Card title="Store details" hint="Shown to customers on the online store.">
                     <StoreLogoUpload storeName={storeName} />
                     <div className="ovx-grid2">
-                      <Field label="Display name" hint="Leave empty to use your store name.">
+                      <Field
+                        label="Display name"
+                        hint="Leave empty to use your store name."
+                        error={errorOf("display_name")}
+                        count={form.display_name.length}
+                        max={LIMITS.displayName.max}
+                      >
                         <input
-                          className="ovx-input"
+                          id="ovx-f-display_name"
+                          className={inputCls("display_name")}
                           value={form.display_name}
-                          onChange={setAllowed("display_name", TEXT_NAME_RE)}
-                          maxLength={150}
+                          onChange={change("display_name", sanitize.displayName)}
+                          onBlur={blur("display_name", finalize.text)}
+                          maxLength={LIMITS.displayName.max}
                           autoComplete="off"
+                          aria-invalid={errorOf("display_name") ? "true" : undefined}
                         />
                       </Field>
-                      <Field label="Store link name" hint="Small letters, numbers and hyphens only. Leave empty to create it automatically.">
+                      <Field
+                        label="Store link name"
+                        hint="Small letters, numbers and hyphens only. Leave empty to create it automatically."
+                        error={errorOf("slug")}
+                        count={form.slug.length}
+                        max={LIMITS.slug.max}
+                      >
                         <input
-                          className="ovx-input"
+                          id="ovx-f-slug"
+                          className={inputCls("slug")}
                           value={form.slug}
-                          onChange={setAllowed("slug", SLUG_RE, (value) => value.toLowerCase())}
-                          maxLength={100}
+                          onChange={change("slug", sanitize.slug)}
+                          onBlur={blur("slug", finalize.slug)}
+                          maxLength={LIMITS.slug.max}
                           placeholder="my-store"
                           autoComplete="off"
+                          autoCapitalize="none"
+                          spellCheck={false}
+                          aria-invalid={errorOf("slug") ? "true" : undefined}
                         />
                       </Field>
-                      <Field label="Phone">
+                      <Field
+                        label="Phone"
+                        hint="10-digit mobile number (optional)."
+                        error={errorOf("phone")}
+                      >
                         <input
-                          className="ovx-input"
-                          type="tel"
-                          inputMode="numeric"
+                          id="ovx-f-phone"
+                          className={inputCls("phone")}
                           value={form.phone}
-                          onChange={setAllowed("phone", PHONE_RE)}
+                          onChange={change("phone", sanitize.phone)}
+                          onBlur={blur("phone")}
                           maxLength={10}
-                          placeholder="10 digit mobile number"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          placeholder="9876543210"
+                          aria-invalid={errorOf("phone") ? "true" : undefined}
                         />
                       </Field>
-                      <Field label="Address" hint="Each branch uses its own address when it has one.">
+                      <Field
+                        label="Address"
+                        hint="Each branch uses its own address when it has one."
+                        error={errorOf("address")}
+                        count={form.address.length}
+                        max={LIMITS.address.max}
+                      >
                         <input
-                          className="ovx-input"
+                          id="ovx-f-address"
+                          className={inputCls("address")}
                           value={form.address}
-                          onChange={setAllowed("address", ADDRESS_RE)}
-                          maxLength={255}
+                          onChange={change("address", sanitize.address)}
+                          onBlur={blur("address", finalize.text)}
+                          maxLength={LIMITS.address.max}
+                          autoComplete="off"
+                          aria-invalid={errorOf("address") ? "true" : undefined}
                         />
                       </Field>
                     </div>
                     <div className="ovx-mt">
-                      <Field label="About the store">
+                      <Field
+                        label="About the store"
+                        hint="A short description (optional). One paragraph, no links."
+                        error={errorOf("about")}
+                        count={form.about.length}
+                        max={LIMITS.about.max}
+                      >
                         <textarea
-                          className="ovx-input"
+                          id="ovx-f-about"
+                          className={inputCls("about")}
                           rows={4}
-                          maxLength={1000}
+                          maxLength={LIMITS.about.max}
                           value={form.about}
-                          onChange={setAllowed("about", ABOUT_RE)}
+                          onChange={change("about", sanitize.about)}
+                          onBlur={blur("about", finalize.text)}
+                          aria-invalid={errorOf("about") ? "true" : undefined}
                         />
                       </Field>
                     </div>
@@ -874,22 +1503,22 @@ export default function OnlineStoreSettings() {
                       hint="Orders are accepted only between these times. Leave both empty for always open."
                     >
                       <div className="ovx-grid2">
-                        <Field label="Opens at">
+                        <Field label="Opens at" error={errorOf("open_time")}>
                           <TimePicker
+                            id="ovx-f-open_time"
+                            invalid={!!errorOf("open_time")}
                             label="Opening time"
                             value={form.open_time}
-                            onChange={(value) =>
-                              setForm((current) => ({ ...current, open_time: value }))
-                            }
+                            onChange={changeTime("open_time")}
                           />
                         </Field>
-                        <Field label="Closes at">
+                        <Field label="Closes at" error={errorOf("close_time")}>
                           <TimePicker
+                            id="ovx-f-close_time"
+                            invalid={!!errorOf("close_time")}
                             label="Closing time"
                             value={form.close_time}
-                            onChange={(value) =>
-                              setForm((current) => ({ ...current, close_time: value }))
-                            }
+                            onChange={changeTime("close_time")}
                           />
                         </Field>
                       </div>
@@ -901,32 +1530,38 @@ export default function OnlineStoreSettings() {
                     >
                       <Field
                         label="Online stock share (%)"
-                        hint="Example: 50% of 11 pieces means 5 pieces can be ordered online."
+                        required
+                        hint="Whole number from 0 to 100. Example: 50% of 11 pieces means 5 pieces can be ordered online."
+                        error={errorOf("online_stock_percent")}
                       >
                         <input
-                          type="text"
-                          inputMode="numeric"
-                          min="0"
-                          max="100"
-                          className="ovx-input"
+                          id="ovx-f-online_stock_percent"
+                          className={inputCls("online_stock_percent")}
                           value={form.online_stock_percent}
-                          onChange={setIntegerRange("online_stock_percent", 0, 100)}
+                          onChange={change("online_stock_percent", sanitize.whole(3))}
+                          onBlur={blur("online_stock_percent")}
+                          inputMode="numeric"
                           maxLength={3}
+                          autoComplete="off"
+                          aria-invalid={errorOf("online_stock_percent") ? "true" : undefined}
                         />
                       </Field>
                       <Field
                         label="Max quantity per product (per order)"
-                        hint="Default for every product. Enter 1–99, or leave empty for no limit. You can set a different limit for a product below."
+                        hint="Whole number from 1 to 10,000. Default for every product. Leave empty for no limit. You can set a different limit for a product below."
+                        error={errorOf("max_qty_per_product")}
                       >
                         <input
-                          type="text"
-                          inputMode="numeric"
-                          min="1"
-                          className="ovx-input"
+                          id="ovx-f-max_qty_per_product"
+                          className={inputCls("max_qty_per_product")}
                           value={form.max_qty_per_product}
-                          onChange={setIntegerRange("max_qty_per_product", 1, MAX_QUANTITY, true)}
-                          maxLength={2}
-                          max={MAX_QUANTITY}
+                          onChange={change("max_qty_per_product", sanitize.whole(5))}
+                          onBlur={blur("max_qty_per_product")}
+                          inputMode="numeric"
+                          maxLength={5}
+                          autoComplete="off"
+                          placeholder="No limit"
+                          aria-invalid={errorOf("max_qty_per_product") ? "true" : undefined}
                         />
                       </Field>
                     </Card>
@@ -947,18 +1582,83 @@ export default function OnlineStoreSettings() {
                         hint="Customer collects and pays at the store."
                       />
                     </div>
+                    {errorOf("delivery_mode") && (
+                      <p id="ovx-f-delivery_mode" tabIndex={-1} className="ovx-ferr" aria-live="polite">
+                        {errorOf("delivery_mode")}
+                      </p>
+                    )}
                     <div className="ovx-grid4 ovx-mt">
-                      <Field label="Delivery charge (₹)" hint="Used for pincodes that have no charge of their own.">
-                        <input type="text" inputMode="decimal" maxLength={9} max={MAX_AMOUNT} className="ovx-input" value={form.delivery_charge} onChange={setDecimal("delivery_charge")} />
+                      <Field
+                        label="Delivery charge (₹)"
+                        required
+                        hint="Used for pincodes that have no charge of their own. Enter 0 for free."
+                        error={errorOf("delivery_charge")}
+                      >
+                        <input
+                          id="ovx-f-delivery_charge"
+                          className={inputCls("delivery_charge")}
+                          value={form.delivery_charge}
+                          onChange={change("delivery_charge", sanitize.money(6))}
+                          onBlur={blur("delivery_charge", finalize.money)}
+                          inputMode="decimal"
+                          maxLength={9}
+                          autoComplete="off"
+                          aria-invalid={errorOf("delivery_charge") ? "true" : undefined}
+                        />
                       </Field>
-                      <Field label="Free delivery above (₹)" hint="Leave empty for no free delivery.">
-                        <input type="text" inputMode="decimal" maxLength={9} max={MAX_AMOUNT} className="ovx-input" value={form.free_delivery_above} onChange={setDecimal("free_delivery_above")} />
+                      <Field
+                        label="Free delivery above (₹)"
+                        hint="Leave empty for no free delivery."
+                        error={errorOf("free_delivery_above")}
+                      >
+                        <input
+                          id="ovx-f-free_delivery_above"
+                          className={inputCls("free_delivery_above")}
+                          value={form.free_delivery_above}
+                          onChange={change("free_delivery_above", sanitize.money(7))}
+                          onBlur={blur("free_delivery_above", finalize.money)}
+                          inputMode="decimal"
+                          maxLength={10}
+                          autoComplete="off"
+                          placeholder="No free delivery"
+                          aria-invalid={errorOf("free_delivery_above") ? "true" : undefined}
+                        />
                       </Field>
-                      <Field label="Minimum order (₹)" hint="Minimum amount for home delivery.">
-                        <input type="text" inputMode="decimal" maxLength={9} max={MAX_AMOUNT} className="ovx-input" value={form.min_order_amount} onChange={setDecimal("min_order_amount")} />
+                      <Field
+                        label="Minimum order (₹)"
+                        required
+                        hint="Minimum amount for home delivery. Enter 0 for none."
+                        error={errorOf("min_order_amount")}
+                      >
+                        <input
+                          id="ovx-f-min_order_amount"
+                          className={inputCls("min_order_amount")}
+                          value={form.min_order_amount}
+                          onChange={change("min_order_amount", sanitize.money(6))}
+                          onBlur={blur("min_order_amount", finalize.money)}
+                          inputMode="decimal"
+                          maxLength={9}
+                          autoComplete="off"
+                          aria-invalid={errorOf("min_order_amount") ? "true" : undefined}
+                        />
                       </Field>
-                      <Field label="Prepare time (min)" hint="Time to prepare an order.">
-                        <input type="text" inputMode="numeric" min="0" max="1440" className="ovx-input" value={form.prep_minutes} onChange={setIntegerRange("prep_minutes", 0, 1440)} />
+                      <Field
+                        label="Prepare time (min)"
+                        required
+                        hint="Time to prepare an order (1 to 1440 minutes)."
+                        error={errorOf("prep_minutes")}
+                      >
+                        <input
+                          id="ovx-f-prep_minutes"
+                          className={inputCls("prep_minutes")}
+                          value={form.prep_minutes}
+                          onChange={change("prep_minutes", sanitize.whole(4))}
+                          onBlur={blur("prep_minutes")}
+                          inputMode="numeric"
+                          maxLength={4}
+                          autoComplete="off"
+                          aria-invalid={errorOf("prep_minutes") ? "true" : undefined}
+                        />
                       </Field>
                     </div>
                   </Card>
@@ -977,24 +1677,54 @@ export default function OnlineStoreSettings() {
                   hint="Customers get home delivery only at these pincodes. A charge or minimum order left empty uses the store default."
                 >
                   <div className="ovx-box">
-                    <Field label="Add pincodes" hint="Type or paste many, separated by commas, spaces or new lines.">
+                    <Field
+                      label="Add pincodes"
+                      required
+                      hint="Type or paste many, separated by commas, spaces or new lines. Each must be 6 digits (up to 200 at a time)."
+                      error={pinErrorOf("pins")}
+                    >
                       <textarea
-                        className="ovx-input"
+                        id="ovx-p-pins"
+                        className={pinCls("pins")}
                         rows={2}
+                        maxLength={LIMITS.pincodeText}
                         value={pins}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (isValidPincodeInput(value)) setPins(value);
-                        }}
+                        onChange={changePin("pins", setPins, sanitize.pincodes)}
+                        onBlur={blurPin("pins")}
                         placeholder="380001, 380015, 380054"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        aria-invalid={pinErrorOf("pins") ? "true" : undefined}
                       />
                     </Field>
                     <div className="ovx-grid3 ovx-mt">
-                      <Field label="Delivery charge (₹)">
-                        <input type="text" inputMode="decimal" maxLength={9} className="ovx-input" value={pinCharge} onChange={(e) => { if (isValidAmountInput(e.target.value)) setPinCharge(e.target.value); }} placeholder="Store default" />
+                      <Field label="Delivery charge (₹)" error={pinErrorOf("charge")}>
+                        <input
+                          id="ovx-p-charge"
+                          className={pinCls("charge")}
+                          value={pinCharge}
+                          onChange={changePin("charge", setPinCharge, sanitize.money(6))}
+                          onBlur={blurPin("charge", setPinCharge, finalize.money)}
+                          inputMode="decimal"
+                          maxLength={9}
+                          autoComplete="off"
+                          placeholder="Store default"
+                          aria-invalid={pinErrorOf("charge") ? "true" : undefined}
+                        />
                       </Field>
-                      <Field label="Minimum order (₹)">
-                        <input type="text" inputMode="decimal" maxLength={9} className="ovx-input" value={pinMin} onChange={(e) => { if (isValidAmountInput(e.target.value)) setPinMin(e.target.value); }} placeholder="Store default" />
+                      <Field label="Minimum order (₹)" error={pinErrorOf("min")}>
+                        <input
+                          id="ovx-p-min"
+                          className={pinCls("min")}
+                          value={pinMin}
+                          onChange={changePin("min", setPinMin, sanitize.money(6))}
+                          onBlur={blurPin("min", setPinMin, finalize.money)}
+                          inputMode="decimal"
+                          maxLength={9}
+                          autoComplete="off"
+                          placeholder="Store default"
+                          aria-invalid={pinErrorOf("min") ? "true" : undefined}
+                        />
                       </Field>
                       <button
                         type="button"
@@ -1035,8 +1765,9 @@ export default function OnlineStoreSettings() {
                     <ul className="ovx-list">
                       {listings.map((l) => {
                         const url = `${STOREFRONT_URL}/s/${l.slug}`;
+                        const on = l.online_enabled !== false;
                         return (
-                          <li key={l.branch_id}>
+                          <li key={l.branch_id} className={on ? "" : "is-off"}>
                             <div style={{ minWidth: 0 }}>
                               <p className="ovx-list-name">{l.name}</p>
                               <a href={url} target="_blank" rel="noreferrer">

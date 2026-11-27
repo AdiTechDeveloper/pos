@@ -33,7 +33,8 @@ const isValidIntegerInput = (value, min = 0, max = 999999, allowEmpty = true) =>
   return number >= min && number <= max;
 };
 
-const isAllowedProductName = (value) => /^[A-Za-z0-9 ]*$/.test(value);
+// Medicine names often contain ( ) - . / % + & , ' so those are allowed too.
+const isAllowedProductName = (value) => /^[A-Za-z0-9 .,()\/%+&'-]*$/.test(value);
 const isAllowedSimpleName = (value) => /^[A-Za-z0-9 ]*$/.test(value);
 const isAllowedSku = (value) => /^[A-Za-z0-9-]*$/.test(value);
 
@@ -108,6 +109,16 @@ const INFO_SUGGESTIONS = [
   "Disclaimer",
 ];
 
+const PHARMACY_KEYS = [
+  "salt_composition",
+  "drug_schedule",
+  "requires_prescription",
+  "pack_type",
+  "units_per_pack",
+  "allow_loose",
+  "loose_unit",
+];
+
 const shrinkImage = (file) =>
   new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
@@ -143,11 +154,134 @@ const shrinkImage = (file) =>
     img.src = url;
   });
 
+// Yup schema state par depend nahi karta, isliye component ke bahar: har render par dobara nahi banta.
+const validationSchema = Yup.object({
+  name: Yup.string()
+    .trim()
+    .required("Product name is required")
+    .min(3, "Product name must be at least 3 characters")
+    .max(100, "Product name cannot exceed 100 characters")
+    .matches(
+      /^[A-Za-z0-9 .,()\/%+&'-]+$/,
+      "Product name can contain letters, numbers, spaces and . , ( ) / % + & ' -",
+    )
+    .test(
+      "not-only-spaces",
+      "Product name cannot contain only spaces",
+      (value) => !!value && value.trim().length > 0,
+    ),
+
+  // HSN codes are 4, 6 or 8 digits long.
+  hsn_code: Yup.string()
+    .nullable()
+    .transform((value) => (value?.trim() === "" ? null : value?.trim()))
+    .matches(/^(\d{4}|\d{6}|\d{8})$/, {
+      message: "HSN code must be 4, 6 or 8 digits",
+      excludeEmptyString: true,
+    }),
+
+  barcode: Yup.string()
+    .nullable()
+    .transform((value) => (value?.trim() === "" ? null : value?.trim()))
+    .matches(/^\d{13}$/, {
+      message: "Barcode must contain exactly 13 digits",
+      excludeEmptyString: true,
+    }),
+
+  sku: Yup.string()
+    .nullable()
+    .transform((value) => (value?.trim() === "" ? null : value?.trim()))
+    .min(8, "SKU must be at least 8 characters")
+    .max(12, "SKU cannot exceed 12 characters")
+    .matches(
+      /^[A-Za-z0-9-]+$/,
+      "SKU can only contain letters, digits and hyphens",
+    )
+    .test(
+      "not-only-spaces",
+      "SKU cannot contain only spaces",
+      (value) => !value || value.trim().length > 0,
+    ),
+
+  brand_id: Yup.string().required("Brand is required"),
+
+  category_id: Yup.string().required("Category is required"),
+
+  plu_code: Yup.string().when("sale_type", {
+    is: "weight",
+    then: (schema) =>
+      schema
+        .transform((value) => (value?.trim() === "" ? undefined : value))
+        .required("PLU code is required for weight-type products")
+        .matches(/^\d{5}$/, "PLU code must be exactly 5 digits"),
+    otherwise: (schema) => schema.nullable(),
+  }),
+
+  mrp: Yup.number()
+    .transform((value, originalValue) => originalValue === "" ? null : value)
+    .nullable()
+    .typeError("MRP must be a valid amount")
+    .min(0, "MRP cannot be negative")
+    .max(MAX_PRODUCT_AMOUNT, "MRP cannot exceed 999999.99"),
+
+  selling_price: Yup.number()
+    .transform((value, originalValue) => originalValue === "" ? null : value)
+    .nullable()
+    .typeError("Selling price must be a valid amount")
+    .min(0, "Selling price cannot be negative")
+    .max(MAX_PRODUCT_AMOUNT, "Selling price cannot exceed 999999.99"),
+
+  cost_price: Yup.number()
+    .transform((value, originalValue) => originalValue === "" ? null : value)
+    .nullable()
+    .typeError("Cost price must be a valid amount")
+    .min(0, "Cost price cannot be negative")
+    .max(MAX_PRODUCT_AMOUNT, "Cost price cannot exceed 999999.99"),
+
+  price_per_kg: Yup.number()
+    .transform((value, originalValue) =>
+      originalValue === "" || originalValue === null ? null : value,
+    )
+    .nullable()
+    .when("sale_type", {
+      is: "weight",
+      then: (schema) =>
+        schema
+          .typeError("Price per kg must be a number")
+          .required("Price per kg is required for weight-type products")
+          .min(0.01, "Price per kg must be greater than 0")
+          .max(MAX_PRODUCT_AMOUNT, "Price per kg cannot exceed 999999.99"),
+      otherwise: (schema) => schema.nullable(),
+    }),
+
+  units_per_pack: Yup.number()
+    .transform((value, originalValue) =>
+      originalValue === "" || originalValue === null ? null : value,
+    )
+    .nullable()
+    .typeError("Units per pack must be a number")
+    .integer("Units per pack must be a whole number")
+    .min(1, "Units per pack must be at least 1")
+    .max(999999, "Units per pack cannot exceed 999999")
+    .when("allow_loose", {
+      is: true,
+      then: (schema) =>
+        schema
+          .required("Units per pack is required for loose selling")
+          .min(2, "Units per pack must be at least 2 for loose selling"),
+    }),
+
+  description: Yup.string().max(5000, "Description cannot exceed 5000 characters"),
+});
+
 const CreateEditProduct = () => {
   const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { id } = useParams(); // if id exists -> Edit Mode
   const navigate = useNavigate();
   const appData = useAppData();
+
+  // hasFeature() ek hi baar
+  const isPharmacy = hasFeature("pharmacy");
 
   const user_data = JSON.parse(localStorage.getItem("user_detail"));
   const store_product = localStorage.getItem("product_detail");
@@ -202,17 +336,8 @@ const CreateEditProduct = () => {
     setInfoRows((prev) => prev.filter((r) => r.key !== key));
   };
 
-  const PHARMACY_KEYS = [
-    "salt_composition",
-    "drug_schedule",
-    "requires_prescription",
-    "pack_type",
-    "units_per_pack",
-    "allow_loose",
-    "loose_unit",
-  ];
-
-  let lastTime = 0;
+  // Barcode scanner detection: ref use karo (plain `let` har render par 0 ho jata tha)
+  const lastTimeRef = useRef(0);
 
   const [initialValues, setInitialValues] = useState({
     sku: "",
@@ -389,124 +514,6 @@ const CreateEditProduct = () => {
     }
   }, [id]);
 
-  const validationSchema = Yup.object({
-    name: Yup.string()
-      .trim()
-      .required("Product name is required")
-      .min(3, "Product name must be at least 3 characters")
-      .max(100, "Product name cannot exceed 100 characters")
-      .matches(
-        /^[A-Za-z0-9 ]+$/,
-        "Product name can contain only letters, numbers and spaces",
-      )
-      .test(
-        "not-only-spaces",
-        "Product name cannot contain only spaces",
-        (value) => !!value && value.trim().length > 0,
-      ),
-
-    hsn_code: Yup.string()
-      .nullable()
-      .transform((value) => (value?.trim() === "" ? null : value?.trim()))
-      .matches(/^\d{8}$/, {
-        message: "HSN code must contain exactly 8 digits",
-        excludeEmptyString: true,
-      }),
-
-    barcode: Yup.string()
-      .nullable()
-      .transform((value) => (value?.trim() === "" ? null : value?.trim()))
-      .matches(/^\d{13}$/, {
-        message: "Barcode must contain exactly 13 digits",
-        excludeEmptyString: true,
-      }),
-
-    sku: Yup.string()
-      .nullable()
-      .transform((value) => (value?.trim() === "" ? null : value?.trim()))
-      .min(8, "SKU must be at least 8 characters")
-      .max(12, "SKU cannot exceed 12 characters")
-      .matches(
-        /^[A-Za-z0-9-]+$/,
-        "SKU can only contain letters, digits and hyphens",
-      )
-      .test(
-        "not-only-spaces",
-        "SKU cannot contain only spaces",
-        (value) => !value || value.trim().length > 0,
-      ),
-
-    brand_id: Yup.string().required("Brand is required"),
-
-    category_id: Yup.string().required("Category is required"),
-
-    plu_code: Yup.string().when("sale_type", {
-      is: "weight",
-      then: (schema) =>
-        schema
-          .transform((value) => (value?.trim() === "" ? undefined : value))
-          .required("PLU code is required for weight-type products")
-          .matches(/^\d{5}$/, "PLU code must be exactly 5 digits"),
-      otherwise: (schema) => schema.nullable(),
-    }),
-
-    mrp: Yup.number()
-      .transform((value, originalValue) => originalValue === "" ? null : value)
-      .nullable()
-      .typeError("MRP must be a valid amount")
-      .min(0, "MRP cannot be negative")
-      .max(MAX_PRODUCT_AMOUNT, "MRP cannot exceed 999999.99"),
-
-    selling_price: Yup.number()
-      .transform((value, originalValue) => originalValue === "" ? null : value)
-      .nullable()
-      .typeError("Selling price must be a valid amount")
-      .min(0, "Selling price cannot be negative")
-      .max(MAX_PRODUCT_AMOUNT, "Selling price cannot exceed 999999.99"),
-
-    cost_price: Yup.number()
-      .transform((value, originalValue) => originalValue === "" ? null : value)
-      .nullable()
-      .typeError("Cost price must be a valid amount")
-      .min(0, "Cost price cannot be negative")
-      .max(MAX_PRODUCT_AMOUNT, "Cost price cannot exceed 999999.99"),
-
-    price_per_kg: Yup.number()
-      .transform((value, originalValue) =>
-        originalValue === "" || originalValue === null ? null : value,
-      )
-      .nullable()
-      .when("sale_type", {
-        is: "weight",
-        then: (schema) =>
-          schema
-            .typeError("Price per kg must be a number")
-            .required("Price per kg is required for weight-type products")
-            .min(0.01, "Price per kg must be greater than 0")
-            .max(MAX_PRODUCT_AMOUNT, "Price per kg cannot exceed 999999.99"),
-        otherwise: (schema) => schema.nullable(),
-      }),
-
-    units_per_pack: Yup.number()
-      .transform((value, originalValue) =>
-        originalValue === "" || originalValue === null ? null : value,
-      )
-      .nullable()
-      .typeError("Units per pack must be a number")
-      .integer("Units per pack must be a whole number")
-      .min(1, "Units per pack must be at least 1")
-      .max(999999, "Units per pack cannot exceed 999999")
-      .when("allow_loose", {
-        is: true,
-        then: (schema) =>
-          schema
-            .required("Units per pack is required for loose selling")
-            .min(2, "Units per pack must be at least 2 for loose selling"),
-      }),
-
-    description: Yup.string().max(5000, "Description cannot exceed 5000 characters"),
-  });
-
   const handleSubmit = async (values) => {
     try {
       const url = isEdit
@@ -534,7 +541,7 @@ const CreateEditProduct = () => {
       payload.product_info = infoRows
         .map((r) => ({ label: r.label.trim(), value: r.value.trim() }))
         .filter((r) => r.label && r.value);
-      if (hasFeature("pharmacy")) {
+      if (isPharmacy) {
         payload.units_per_pack =
           payload.units_per_pack === "" ? null : payload.units_per_pack;
         payload.requires_prescription = !!payload.requires_prescription;
@@ -624,8 +631,10 @@ const CreateEditProduct = () => {
         }
       }
 
+      // Cache ko purana mark karo. Saare products yahan reload NAHI karte
+      // (40,000+ products ek saath mangwana bhaari tha); product list page khulne par
+      // apna page khud mangwa legi.
       appData?.invalidate("products");
-      await appData?.loadProducts({ force: true });
 
       toast.success(isEdit ? "Product Updated!" : "Product Created!");
       navigate("/product");
@@ -709,8 +718,15 @@ const CreateEditProduct = () => {
           {!isEdit && (
             <ProductImport
               onImported={async () => {
+                // Import can auto-create brands/categories, so refresh those lists too.
+                // Products ki poori list yahan reload nahi hoti (product list page apna page khud mangwati hai).
                 appData?.invalidate("products");
-                await appData?.loadProducts({ force: true });
+                appData?.invalidate("brands");
+                appData?.invalidate("categories");
+                await Promise.all([
+                  appData?.loadBrands(),
+                  appData?.loadCategories(),
+                ]);
               }}
             />
           )}
@@ -783,7 +799,7 @@ const CreateEditProduct = () => {
                       <fieldset className="col-md-3 mb-15">
                         <div className="body-title">
                           {" "}
-                          {hasFeature("pharmacy")
+                          {isPharmacy
                             ? "Manufacturer / Company *"
                             : "Brand *"}
                         </div>
@@ -826,7 +842,7 @@ const CreateEditProduct = () => {
                       </fieldset>
                       <fieldset className="col-md-3">
                         <div className="body-title">
-                          {hasFeature("pharmacy")
+                          {isPharmacy
                             ? "Medicine Category *"
                             : "Category *"}
                         </div>
@@ -874,7 +890,7 @@ const CreateEditProduct = () => {
                     </div>
 
                     {/* Sale Type / Weight fields (pharmacy stores do not need this) */}
-                    {!hasFeature("pharmacy") && (
+                    {!isPharmacy && (
                       <div className="row mb-20">
                         <fieldset className="col-md-3">
                           <div className="body-title">Sale Type</div>
@@ -966,7 +982,7 @@ const CreateEditProduct = () => {
                       </div>
                     )}
 
-                    {hasFeature("pharmacy") && (
+                    {isPharmacy && (
                       <div className="row mb-20">
                         <fieldset className="col-md-3">
                           <div className="body-title">Drug Schedule</div>
@@ -1277,8 +1293,8 @@ const CreateEditProduct = () => {
                                 className="mb-5"
                                 onChange={(e) => {
                                   const now = Date.now();
-                                  const isScanner = now - lastTime < 30;
-                                  lastTime = now;
+                                  const isScanner = now - lastTimeRef.current < 30;
+                                  lastTimeRef.current = now;
 
                                   const value = e.target.value;
                                   if (!/^\d{0,13}$/.test(value)) return;
@@ -1636,9 +1652,14 @@ const CreateEditProduct = () => {
                             as="textarea"
                             name="description"
                             rows={4}
-                            maxLength={500}
+                            maxLength={5000}
                             placeholder="e.g. Rich and creamy full cream milk, an excellent source of vitamin A and D..."
                             className="mb-5"
+                          />
+                          <ErrorMessage
+                            name="description"
+                            className="error-text"
+                            component="div"
                           />
                         </div>
                       </fieldset>
