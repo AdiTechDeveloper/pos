@@ -546,7 +546,7 @@ const CreateStore = () => {
                     maxLength={LIMITS.name}
                     setFieldValue={setFieldValue}
                     value={values.name}
-                    readOnly={isEdit}
+                    // readOnly={isEdit}
                   />
 
                   {/* TAGLINE */}
