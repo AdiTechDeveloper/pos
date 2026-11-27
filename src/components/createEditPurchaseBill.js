@@ -6,6 +6,7 @@ import * as Yup from "yup";
 import Layout from "./layout";
 import { toast } from "react-toastify";
 import ProductForm from "./ProductForm";
+import ProductSearchSelect from "./ProductSearchSelect";
 import { useAppData } from "../context/AppDataContext";
 import FormikDatePicker from "./FormikDatePicker";
 import { hasFeature } from "../utils/hasFeature";
@@ -776,7 +777,21 @@ const CreateEditPurchaseBill = () => {
   const branches = appData?.branches || [];
   const suppliers = appData?.suppliers || [];
   const products = appData?.purchaseProducts || [];
+
+  // Cache of products picked via search / AI scan / newly created / bill's own products.
+  // appData.purchaseProducts sirf pehla page (50) hai, isliye baaki sab yahan cache hote hain.
   const [aiMatchedProducts, setAiMatchedProducts] = useState([]);
+
+  const cacheProducts = (list) => {
+    const valid = (list || []).filter((p) => p?.id != null);
+    if (!valid.length) return;
+    setAiMatchedProducts((previous) => {
+      const byId = new Map(previous.map((p) => [String(p.id), p]));
+      valid.forEach((p) => byId.set(String(p.id), p));
+      return Array.from(byId.values());
+    });
+  };
+
   const availablePurchaseProducts = useMemo(() => {
     const byId = new Map();
     [...products, ...aiMatchedProducts].forEach((product) => {
@@ -843,6 +858,10 @@ const CreateEditPurchaseBill = () => {
 
     setSupplierId(bill.supplier_id?.toString() || "");
     setIsBillLost(Number(bill.is_lost) === 1);
+
+    // Bill ke products ko cache me daalo, taaki 50 ke bahar wale products ka
+    // naam / sale_type / pack info edit mode me bhi dikhe.
+    cacheProducts((bill.lines || []).map((l) => l.product));
 
     setInitialValues({
       branch_id: bill.branch_id?.toString() || "",
@@ -1595,13 +1614,7 @@ const CreateEditPurchaseBill = () => {
         ...(result?.matched_product ? [result.matched_product] : []),
         ...(Array.isArray(result?.candidates) ? result.candidates : []),
       ]);
-      setAiMatchedProducts((previous) => {
-        const byId = new Map(previous.map((product) => [String(product.id), product]));
-        returnedProducts.forEach((product) => {
-          if (product?.id != null) byId.set(String(product.id), product);
-        });
-        return Array.from(byId.values());
-      });
+      cacheProducts(returnedProducts);
 
       const mappedLines = bill.lines.map((item, index) => {
         const matchResult = matchResults.find(
@@ -1632,7 +1645,7 @@ const CreateEditPurchaseBill = () => {
           batch_no: sanitizers.batch(item.batch_no || ""),
           // Avoid saving a potentially hallucinated expiry day.
           // Verify the original invoice and enter expiry manually.
-        expiry_date: normalizeExpiryDate(item.expiry_date),
+          expiry_date: normalizeExpiryDate(item.expiry_date),
           is_opening: false,
         };
       });
@@ -1697,6 +1710,9 @@ const CreateEditPurchaseBill = () => {
         toast.error("Invalid product data received from server");
         return;
       }
+
+      // Scanned product ko cache me daalo (50 ke bahar ka ho sakta hai)
+      cacheProducts([product]);
 
       const inventory =
         response.data.batches?.find((b) => b.batch_barcode === barcode) || {};
@@ -2077,27 +2093,24 @@ const CreateEditPurchaseBill = () => {
                                       </small>
                                       <Field name={`lines.${index}.product_id`}>
                                         {({ field, form }) => (
-                                          <select
-                                            {...field}
-                                            onChange={(e) => {
-                                              const value = e.target.value;
-                                              if (value === "add_new") {
-                                                setShowProductModal(true);
-                                                setActiveRowIndex(index);
-                                                return;
-                                              }
+                                          <ProductSearchSelect
+                                            value={field.value}
+                                            selectedProduct={lineProduct}
+                                            onAddNew={() => {
+                                              setShowProductModal(true);
+                                              setActiveRowIndex(index);
+                                            }}
+                                            onSelect={(selectedProduct) => {
+                                              // selected product ko cache me daalo taaki
+                                              // findProduct() ise dhundh sake
+                                              cacheProducts([selectedProduct]);
+
                                               form.setFieldValue(
                                                 field.name,
-                                                value,
+                                                String(selectedProduct.id),
                                               );
 
-                                              const selectedProduct =
-                                                availablePurchaseProducts.find(
-                                                  (p) =>
-                                                    p.id.toString() === value,
-                                                );
                                               if (
-                                                selectedProduct &&
                                                 selectedProduct.sale_type ===
                                                 "weight" &&
                                                 selectedProduct.price_per_kg
@@ -2108,18 +2121,7 @@ const CreateEditPurchaseBill = () => {
                                                 );
                                               }
                                             }}
-                                          >
-                                            <option value="">Select</option>
-                                            <option value="add_new">
-                                              + Add New Product
-                                            </option>
-                                            {availablePurchaseProducts.map((p) => (
-                                              <option key={p.id} value={p.id}>
-                                                {p.name}
-                                              </option>
-                                            ))}
-
-                                          </select>
+                                          />
                                         )}
                                       </Field>
                                       <ErrorMessage
@@ -2753,8 +2755,8 @@ const CreateEditPurchaseBill = () => {
                 <div className="pb-modal-body">
                   <ProductForm
                     onSuccess={async (product) => {
-                      appData?.invalidate("purchaseProducts");
-                      await appData?.loadPurchaseProducts();
+                      // Naya product seedha cache me, dobara list load karne ki zaroorat nahi
+                      cacheProducts([product]);
 
                       if (formikRef.current && activeRowIndex !== null) {
                         formikRef.current.setFieldValue(
