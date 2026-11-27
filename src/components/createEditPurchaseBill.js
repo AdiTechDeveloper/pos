@@ -541,7 +541,50 @@ const toISODate = (value) => {
   }
   return `${y}-${pad(mo)}-${pad(d)}`;
 };
+const normalizeExpiryDate = (value) => {
+  if (!value) return "";
 
+  const s = String(value).trim().replace(/\./g, "/");
+
+  // Existing full date formats: YYYY-MM-DD / DD-MM-YYYY
+  const fullDate = toISODate(s);
+  if (fullDate) return fullDate;
+
+  // MM/YY or MM/YYYY
+  const monthYear = s.match(/^(\d{1,2})[-/](\d{2}|\d{4})$/);
+
+  if (monthYear) {
+    const month = Number(monthYear[1]);
+    let year = Number(monthYear[2]);
+
+    if (year < 100) year += 2000;
+
+    if (month >= 1 && month <= 12) {
+      return `${year}-${pad(month)}-01`;
+    }
+  }
+
+  // DD-MM-YY or DD/MM/YY
+  const shortDate = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2})$/);
+
+  if (shortDate) {
+    const day = Number(shortDate[1]);
+    const month = Number(shortDate[2]);
+    const year = 2000 + Number(shortDate[3]);
+
+    const date = new Date(year, month - 1, day);
+
+    if (
+      date.getFullYear() === year &&
+      date.getMonth() === month - 1 &&
+      date.getDate() === day
+    ) {
+      return `${year}-${pad(month)}-${pad(day)}`;
+    }
+  }
+
+  return "";
+};
 const num = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
@@ -733,6 +776,14 @@ const CreateEditPurchaseBill = () => {
   const branches = appData?.branches || [];
   const suppliers = appData?.suppliers || [];
   const products = appData?.purchaseProducts || [];
+  const [aiMatchedProducts, setAiMatchedProducts] = useState([]);
+  const availablePurchaseProducts = useMemo(() => {
+    const byId = new Map();
+    [...products, ...aiMatchedProducts].forEach((product) => {
+      if (product?.id != null) byId.set(String(product.id), product);
+    });
+    return Array.from(byId.values());
+  }, [products, aiMatchedProducts]);
   const gstRates = appData?.gstRates || [];
   const [supplierId, setSupplierId] = useState("");
   const [barcode, setBarcode] = useState("");
@@ -899,7 +950,7 @@ const CreateEditPurchaseBill = () => {
       .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
   const findProduct = (productId) =>
-    products.find((p) => String(p.id) === String(productId));
+    availablePurchaseProducts.find((p) => String(p.id) === String(productId));
 
   /* ---------- totals (render + validation dono yahi use karte hain) ---------- */
   const calcGrandTotal = (values) =>
@@ -1071,7 +1122,7 @@ const CreateEditPurchaseBill = () => {
               .nullable()
               .transform((value) => value?.trim() || "")
               .matches(
-                /^$|^\d{4}$|^\d{6}$|^\d{8}$/,
+                /^$|^\d{4}$|^$|^\d{5}$|^$|^\d{6}$|^\d{7}$|^\d{8}$/,
                 "HSN must be 4, 6 or 8 digits",
               ),
 
@@ -1512,12 +1563,51 @@ const CreateEditPurchaseBill = () => {
         setFieldValue("tax_type", bill.tax_type);
       }
 
-      // Map AI product names to existing products and GST rates.
-      const mappedLines = bill.lines.map((item) => {
-        const productMatch = products.find(
-          (product) =>
-            normalizeName(product.name) === normalizeName(item.product_name),
+      // Search the complete store product catalogue on the backend in one request.
+      const matchResponse = await axios.post(
+        `${BASE_URL}/api/products/match-for-purchase`,
+        {
+          lines: bill.lines.map((item, index) => ({
+            line_index: index,
+            product_name: item.product_name || "",
+            sku: item.sku || "",
+            barcode: item.barcode || "",
+            salt_composition: item.salt_composition || "",
+            manufacturer: item.manufacturer || "",
+          })),
+        },
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${user_data.token}`,
+          },
+          timeout: 60000,
+        },
+      );
+
+      const matchResults = Array.isArray(matchResponse?.data?.data)
+        ? matchResponse.data.data
+        : [];
+
+      // Keep all returned candidates available in the product dropdown,
+      // including products that were not in the initially loaded first page.
+      const returnedProducts = matchResults.flatMap((result) => [
+        ...(result?.matched_product ? [result.matched_product] : []),
+        ...(Array.isArray(result?.candidates) ? result.candidates : []),
+      ]);
+      setAiMatchedProducts((previous) => {
+        const byId = new Map(previous.map((product) => [String(product.id), product]));
+        returnedProducts.forEach((product) => {
+          if (product?.id != null) byId.set(String(product.id), product);
+        });
+        return Array.from(byId.values());
+      });
+
+      const mappedLines = bill.lines.map((item, index) => {
+        const matchResult = matchResults.find(
+          (result) => Number(result.line_index) === index,
         );
+        const productMatch = matchResult?.matched_product || null;
 
         const gstMatch = gstRates.find(
           (gst) => Number(gst.rate) === Number(item.gst_rate_percent),
@@ -1542,7 +1632,7 @@ const CreateEditPurchaseBill = () => {
           batch_no: sanitizers.batch(item.batch_no || ""),
           // Avoid saving a potentially hallucinated expiry day.
           // Verify the original invoice and enter expiry manually.
-          expiry_date: "",
+        expiry_date: normalizeExpiryDate(item.expiry_date),
           is_opening: false,
         };
       });
@@ -2002,7 +2092,7 @@ const CreateEditPurchaseBill = () => {
                                               );
 
                                               const selectedProduct =
-                                                products.find(
+                                                availablePurchaseProducts.find(
                                                   (p) =>
                                                     p.id.toString() === value,
                                                 );
@@ -2023,7 +2113,7 @@ const CreateEditPurchaseBill = () => {
                                             <option value="add_new">
                                               + Add New Product
                                             </option>
-                                            {products.map((p) => (
+                                            {availablePurchaseProducts.map((p) => (
                                               <option key={p.id} value={p.id}>
                                                 {p.name}
                                               </option>
